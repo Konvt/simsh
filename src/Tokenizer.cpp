@@ -23,7 +23,7 @@ namespace hull {
     return *this;
   }
 
-  void LineBuffer::clear()
+  void LineBuffer::clear() noexcept
   {
     line_input_.clear();
     line_pos_ = 0;

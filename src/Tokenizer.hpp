@@ -36,9 +36,10 @@ namespace hull {
     [[nodiscard]] size_t line_pos() const noexcept { return line_pos_; }
 
     /// @brief Clear the line buffer.
-    void clear();
+    void clear() noexcept;
 
     /// @brief Peek the current character.
+    /// @throw error::StreamClosed If `peek` is called again when EOF has been returned.
     [[nodiscard]] type_decl::CharT peek();
 
     /// @brief Discard the current character from the buffer.

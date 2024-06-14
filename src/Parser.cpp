@@ -97,7 +97,6 @@ namespace hull {
       return left_stmt;
     }
 
-
     default:
       throw error::error_factory( error::info::SyntaxErrorInfo(
         tknizr_.line_pos(), TokenType::NEWLINE, tknizr_.peek().type_
