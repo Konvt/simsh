@@ -70,8 +70,9 @@ namespace hull {
     /// @throw error::ArgumentError If the tokenizer is empty.
     Token& peek();
 
+    /// @brief 消耗当前 token，并将 token 串返回
     /// @throw error::SyntaxError If tkn isn't matched with current token.
-    void consume( TokenType expect );
+    type_decl::TokenT consume( TokenType expect );
 
     template<utils::LineBufType T>
     void reset( T&& line_input ) {

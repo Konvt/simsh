@@ -101,6 +101,12 @@ namespace hull {
         return !val_decl::EvalSuccess;
       }
 
+      auto [match_result, matches] = utils::match_string( optr_, "^([0-9]*)>{1,2}$"sv );
+      assert( match_result == true );
+
+      const auto& fd_str = matches[1].str();
+      const type_decl::FDType file_d = fd_str.empty() ? STDOUT_FILENO : stoi( fd_str );
+
       int status;
       if ( pid_t process_id = fork();
            process_id < 0 )
@@ -110,7 +116,7 @@ namespace hull {
       else if ( process_id == 0 ) {
         auto fd = open( filename.c_str(),
           O_WRONLY | (category_ == StmtKind::appnd_redrct ? O_APPEND : O_TRUNC) );
-        dup2( fd, STDOUT_FILENO );
+        dup2( fd, file_d );
 
         if ( l_child_ != nullptr ) // 允许语句 `./prog < txt.txt > output.txt` 存在
           l_child_->evaluate();

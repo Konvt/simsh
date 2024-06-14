@@ -13,20 +13,22 @@
 namespace hull {
   class StmtNode {
     StmtKind category_;
+    type_decl::StringT optr_;
     using Node = std::unique_ptr<StmtNode>;
     Node l_child_, r_child_;
 
   public:
     StmtNode( StmtKind stmt_type )
-      : category_ { stmt_type }
+      : category_ { stmt_type }, optr_ { "command" }
       , l_child_ { nullptr }, r_child_ { nullptr } {}
-    StmtNode( StmtKind stmt_type, Node left_stmt, Node right_stmt )
-      : category_ { stmt_type }
+    StmtNode( StmtKind stmt_type, type_decl::StringT optr, Node left_stmt, Node right_stmt )
+      : category_ { stmt_type }, optr_ { move( optr ) }
       , l_child_ { std::move( left_stmt ) }
       , r_child_ { std::move( right_stmt ) } {}
     virtual ~StmtNode() = default;
 
     [[nodiscard]] StmtKind type() const noexcept { return category_; }
+    [[nodiscard]] type_decl::StrViewT optr() const noexcept { return optr_; }
     StmtNode* left() const noexcept { return l_child_.get(); }
     StmtNode* right() const noexcept { return r_child_.get(); }
 

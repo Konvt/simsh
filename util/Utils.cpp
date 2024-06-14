@@ -58,7 +58,7 @@ namespace hull {
       }
     }
 
-    bool create_file( const type_decl::StrViewT filename, mode_t mode )
+    bool create_file( type_decl::StrViewT filename, mode_t mode )
     {
       if ( mode == 0 )
         mode = 0644;
@@ -68,6 +68,14 @@ namespace hull {
         return false;
       else close( fd );
       return true;
+    }
+
+    pair<bool, smatch> match_string( const type_decl::StringT& str, type_decl::StrViewT reg_str )
+    {
+      regex pattern { reg_str.data() };
+      smatch matches;
+      bool result = regex_match( str, matches, pattern );
+      return { result, move( matches ) };
     }
   }
 }

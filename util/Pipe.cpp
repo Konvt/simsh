@@ -64,7 +64,7 @@ namespace hull {
       }
     }
 
-    Pipe::FDType PipeReader::get() const
+    type_decl::FDType PipeReader::get() const
     {
       return pipefd_[reader_fd];
     }
@@ -77,16 +77,14 @@ namespace hull {
       }
     }
 
-    Pipe::FDType PipeWriter::get() const
+    type_decl::FDType PipeWriter::get() const
     {
       return pipefd_[writer_fd];
     }
 
-    bool close_blocking( Pipe::FDType fd )
+    bool close_blocking( type_decl::FDType fd )
     {
       return fcntl( fd, F_SETFL, fcntl( fd, F_GETFL ) | O_NONBLOCK ) > 0;
     }
   }
 }
-
-

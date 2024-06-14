@@ -22,7 +22,7 @@ namespace hull {
     [[nodiscard]] StmtNodePtr inner_statement();
     [[nodiscard]] StmtNodePtr inner_statement_extension( StmtNodePtr left_stmt );
 
-    [[nodiscard]] StmtNodePtr redirection( Parser::StmtNodePtr left_stmt );
+    [[nodiscard]] StmtNodePtr redirection( StmtNodePtr left_stmt );
     [[nodiscard]] ExprNodePtr expression();
 
   public:

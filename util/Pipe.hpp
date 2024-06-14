@@ -14,14 +14,11 @@ namespace hull {
 
     /// @brief Anonymous pipes.
     class Pipe {
-    public:
-      using FDType = int;
-
     protected:
-      static constexpr FDType reader_fd = 0;
-      static constexpr FDType writer_fd = 1;
+      static constexpr type_decl::FDType reader_fd = 0;
+      static constexpr type_decl::FDType writer_fd = 1;
 
-      std::array<FDType, 2> pipefd_;
+      std::array<type_decl::FDType, 2> pipefd_;
       bool reader_closed_, writer_closed_;
 
     public:
@@ -42,7 +39,7 @@ namespace hull {
       PipeReader& operator=( const PipeReader& ) = delete;
 
       void close();
-      Pipe::FDType get() const;
+      type_decl::FDType get() const;
       template<typename T>
         requires std::is_trivially_copyable_v<T>
       T pop() const {
@@ -59,7 +56,7 @@ namespace hull {
       PipeWriter& operator=( const PipeReader& ) = delete;
 
       void close();
-      Pipe::FDType get() const;
+      type_decl::FDType get() const;
       template<typename T>
         requires std::is_trivially_copyable_v<std::decay_t<T>>
       void push( const T& value ) const {
@@ -68,7 +65,7 @@ namespace hull {
       }
     };
 
-    bool close_blocking( Pipe::FDType fd );
+    bool close_blocking( type_decl::FDType fd );
   }
 
 }

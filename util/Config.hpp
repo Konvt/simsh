@@ -25,6 +25,7 @@ namespace hull {
     using StrViewT = std::string_view;
     using EvalT = int64_t;
 
+    using FDType = int; // file descriptor
     using TokenT = std::vector<StringT>;
   }
 

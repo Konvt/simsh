@@ -23,11 +23,14 @@ namespace hull {
     return (current_token_ = next()).value();
   }
 
-  void Tokenizer::consume( TokenType expect )
+  type_decl::TokenT Tokenizer::consume( TokenType expect )
   {
-    if ( current_token_->is( expect ) )
+    if ( current_token_->is( expect ) ) {
+      type_decl::TokenT discard_tokens = move( current_token_->value_ );
       current_token_.reset();
-    else throw error::error_factory( error::info::SyntaxErrorInfo(
+      return discard_tokens;
+    }
+    throw error::error_factory( error::info::SyntaxErrorInfo(
       line_buf_.line_pos(), expect, current_token_->type_
     ) );
   }
@@ -43,7 +46,7 @@ namespace hull {
 
     enum class StateType {
       START, DONE, CMD_SKIPSPACE,
-      INCMD, INSTR, INAND,
+      INCMD, INNUM_LIKE, INSTR, INAND,
       INPIPE_LIKE, INRARR, // means "right arrow"
     };
 
@@ -55,6 +58,8 @@ namespace hull {
       case StateType::START: {
         if ( character != '\n' && isspace( character ) )
           save_char = false;
+        else if ( isdigit( character ) )
+          state = StateType::INNUM_LIKE;
         else {
           state = StateType::DONE;
           switch ( character ) {
@@ -116,6 +121,16 @@ namespace hull {
           save_char = false;
           discard_char = false;
           state = StateType::DONE;
+        }
+      } break;
+
+      case StateType::INNUM_LIKE: {
+        if ( character == '>' )
+          state = StateType::INRARR;
+        else if ( !isdigit( character ) ) {
+          save_char = false;
+          discard_char = false;
+          state = StateType::INCMD;
         }
       } break;
 
