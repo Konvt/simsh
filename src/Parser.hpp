@@ -36,6 +36,7 @@ namespace hull {
     }
 
     [[nodiscard]] StmtNodePtr parse();
+    [[nodiscard]] bool empty() const { return tknizr_.empty(); }
 
     [[nodiscard]] friend StmtNodePtr operator>>( std::istream& is, Parser& prsr ) {
       prsr.reset( is );

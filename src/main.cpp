@@ -7,11 +7,15 @@ int main()
 {
   hull::Parser prsr;
 
-  try {
-    prsr.parse()->evaluate();
-  } catch ( const hull::error::ProcessSuicide& e ) {
-    return e.value();
-  } catch ( const hull::error::TraceBack& e ) {
-    hull::utils::logger << e;
+  while ( !prsr.empty() ) {
+    cout << ">>> ";
+    try {
+      prsr.parse()->evaluate();
+    } catch ( const hull::error::ProcessSuicide& e ) {
+      return e.value();
+    } catch ( const hull::error::TraceBack& e ) {
+      hull::utils::logger << e;
+    }
   }
 }
+// todo: expr !-0

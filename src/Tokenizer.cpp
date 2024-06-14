@@ -7,13 +7,43 @@
 using namespace std;
 
 namespace hull {
+  void LineBuffer::swap_members( LineBuffer&& rhs ) noexcept
+  {
+    using std::swap;
+    swap( received_eof_, rhs.received_eof_ );
+    swap( line_pos_, rhs.line_pos_ );
+    swap( line_input_, rhs.line_input_ );
+  }
+
+  LineBuffer& LineBuffer::operator=( LineBuffer&& rhs ) noexcept
+  {
+    using std::swap;
+    swap( input_stream_, rhs.input_stream_ );
+    swap_members( move( rhs ) );
+    return *this;
+  }
+
+  void LineBuffer::clear()
+  {
+    line_input_.clear();
+    line_pos_ = 0;
+  }
+
   type_decl::CharT LineBuffer::peek()
   {
+    assert( input_stream_ != nullptr );
     if ( line_pos_ >= line_input_.size() ) {
-      if ( !getline( *input_stream_, line_input_ ) )
-        throw error::ProcessSuicide( EOF );
-      line_input_.push_back( '\n' );
-      line_pos_ = 0;
+      clear();
+
+      getline( *input_stream_, line_input_ );
+      if ( input_stream_->eof() ) {
+        if ( received_eof_ )
+          throw error::StreamClosed();
+        else received_eof_ = true;
+
+        line_input_.push_back( EOF );
+      }
+      else line_input_.push_back( '\n' );
     }
     return line_input_[line_pos_];
   }

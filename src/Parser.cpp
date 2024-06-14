@@ -6,6 +6,7 @@ using namespace std;
 namespace hull {
   Parser::StmtNodePtr Parser::parse()
   {
+    tknizr_.clear();
     return statement();
   }
 
@@ -47,7 +48,7 @@ namespace hull {
       throw error::error_factory( error::info::SyntaxErrorInfo(
         tknizr_.line_pos(), TokenType::CMD, tknizr_.peek().type_
       ) );
-    } break;
+    }
     }
 
     return statement_extension( move( node ) );
@@ -94,7 +95,7 @@ namespace hull {
     case TokenType::NEWLINE: {
       tknizr_.consume( tkn_tp );
       return left_stmt;
-    } break;
+    }
 
 
     default:
@@ -116,7 +117,7 @@ namespace hull {
       auto optr = tknizr_.consume( TokenType::NOT );
       return make_unique<StmtNode>( StmtKind::logical_not, move( optr.front() ),
         inner_statement(), nullptr );
-    } break;
+    }
 
     case TokenType::LPAREN: {
       tknizr_.consume( TokenType::LPAREN );
@@ -128,7 +129,7 @@ namespace hull {
       throw error::error_factory( error::info::SyntaxErrorInfo(
         tknizr_.line_pos(), TokenType::CMD, tknizr_.peek().type_
       ) );
-    } break;
+    }
     }
 
     return inner_statement_extension( move( node ) );

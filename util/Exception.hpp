@@ -4,6 +4,7 @@
 #include <exception>
 #include <utility>
 #include <optional>
+#include <cstdio>
 
 #include "EnumLabel.hpp"
 
@@ -58,10 +59,20 @@ namespace hull {
     class ProcessSuicide : public TraceBack {
       type_decl::EvalT exit_val_;
 
+    protected:
+      ProcessSuicide( type_decl::StringT message, type_decl::EvalT exit_val )
+        : TraceBack( std::move( message ) ), exit_val_ { exit_val } {}
+
     public:
       ProcessSuicide( type_decl::EvalT exit_val )
-        : TraceBack( "current process must be killed" ), exit_val_ { exit_val } {}
+        : ProcessSuicide( "current process must be killed", exit_val ) {}
       type_decl::EvalT value() const noexcept { return exit_val_; }
+    };
+
+    class StreamClosed : public ProcessSuicide {
+    public:
+      StreamClosed()
+        : ProcessSuicide( "target io stream has been closed", EOF ) {}
     };
 
     namespace info {

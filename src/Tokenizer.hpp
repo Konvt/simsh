@@ -12,37 +12,31 @@ namespace hull {
   class LineBuffer {
     std::istream* input_stream_;
 
+    bool received_eof_;
     size_t line_pos_;
     type_decl::StringT line_input_;
 
+    void swap_members( LineBuffer&& rhs ) noexcept;
+
   public:
+    LineBuffer( const LineBuffer& lhs ) = delete;
+    LineBuffer& operator=( const LineBuffer& lhs ) = delete;
+
     LineBuffer( std::istream& input_stream )
-      : input_stream_ { std::addressof( input_stream ) }, line_pos_ {} {}
-    LineBuffer( const LineBuffer& lhs ) : LineBuffer( *lhs.input_stream_ ) {}
+      : input_stream_ { std::addressof( input_stream ) }
+      , received_eof_ { false }, line_pos_ {} {}
     LineBuffer( LineBuffer&& rhs ) noexcept : LineBuffer( *rhs.input_stream_ ) {
-      using std::swap;
-      swap( line_pos_, rhs.line_pos_ );
-      swap( line_input_, rhs.line_input_ );
+      swap_members( std::move( rhs ) );
     }
     ~LineBuffer() = default;
 
-    LineBuffer& operator=( const LineBuffer& lhs ) {
-      input_stream_ = lhs.input_stream_;
-      line_pos_ = lhs.line_pos_;
-      line_input_ = lhs.line_input_;
-      return *this;
-    }
-    LineBuffer& operator=( LineBuffer&& rhs ) noexcept {
-      using std::swap;
-      swap( input_stream_, rhs.input_stream_ );
-      swap( line_pos_, rhs.line_pos_ );
-      swap( line_input_, rhs.line_input_ );
-      return *this;
-    }
+    LineBuffer& operator=( LineBuffer&& rhs ) noexcept;
 
+    [[nodiscard]] bool eof() const { return input_stream_->eof(); }
     [[nodiscard]] size_t line_pos() const noexcept { return line_pos_; }
 
-    bool eof() const { return input_stream_->eof(); }
+    /// @brief Clear the line buffer.
+    void clear();
 
     /// @brief Peek the current character.
     [[nodiscard]] type_decl::CharT peek();
@@ -71,6 +65,9 @@ namespace hull {
 
     [[nodiscard]] size_t line_pos() const noexcept { return line_buf_.line_pos(); }
     [[nodiscard]] bool empty() const noexcept { return line_buf_.eof(); }
+
+    /// @brief Clear all unprocessed characters.
+    void clear() { line_buf_.clear(); }
 
     /// @throw error::ArgumentError If the tokenizer is empty.
     Token& peek();
