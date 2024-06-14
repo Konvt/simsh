@@ -3,7 +3,7 @@
 
 #include <istream>
 #include <utility>
-#include <optional>
+#include <list>
 
 #include "Config.hpp"
 #include "EnumLabel.hpp"
@@ -26,10 +26,10 @@ namespace hull {
       bool eol() const noexcept { return line_pos_ >= line_input_.size(); }
 
       /// @brief Peek the current character.
-      [[nodiscard]] type_decl::CharT peek() const { return line_input_[line_pos_]; }
+      [[nodiscard]] type_decl::CharT peek() const noexcept { return line_input_[line_pos_]; }
 
       /// @brief Discard the current character from the buffer.
-      void discard();
+      void discard() noexcept;
 
       void reset( type_decl::StringT line_input ) {
         line_input_ = std::move( line_input.append( "\n" ) );
@@ -61,7 +61,7 @@ namespace hull {
     template<utils::LineBufType T>
     Tokenizer( T&& line_buf )
       : line_buf_ { std::move( line_buf ) }
-      , current_token_ { std::nullopt } {}
+      , token_list_ {} {}
     ~Tokenizer() = default;
 
     [[nodiscard]] size_t line_pos() const noexcept { return line_buf_.line_pos(); }
@@ -71,7 +71,7 @@ namespace hull {
     Token& peek();
 
     /// @brief 消耗当前 token，并将 token 串返回
-    /// @throw error::SyntaxError If tkn isn't matched with current token.
+    /// @throw error::SyntaxError If `expect` isn't matched with current token.
     type_decl::TokenT consume( TokenType expect );
 
     template<utils::LineBufType T>
@@ -80,15 +80,18 @@ namespace hull {
       if ( new_line_buf.empty() )
         return;
       line_buf_ = std::move( new_line_buf );
-      current_token_.reset();
+      token_list_.clear();
     }
 
   private:
     utils::LineBuffer line_buf_;
-    std::optional<Token> current_token_;
+    std::list<Token> token_list_;
 
-    /// @throw hull::TokenError, hull::TraceBack
-    [[nodiscard]] Token next();
+    void next();
+
+    /// @throw error::ArgumentError If the state machine is stepped into a wrong state.
+    /// @throw error::TokenError If the state machine received an unexpected token.
+    [[nodiscard]] std::pair<TokenType, type_decl::StringT> dfa();
   };
 }
 

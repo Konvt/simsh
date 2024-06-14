@@ -35,7 +35,6 @@ namespace hull {
     inline const std::unordered_set<type_decl::StringT> internal_command {
       { "cd" }, { "exit" }
     };
-
   }
 }
 

@@ -25,6 +25,7 @@ namespace hull {
       Pipe( const Pipe& ) = delete;
       Pipe& operator=( const Pipe& ) = delete;
 
+      /// @throw error::ArgumentError If an attempt to create a pipe fails.
       Pipe();
       Pipe( Pipe&& rhs ) noexcept;
       Pipe& operator=( Pipe&& rhs ) noexcept;

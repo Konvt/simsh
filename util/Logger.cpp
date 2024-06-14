@@ -9,7 +9,7 @@ namespace hull {
       return *this;
     }
 
-    Logger& Logger::inst() {
+    Logger& Logger::inst() noexcept {
       static Logger logger;
       return logger;
     }

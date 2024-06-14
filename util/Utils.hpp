@@ -9,7 +9,6 @@
 
 #include "Config.hpp"
 #include "EnumLabel.hpp"
-#include "Pipe.hpp"
 
 namespace hull {
   namespace utils {

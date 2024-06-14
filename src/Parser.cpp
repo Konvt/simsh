@@ -186,30 +186,34 @@ namespace hull {
 
   Parser::StmtNodePtr Parser::redirection( Parser::StmtNodePtr left_stmt )
   {
+    StmtKind stmt_kind = StmtKind::trivial;
+    type_decl::TokenT token_str;
     switch ( tknizr_.peek().type_ ) {
     case TokenType::OVR_REDIR: {
-      auto optr = tknizr_.consume( TokenType::OVR_REDIR );
-      return make_unique<StmtNode>( StmtKind::ovrwrit_redrct, move( optr.front() ),
-        move( left_stmt ), expression() );
-    }
-
+      stmt_kind = StmtKind::ovrwrit_redrct;
+      token_str = tknizr_.consume( TokenType::OVR_REDIR );
+    } break;
     case TokenType::APND_REDIR: {
-      auto optr = tknizr_.consume( TokenType::APND_REDIR );
-      return make_unique<StmtNode>( StmtKind::appnd_redrct, move( optr.front() ),
-        move( left_stmt ), expression() );
-    }
-
+      stmt_kind = StmtKind::appnd_redrct;
+      token_str = tknizr_.consume( TokenType::APND_REDIR );
+    } break;
     case TokenType::STDIN_REDIR: {
-      auto optr = tknizr_.consume( TokenType::STDIN_REDIR );
-      return make_unique<StmtNode>( StmtKind::stdin_redrct, move( optr.front() ),
-        move( left_stmt ), expression() );
-    }
-
+      stmt_kind = StmtKind::stdin_redrct;
+      token_str = tknizr_.consume( TokenType::STDIN_REDIR );
+    } break;
     default:
       throw error::error_factory( error::info::SyntaxErrorInfo(
         tknizr_.line_pos(), TokenType::OVR_REDIR, tknizr_.peek().type_
       ) );
     }
+
+    if ( tknizr_.peek().type_ != TokenType::CMD ) {
+      throw error::error_factory( error::info::SyntaxErrorInfo(
+        tknizr_.line_pos(), TokenType::CMD, tknizr_.peek().type_
+      ) );
+    }
+    return make_unique<StmtNode>( stmt_kind, move( token_str.front() ),
+      move( left_stmt ), expression() );
   }
 
   Parser::ExprNodePtr Parser::expression()

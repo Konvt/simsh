@@ -6,7 +6,7 @@
 using namespace std;
 
 namespace hull {
-  void utils::LineBuffer::discard()
+  void utils::LineBuffer::discard() noexcept
   {
     assert( line_pos_ <= line_input_.size() );
     ++line_pos_;
@@ -14,38 +14,61 @@ namespace hull {
 
   Tokenizer::Token& Tokenizer::peek()
   {
-    if ( current_token_.has_value() )
-      return current_token_.value();
-    else if ( empty() )
+    if ( !token_list_.empty() )
+      return token_list_.front();
+    else if ( empty() ) {
       throw error::error_factory( error::info::ArgumentErrorInfo(
         "tokenizer"sv, "empty tokenizer"sv
       ) );
-    return (current_token_ = next()).value();
+    } else next();
+    return token_list_.front();
   }
 
   type_decl::TokenT Tokenizer::consume( TokenType expect )
   {
-    if ( current_token_->is( expect ) ) {
-      type_decl::TokenT discard_tokens = move( current_token_->value_ );
-      current_token_.reset();
+    assert( token_list_.empty() == false );
+    if ( token_list_.front().is( expect ) ) {
+      type_decl::TokenT discard_tokens = move( token_list_.front().value_ );
+      token_list_.pop_front();
       return discard_tokens;
     }
     throw error::error_factory( error::info::SyntaxErrorInfo(
-      line_buf_.line_pos(), expect, current_token_->type_
+      line_buf_.line_pos(), expect, token_list_.front().type_
     ) );
   }
 
-  Tokenizer::Token Tokenizer::next()
+  void Tokenizer::next()
   {
-    Token new_token;
-    const auto back_insert = []( auto& container ) {
-      container.push_back( {} );
-      return prev( container.end() );
-    };
-    auto inserter = back_insert( new_token.value_ );
+    assert( empty() == false );
+    assert( token_list_.empty() == true );
+
+    Tokenizer::Token new_token;
+    {
+      auto [tkn_tp, tkn_str] = dfa();
+      new_token.type_ = tkn_tp; new_token.value_.push_back( move( tkn_str ) );
+    }
+    if ( new_token.is( TokenType::CMD ) ) {
+      while ( true ) {
+        assert( empty() == false );
+        auto [new_type, new_str] = dfa();
+        if ( new_type == TokenType::CMD )
+          new_token.value_.push_back( move( new_str ) );
+        else {
+          token_list_.push_back( move( new_token ) );
+          token_list_.push_back( Tokenizer::Token( new_type, type_decl::TokenT( 1, move( new_str ) ) ) );
+          break;
+        }
+      }
+    } else token_list_.push_back( move( new_token ) );
+  }
+
+  pair<TokenType, type_decl::StringT> Tokenizer::dfa()
+  {
+    TokenType token_type = TokenType::ERROR;
+    type_decl::StringT token_str;
 
     enum class StateType {
-      START, DONE, CMD_SKIPSPACE,
+      START, DONE,
       INCMD, INNUM_LIKE, INSTR, INAND,
       INPIPE_LIKE, INRARR, // means "right arrow"
     };
@@ -65,15 +88,15 @@ namespace hull {
           switch ( character ) {
           case EOF: {
             save_char = false;
-            new_token.type_ = TokenType::ENDFILE;
+            token_type = TokenType::ENDFILE;
           } break;
           case '\0':
             [[fallthrough]];
           case '\n': {
-            new_token.type_ = TokenType::NEWLINE;
+            token_type = TokenType::NEWLINE;
           } break;
           case ';': {
-            new_token.type_ = TokenType::SEMI;
+            token_type = TokenType::SEMI;
           } break;
           case '"': {
             state = StateType::INSTR;
@@ -86,19 +109,19 @@ namespace hull {
             state = StateType::INPIPE_LIKE;
           } break;
           case '<': {
-            new_token.type_ = TokenType::STDIN_REDIR;
+            token_type = TokenType::STDIN_REDIR;
           } break;
           case '!': {
-            new_token.type_ = TokenType::NOT;
+            token_type = TokenType::NOT;
           } break;
           case '>': {
             state = StateType::INRARR;
           } break;
           case '(': {
-            new_token.type_ = TokenType::LPAREN;
+            token_type = TokenType::LPAREN;
           } break;
           case ')': {
-            new_token.type_ = TokenType::RPAREN;
+            token_type = TokenType::RPAREN;
           } break;
           default: {
             state = StateType::INCMD;
@@ -108,16 +131,9 @@ namespace hull {
       } break;
 
       case StateType::INCMD: {
-        if ( character != '\n' && isspace( character ) ) {
-          save_char = false;
-          inserter = back_insert( new_token.value_ );
-          state = StateType::CMD_SKIPSPACE;
-        } else if ( character == '"' ) {
-          save_char = false;
-          state = StateType::INSTR;
-        } else if ( !regex_match( type_decl::StringT( 1, character ), regex( "[A-Za-z0-9_\\.,+\\-*/@:~]" ) ) ) {
+        if ( !regex_match( type_decl::StringT( 1, character ), regex( "[A-Za-z0-9_\\.,+\\-*/@:~]" ) ) ) {
           // 遇到了不应该出现在 command 中的字符，结束状态
-          new_token.type_ = TokenType::CMD;
+          token_type = TokenType::CMD;
           save_char = false;
           discard_char = false;
           state = StateType::DONE;
@@ -134,18 +150,11 @@ namespace hull {
         }
       } break;
 
-      case StateType::CMD_SKIPSPACE: {
-        save_char = false;
-        if ( character == '\n' || !isspace( character ) ) {
-          discard_char = false;
-          state = StateType::INCMD;
-        }
-      } break;
-
       case StateType::INSTR: {
         if ( character == '"' ) {
           save_char = false;
-          state = StateType::INCMD;
+          token_type = TokenType::CMD;
+          state = StateType::DONE;
         } else if ( ("\n\0"sv).find( character ) != type_decl::StrViewT::npos || character == EOF )
           throw error::error_factory( error::info::TokenErrorInfo(
             line_buf_.line_pos(), '"', character
@@ -154,13 +163,13 @@ namespace hull {
 
       case StateType::INAND: { // &&
         if ( character != '&' ) {
-          new_token.type_ = TokenType::ERROR;
+          token_type = TokenType::ERROR;
           throw error::error_factory( error::info::TokenErrorInfo(
             line_buf_.line_pos(), '&', character
           ) );
         } else {
           state = StateType::DONE;
-          new_token.type_ = TokenType::AND;
+          token_type = TokenType::AND;
         }
       } break;
 
@@ -168,8 +177,8 @@ namespace hull {
         if ( character != '|' ) {
           save_char = false;
           discard_char = false;
-          new_token.type_ = TokenType::PIPE;
-        } else new_token.type_ = TokenType::OR;
+          token_type = TokenType::PIPE;
+        } else token_type = TokenType::OR;
         state = StateType::DONE;
       } break;
 
@@ -177,8 +186,8 @@ namespace hull {
         if ( character != '>' ) {
           save_char = false;
           discard_char = false;
-          new_token.type_ = TokenType::OVR_REDIR;
-        } else new_token.type_ = TokenType::APND_REDIR;
+          token_type = TokenType::OVR_REDIR;
+        } else token_type = TokenType::APND_REDIR;
         state = StateType::DONE;
       } break;
 
@@ -186,7 +195,7 @@ namespace hull {
         [[fallthrough]];
       default: {
         state = StateType::DONE;
-        new_token.type_ = TokenType::ERROR;
+        token_type = TokenType::ERROR;
         throw error::error_factory( error::info::ArgumentErrorInfo(
           "tokenizer"sv, "the state machine status is incorrect"sv
         ) );
@@ -194,14 +203,11 @@ namespace hull {
       }
 
       if ( save_char )
-        inserter->push_back( character );
+        token_str.push_back( character );
       if ( discard_char )
         line_buf_.discard();
     }
 
-    if ( inserter->empty() )
-      new_token.value_.erase( inserter );
-
-    return new_token;
+    return make_pair( token_type, move( token_str ) );
   }
 }

@@ -41,7 +41,7 @@ namespace hull {
     type_decl::TokenT expr_;
     std::optional<type_decl::EvalT> result_;
 
-    /// @brief 执行表达式，并将执行结果作为求值结果返回
+    /// @brief 执行表达式，并将“执行结果是否成功”的布尔值作为求值结果返回
     /// @param expression 一条命令表达式
     /// @return 子进程返回值
     [[nodiscard]] static type_decl::EvalT external_exec( const type_decl::TokenT& expression );
@@ -67,8 +67,8 @@ namespace hull {
     }
     virtual ~ExprNode() = default;
 
-    /// @brief 对表达式进行求值，如果结点类型为 `ExprKind::command`，则执行命令并返回命令执行结果，
-    /// @brief 若结点类型为 `ExprKind::string`，则返回字符串是否非空结果
+    /// @throw error::InitError If a specific system call error occurs (i.e. `fork` and `waitpid`).
+    /// @throw error::ProcessSuicide If this process is a child process.
     [[nodiscard]] virtual type_decl::EvalT evaluate() override;
 
     /// @brief 返回一个只读的表达式视图
