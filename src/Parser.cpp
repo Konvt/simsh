@@ -28,16 +28,16 @@ namespace hull {
       return statement_extension( redirection( nullptr ) );
     }
 
-    case TokenType::NOT: {
-      tknizr_.consume( TokenType::NOT );
-      return make_unique<StmtNode>( StmtKind::logical_not, statement(), nullptr );
-    }
-
     case TokenType::LPAREN: {
       tknizr_.consume( TokenType::LPAREN );
       node = inner_statement();
       tknizr_.consume( TokenType::RPAREN );
     } break;
+
+    case TokenType::NOT: {
+      tknizr_.consume( TokenType::NOT );
+      return make_unique<StmtNode>( StmtKind::logical_not, statement(), nullptr );
+    }
 
     case TokenType::ENDFILE: // empty statement
       [[fallthrough]];
@@ -120,10 +120,6 @@ namespace hull {
       tknizr_.consume( TokenType::LPAREN );
       node = inner_statement();
       tknizr_.consume( TokenType::RPAREN );
-    } break;
-
-    case TokenType::RPAREN: {
-      return make_unique<ExprNode>( StmtKind::trivial, ExprKind::command, val_decl::EvalSuccess );
     } break;
 
     default: {
