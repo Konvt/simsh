@@ -1,12 +1,24 @@
-#include <cassert>
 #include <regex>
+#include <string>
+#include <cassert>
 
 #include "Tokenizer.hpp"
 #include "Exception.hpp"
 using namespace std;
 
 namespace hull {
-  void utils::LineBuffer::discard() noexcept
+  type_decl::CharT LineBuffer::peek()
+  {
+    if ( line_pos_ >= line_input_.size() ) {
+      if ( !getline( *input_stream_, line_input_ ) )
+        throw error::ProcessSuicide( EOF );
+      line_input_.push_back( '\n' );
+      line_pos_ = 0;
+    }
+    return line_input_[line_pos_];
+  }
+
+  void LineBuffer::discard() noexcept
   {
     assert( line_pos_ <= line_input_.size() );
     ++line_pos_;
@@ -16,11 +28,7 @@ namespace hull {
   {
     if ( !token_list_.empty() )
       return token_list_.front();
-    else if ( empty() ) {
-      throw error::error_factory( error::info::ArgumentErrorInfo(
-        "tokenizer"sv, "empty tokenizer"sv
-      ) );
-    } else next();
+    next();
     return token_list_.front();
   }
 
@@ -39,7 +47,6 @@ namespace hull {
 
   void Tokenizer::next()
   {
-    assert( empty() == false );
     assert( token_list_.empty() == true );
 
     Tokenizer::Token new_token;
@@ -49,7 +56,6 @@ namespace hull {
     }
     if ( new_token.is( TokenType::CMD ) ) {
       while ( true ) {
-        assert( empty() == false );
         auto [new_type, new_str] = dfa();
         if ( new_type == TokenType::CMD )
           new_token.value_.push_back( move( new_str ) );

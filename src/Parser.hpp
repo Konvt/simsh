@@ -3,7 +3,7 @@
 
 #include <concepts>
 #include <type_traits>
-#include <istream>
+#include <iostream>
 #include <memory>
 
 #include "Exception.hpp"
@@ -26,30 +26,20 @@ namespace hull {
     [[nodiscard]] ExprNodePtr expression();
 
   public:
-    Parser() : tknizr_ { "" } {}
-    template<typename T>
-      requires std::disjunction_v<
-        std::bool_constant<utils::LineBufType<T>>,
-        std::is_same<std::decay_t<T>, Tokenizer>
-      >
-    Parser( T&& line_input )
-      : tknizr_ { std::forward<T>( line_input ) } {}
+    Parser() : tknizr_ { std::cin } {}
+    Parser( LineBuffer line_buf )
+      : tknizr_ { std::move( line_buf ) } {}
     ~Parser() = default;
 
-    template<utils::LineBufType T>
-    void reset( T&& line_input ) {
-      tknizr_.reset( std::forward<T>( line_input ) );
+    void reset( LineBuffer line_buf ) {
+      tknizr_.reset( std::move( line_buf ) );
     }
 
     [[nodiscard]] StmtNodePtr parse();
 
-    friend std::istream& getline( std::istream& is, Parser& parsr ) {
-      using std::getline;
-      if ( is.eof() )
-        throw error::ProcessSuicide( EXIT_SUCCESS );
-      type_decl::StringT line_input; getline( is, line_input );
-      parsr.reset( utils::LineBuffer( std::move( line_input ) ) );
-      return is;
+    [[nodiscard]] friend StmtNodePtr operator>>( std::istream& is, Parser& prsr ) {
+      prsr.reset( is );
+      return prsr.parse();
     }
   };
 }

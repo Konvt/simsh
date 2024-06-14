@@ -6,10 +6,6 @@ using namespace std;
 namespace hull {
   Parser::StmtNodePtr Parser::parse()
   {
-    if ( tknizr_.empty() )
-      throw error::error_factory( error::info::ArgumentErrorInfo(
-        "parser"sv, "empty tokenizer"sv
-      ) );
     return statement();
   }
 

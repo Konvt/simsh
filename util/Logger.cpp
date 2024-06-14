@@ -1,11 +1,11 @@
 #include <iostream>
-
 #include "Logger.hpp"
+using namespace std;
 
 namespace hull {
   namespace utils {
     Logger& Logger::operator<<( const error::TraceBack& e ) {
-      std::cerr << e.what() << std::endl;
+      cerr << e.what() << endl;
       return *this;
     }
 

@@ -9,41 +9,47 @@
 #include "EnumLabel.hpp"
 
 namespace hull {
-  namespace utils {
-    class LineBuffer {
-      size_t line_pos_;
-      type_decl::StringT line_input_;
+  class LineBuffer {
+    std::istream* input_stream_;
 
-    public:
-      LineBuffer( type_decl::StringT line_input )
-        : line_pos_ {}, line_input_ { std::move( line_input.append( "\n" ) ) } {}
-      ~LineBuffer() = default;
+    size_t line_pos_;
+    type_decl::StringT line_input_;
 
-      [[nodiscard]] size_t line_pos() const noexcept { return line_pos_; }
-      [[nodiscard]] bool empty() const noexcept { return line_input_.empty(); }
+  public:
+    LineBuffer( std::istream& input_stream )
+      : input_stream_ { std::addressof( input_stream ) }, line_pos_ {} {}
+    LineBuffer( const LineBuffer& lhs ) : LineBuffer( *lhs.input_stream_ ) {}
+    LineBuffer( LineBuffer&& rhs ) noexcept : LineBuffer( *rhs.input_stream_ ) {
+      using std::swap;
+      swap( line_pos_, rhs.line_pos_ );
+      swap( line_input_, rhs.line_input_ );
+    }
+    ~LineBuffer() = default;
 
-      /// @brief End of line.
-      bool eol() const noexcept { return line_pos_ >= line_input_.size(); }
+    LineBuffer& operator=( const LineBuffer& lhs ) {
+      input_stream_ = lhs.input_stream_;
+      line_pos_ = lhs.line_pos_;
+      line_input_ = lhs.line_input_;
+      return *this;
+    }
+    LineBuffer& operator=( LineBuffer&& rhs ) noexcept {
+      using std::swap;
+      swap( input_stream_, rhs.input_stream_ );
+      swap( line_pos_, rhs.line_pos_ );
+      swap( line_input_, rhs.line_input_ );
+      return *this;
+    }
 
-      /// @brief Peek the current character.
-      [[nodiscard]] type_decl::CharT peek() const noexcept { return line_input_[line_pos_]; }
+    [[nodiscard]] size_t line_pos() const noexcept { return line_pos_; }
 
-      /// @brief Discard the current character from the buffer.
-      void discard() noexcept;
+    bool eof() const { return input_stream_->eof(); }
 
-      void reset( type_decl::StringT line_input ) {
-        line_input_ = std::move( line_input.append( "\n" ) );
-        line_pos_ = 0;
-      }
-    };
+    /// @brief Peek the current character.
+    [[nodiscard]] type_decl::CharT peek();
 
-    template<typename T>
-    concept LineBufType =
-      std::disjunction_v<
-        std::is_same<std::decay_t<T>, utils::LineBuffer>,
-        std::is_convertible<std::decay_t<T>, type_decl::StringT>
-      >;
-  }
+    /// @brief Discard the current character from the buffer.
+    void discard() noexcept;
+  };
 
   class Tokenizer {
   public:
@@ -58,14 +64,13 @@ namespace hull {
       [[nodiscard]] bool is_not( TokenType tp ) const noexcept { return !is( tp ); }
     };
 
-    template<utils::LineBufType T>
-    Tokenizer( T&& line_buf )
+    Tokenizer( LineBuffer line_buf )
       : line_buf_ { std::move( line_buf ) }
       , token_list_ {} {}
     ~Tokenizer() = default;
 
     [[nodiscard]] size_t line_pos() const noexcept { return line_buf_.line_pos(); }
-    [[nodiscard]] bool empty() const noexcept { return line_buf_.eol(); }
+    [[nodiscard]] bool empty() const noexcept { return line_buf_.eof(); }
 
     /// @throw error::ArgumentError If the tokenizer is empty.
     Token& peek();
@@ -74,17 +79,15 @@ namespace hull {
     /// @throw error::SyntaxError If `expect` isn't matched with current token.
     type_decl::TokenT consume( TokenType expect );
 
-    template<utils::LineBufType T>
-    void reset( T&& line_input ) {
-      utils::LineBuffer new_line_buf { std::forward<T>( line_input ) };
-      if ( new_line_buf.empty() )
-        return;
-      line_buf_ = std::move( new_line_buf );
-      token_list_.clear();
+    void reset( LineBuffer line_buf ) {
+      if ( !line_buf.eof() ) {
+        line_buf_ = std::move( line_buf );
+        token_list_.clear();
+      }
     }
 
   private:
-    utils::LineBuffer line_buf_;
+    LineBuffer line_buf_;
     std::list<Token> token_list_;
 
     void next();
