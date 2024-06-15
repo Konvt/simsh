@@ -170,7 +170,7 @@ namespace hull {
       } break;
 
       case StateType::INCMD: {
-        if ( !regex_match( type_decl::StringT( 1, character ), regex( "[A-Za-z0-9_\\.,+\\-*/@:~]" ) ) ) {
+        if ( isspace(character) || regex_match( type_decl::StringT( 1, character ), regex( R"([&|!<>"':\()^%$#])" ) ) ) {
           // 遇到了不应该出现在 command 中的字符，结束状态
           token_type = TokenType::CMD;
           save_char = false;

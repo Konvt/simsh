@@ -21,14 +21,15 @@ namespace hull {
 
     case TokenType::OVR_REDIR:
       [[fallthrough]];
-    case TokenType::APND_REDIR: {
+    case TokenType::APND_REDIR:
+      [[fallthrough]];
+    case TokenType::MERG_OUTPUT: {
       node = redirection( nullptr );
     } break;
 
     case TokenType::LPAREN: {
       tknizr_.consume( TokenType::LPAREN );
       node = inner_statement();
-      tknizr_.consume( TokenType::RPAREN );
     } break;
 
     case TokenType::NOT: {
@@ -39,7 +40,8 @@ namespace hull {
       [[fallthrough]];
     case TokenType::NEWLINE: {
       tknizr_.consume( tkn_tp );
-      return make_unique<ExprNode>( StmtKind::trivial, ExprKind::command, val_decl::EvalSuccess );
+      return make_unique<ExprNode>( StmtKind::trivial,
+        ExprKind::command, val_decl::EvalSuccess );
     }
 
     default: {
@@ -56,7 +58,7 @@ namespace hull {
   {
     switch ( const auto tkn_tp = tknizr_.peek().type_;
              tkn_tp ) {
-    case TokenType::AND: {
+    case TokenType::AND: { // connector
       auto optr = tknizr_.consume( TokenType::AND );
       return make_unique<StmtNode>( StmtKind::logical_and, move( optr ),
         move( left_stmt ), statement() );
@@ -74,6 +76,12 @@ namespace hull {
         move( left_stmt ), statement() );
     }
 
+    case TokenType::SEMI: {
+      auto optr = tknizr_.consume( TokenType::SEMI );
+      return make_unique<StmtNode>( StmtKind::sequential, move( optr ),
+        move( left_stmt ), statement() );
+    }
+
     case TokenType::OVR_REDIR: // redirection
       [[fallthrough]];
     case TokenType::APND_REDIR:
@@ -82,12 +90,6 @@ namespace hull {
       [[fallthrough]];
     case TokenType::MERG_OUTPUT: {
       return statement_extension( redirection( move( left_stmt ) ) );
-    }
-
-    case TokenType::SEMI: {
-      auto optr = tknizr_.consume( TokenType::SEMI );
-      return make_unique<StmtNode>( StmtKind::sequential, move( optr ),
-        move( left_stmt ), statement() );
     }
 
     case TokenType::ENDFILE:
@@ -114,7 +116,9 @@ namespace hull {
 
     case TokenType::OVR_REDIR:
       [[fallthrough]];
-    case TokenType::APND_REDIR: {
+    case TokenType::APND_REDIR:
+      [[fallthrough]];
+    case TokenType::MERG_OUTPUT: {
       node = redirection( nullptr );
     } break;
 
@@ -125,7 +129,6 @@ namespace hull {
     case TokenType::LPAREN: {
       tknizr_.consume( TokenType::LPAREN );
       node = inner_statement();
-      tknizr_.consume( TokenType::RPAREN );
     } break;
 
     default: {
@@ -141,7 +144,7 @@ namespace hull {
   Parser::StmtNodePtr Parser::inner_statement_extension( Parser::StmtNodePtr left_stmt )
   {
     switch ( tknizr_.peek().type_ ) {
-    case TokenType::AND: {
+    case TokenType::AND: { // connector
       auto optr = tknizr_.consume( TokenType::AND );
       return make_unique<StmtNode>( StmtKind::logical_and, move( optr ),
         move( left_stmt ), inner_statement() );
@@ -159,6 +162,18 @@ namespace hull {
         move( left_stmt ), inner_statement() );
     }
 
+    case TokenType::SEMI: {
+      auto optr = tknizr_.consume( TokenType::SEMI );
+
+      StmtNodePtr right_stmt;
+      if ( tknizr_.peek().is( TokenType::RPAREN ) )
+        tknizr_.consume( TokenType::RPAREN );
+      else right_stmt = inner_statement();
+
+      return make_unique<StmtNode>( StmtKind::sequential, move( optr ),
+        move( left_stmt ), move( right_stmt ) );
+    }
+
     case TokenType::OVR_REDIR: // redirection
       [[fallthrough]];
     case TokenType::APND_REDIR:
@@ -169,13 +184,8 @@ namespace hull {
       return inner_statement_extension( redirection( move( left_stmt ) ) );
     }
 
-    case TokenType::SEMI: {
-      auto optr = tknizr_.consume( TokenType::SEMI );
-      return make_unique<StmtNode>( StmtKind::sequential, move( optr ),
-        move( left_stmt ), inner_statement() );
-    }
-
     case TokenType::RPAREN: {
+      tknizr_.consume( TokenType::RPAREN );
       return left_stmt;
     }
 
@@ -235,8 +245,6 @@ namespace hull {
 
       node = make_unique<StmtNode>( StmtKind::logical_not,
         move( optr ), inner_statement(), nullptr );
-
-      tknizr_.consume( TokenType::RPAREN );
     } else throw error::error_factory( error::info::SyntaxErrorInfo(
       tknizr_.line_pos(), TokenType::CMD, tknizr_.peek().type_
     ) );
@@ -247,6 +255,7 @@ namespace hull {
   Parser::ExprNodePtr Parser::expression()
   {
     auto tokens = tknizr_.consume( TokenType::CMD );
-    return make_unique<ExprNode>( StmtKind::trivial, ExprKind::command, move( tokens ) );
+    return make_unique<ExprNode>( StmtKind::trivial,
+      ExprKind::command, move( tokens ) );
   }
 }

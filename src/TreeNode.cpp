@@ -21,9 +21,14 @@ namespace hull {
   {
     switch ( category_ ) {
     case StmtKind::sequential: {
-      assert( l_child_ != nullptr && r_child_ != nullptr );
-      l_child_->evaluate();
-      return r_child_->evaluate();
+      assert( l_child_ != nullptr );
+
+      if ( r_child_ == nullptr )
+        return l_child_->evaluate();
+      else {
+        l_child_->evaluate();
+        return r_child_->evaluate();
+      }
     }
 
     case StmtKind::logical_and: {
@@ -106,7 +111,7 @@ namespace hull {
       type_decl::FDType file_d;
       auto [match_result, matches] = utils::match_string( tokens_.front(),
         (category_ == StmtKind::appnd_redrct || category_ == StmtKind::ovrwrit_redrct ?
-          "^(\\d*)>{1,2}$"sv : "^(\\d*)&>$"sv) );
+          R"(^(\d*)>{1,2}$)"sv : R"(^(\d*)&>$)"sv) );
       assert( match_result == true );
 
       const auto& fd_str = matches[1].str();
