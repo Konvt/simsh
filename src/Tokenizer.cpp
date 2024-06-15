@@ -179,6 +179,8 @@ namespace hull {
       case StateType::INNUM_LIKE: {
         if ( character == '>' )
           state = StateType::INRARR;
+        else if ( character == '&' )
+          state = StateType::INAND;
         else if ( !isdigit( character ) ) {
           save_char = false;
           discard_char = false;
@@ -198,14 +200,17 @@ namespace hull {
       } break;
 
       case StateType::INAND: { // &&
-        if ( character != '&' ) {
+        if ( character == '&' ) {
+          state = StateType::DONE;
+          token_type = TokenType::AND;
+        } else if ( character == '>' ) { // &>
+          state = StateType::DONE;
+          token_type = TokenType::MERG_OUTPUT;
+        } else {
           token_type = TokenType::ERROR;
           throw error::error_factory( error::info::TokenErrorInfo(
             line_buf_.line_pos(), '&', character
           ) );
-        } else {
-          state = StateType::DONE;
-          token_type = TokenType::AND;
         }
       } break;
 

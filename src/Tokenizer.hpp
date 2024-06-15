@@ -68,7 +68,7 @@ namespace hull {
     [[nodiscard]] bool empty() const noexcept { return line_buf_.eof(); }
 
     /// @brief Clear all unprocessed characters.
-    void clear() { line_buf_.clear(); }
+    void clear() { line_buf_.clear(); token_list_.clear(); }
 
     /// @throw error::ArgumentError If the tokenizer is empty.
     Token& peek();

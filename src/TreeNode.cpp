@@ -38,7 +38,7 @@ namespace hull {
 
     case StmtKind::logical_not: {
       assert( l_child_ != nullptr && r_child_ == nullptr );
-      return l_child_->evaluate() != val_decl::EvalSuccess;
+      return !l_child_->evaluate();
     }
 
     case StmtKind::pipeline: {
@@ -75,7 +75,9 @@ namespace hull {
 
     case StmtKind::appnd_redrct:
       [[fallthrough]];
-    case StmtKind::ovrwrit_redrct: {
+    case StmtKind::ovrwrit_redrct:
+      [[fallthrough]];
+    case StmtKind::merge_redrct: {
       assert( r_child_ != nullptr );
       assert( r_child_->category_ == StmtKind::trivial );
 
@@ -101,11 +103,14 @@ namespace hull {
         return !val_decl::EvalSuccess;
       }
 
-      auto [match_result, matches] = utils::match_string( optr_, "^([0-9]*)>{1,2}$"sv );
+      type_decl::FDType file_d;
+      auto [match_result, matches] = utils::match_string( optr_,
+        (category_ == StmtKind::appnd_redrct || category_ == StmtKind::ovrwrit_redrct ?
+          "^(\\d*)>{1,2}$"sv : "^(\\d*)&>$"sv) );
       assert( match_result == true );
 
       const auto& fd_str = matches[1].str();
-      const type_decl::FDType file_d = fd_str.empty() ? STDOUT_FILENO : stoi( fd_str );
+      file_d = fd_str.empty() ? STDOUT_FILENO : stoi( fd_str );
 
       int status;
       if ( pid_t process_id = fork();
@@ -114,14 +119,21 @@ namespace hull {
           "output redirection"sv, "failed to fork"sv, {}
         ) );
       else if ( process_id == 0 ) {
-        auto fd = open( filename.c_str(),
+        auto target_fd = open( filename.c_str(),
           O_WRONLY | (category_ == StmtKind::appnd_redrct ? O_APPEND : O_TRUNC) );
-        dup2( fd, file_d );
+
+        dup2( target_fd, file_d );
+        if ( category_ == StmtKind::merge_redrct ) {
+          if ( file_d != STDOUT_FILENO )
+            dup2( target_fd, STDOUT_FILENO );
+          if ( file_d != STDERR_FILENO )
+            dup2( target_fd, STDERR_FILENO );
+        }
 
         if ( l_child_ != nullptr ) // 允许语句 `./prog < txt.txt > output.txt` 存在
           l_child_->evaluate();
 
-        close( fd );
+        close( target_fd );
         throw error::TerminationSignal( EXIT_FAILURE );
       } else if ( waitpid( process_id, &status, 0 ) < 0 )
         throw error::error_factory( error::info::InitErrorInfo(

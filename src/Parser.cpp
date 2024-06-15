@@ -32,10 +32,8 @@ namespace hull {
     } break;
 
     case TokenType::NOT: {
-      auto optr = tknizr_.consume( TokenType::NOT );
-      return make_unique<StmtNode>( StmtKind::logical_not, move( optr.front() ),
-        statement(), nullptr );
-    }
+      node = logical_not();
+    } break;
 
     case TokenType::ENDFILE: // empty statement
       [[fallthrough]];
@@ -80,7 +78,9 @@ namespace hull {
       [[fallthrough]];
     case TokenType::APND_REDIR:
       [[fallthrough]];
-    case TokenType::STDIN_REDIR: {
+    case TokenType::STDIN_REDIR:
+      [[fallthrough]];
+    case TokenType::MERG_OUTPUT: {
       return statement_extension( redirection( move( left_stmt ) ) );
     }
 
@@ -113,10 +113,8 @@ namespace hull {
     } break;
 
     case TokenType::NOT: {
-      auto optr = tknizr_.consume( TokenType::NOT );
-      return make_unique<StmtNode>( StmtKind::logical_not, move( optr.front() ),
-        inner_statement(), nullptr );
-    }
+      node = logical_not();
+    } break;
 
     case TokenType::LPAREN: {
       tknizr_.consume( TokenType::LPAREN );
@@ -159,7 +157,9 @@ namespace hull {
       [[fallthrough]];
     case TokenType::APND_REDIR:
       [[fallthrough]];
-    case TokenType::STDIN_REDIR: {
+    case TokenType::STDIN_REDIR:
+      [[fallthrough]];
+    case TokenType::MERG_OUTPUT: {
       return inner_statement_extension( redirection( move( left_stmt ) ) );
     }
 
@@ -197,6 +197,10 @@ namespace hull {
       stmt_kind = StmtKind::stdin_redrct;
       token_str = tknizr_.consume( TokenType::STDIN_REDIR );
     } break;
+    case TokenType::MERG_OUTPUT: {
+      stmt_kind = StmtKind::merge_redrct;
+      token_str = tknizr_.consume( TokenType::MERG_OUTPUT );
+    } break;
     default:
       throw error::error_factory( error::info::SyntaxErrorInfo(
         tknizr_.line_pos(), TokenType::OVR_REDIR, tknizr_.peek().type_
@@ -210,6 +214,26 @@ namespace hull {
     }
     return make_unique<StmtNode>( stmt_kind, move( token_str.front() ),
       move( left_stmt ), expression() );
+  }
+
+  Parser::StmtNodePtr Parser::logical_not()
+  {
+    auto optr = tknizr_.consume( TokenType::NOT );
+
+    if ( tknizr_.peek().is( TokenType::CMD ) ) {
+      return make_unique<StmtNode>( StmtKind::logical_not,
+        move( optr.front() ), expression(), nullptr );
+    } else if ( tknizr_.peek().is( TokenType::LPAREN ) ) {
+      tknizr_.consume( TokenType::LPAREN );
+      auto ret = make_unique<StmtNode>( StmtKind::logical_not,
+        move( optr.front() ), inner_statement(), nullptr );
+      tknizr_.consume( TokenType::RPAREN );
+      return ret;
+    }
+
+    throw error::error_factory( error::info::SyntaxErrorInfo(
+      tknizr_.line_pos(), TokenType::CMD, tknizr_.peek().type_
+    ) );
   }
 
   Parser::ExprNodePtr Parser::expression()
