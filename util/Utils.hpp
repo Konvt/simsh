@@ -20,12 +20,6 @@ namespace hull {
     bool create_file( type_decl::StrViewT filename, mode_t mode = 0 );
 
     std::pair<bool, std::smatch> match_string( const type_decl::StringT& str, type_decl::StrViewT reg_str );
-
-    template<typename E>
-      requires std::is_enum_v<std::decay_t<E>>
-    constexpr size_t enum_index( E&& val ) noexcept {
-      return static_cast<size_t>( val );
-    }
   }
 }
 

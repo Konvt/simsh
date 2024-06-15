@@ -63,7 +63,7 @@ namespace hull {
             dup2( pipe.reader().get(), STDIN_FILENO );
             r_child_->evaluate();
           }
-          throw error::ProcessSuicide( EXIT_FAILURE );
+          throw error::TerminationSignal( EXIT_FAILURE );
         } else if ( waitpid( process_id, nullptr, 0 ) < 0 )
           throw error::error_factory( error::info::InitErrorInfo(
             "pipeline", "failed to waitpid"sv, {}
@@ -122,7 +122,7 @@ namespace hull {
           l_child_->evaluate();
 
         close( fd );
-        throw error::ProcessSuicide( EXIT_FAILURE );
+        throw error::TerminationSignal( EXIT_FAILURE );
       } else if ( waitpid( process_id, &status, 0 ) < 0 )
         throw error::error_factory( error::info::InitErrorInfo(
           "output redirection"sv, "failed to waitpid"sv, {}
@@ -171,7 +171,7 @@ namespace hull {
         l_child_->evaluate();
 
         close( fd );
-        throw error::ProcessSuicide( EXIT_FAILURE );
+        throw error::TerminationSignal( EXIT_FAILURE );
       } else if ( waitpid( process_id, &status, 0 ) < 0 )
         throw error::error_factory( error::info::InitErrorInfo(
           "input redirection"sv, "failed to waitpid"sv, {}
@@ -214,7 +214,7 @@ namespace hull {
       execvp( exec_argv.front(), exec_argv.data() );
 
       pipe.writer().push( true );
-      throw error::ProcessSuicide( EXIT_FAILURE ); // 保证各作用域对象析构正常进行
+      throw error::TerminationSignal( EXIT_FAILURE ); // 保证各作用域对象析构正常进行
     } else {
       int status;
       if ( waitpid( process_id, &status, 0 ) < 0 )
@@ -251,7 +251,7 @@ namespace hull {
         ) );
         return !val_decl::EvalSuccess;
       }
-      throw error::ProcessSuicide( EXIT_SUCCESS );
+      throw error::TerminationSignal( EXIT_SUCCESS );
     }
     default:
       assert( false );

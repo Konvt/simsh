@@ -34,7 +34,7 @@ namespace hull {
 
     /// @brief 对语句进行求值，若是平凡语句（表达式）则返回表达式求值结果，否则遵循语法规则对两侧子结点递归求值
     /// @throw error::InitError If a specific system call error occurs (i.e. `fork` and `waitpid`).
-    /// @throw error::ProcessSuicide If this process is a child process.
+    /// @throw error::TerminationSignal If this process is a child process.
     [[nodiscard]] virtual type_decl::EvalT evaluate();
   };
 
@@ -69,7 +69,7 @@ namespace hull {
     }
     virtual ~ExprNode() = default;
 
-    /// @throw error::ProcessSuicide If this process is a child process.
+    /// @throw error::TerminationSignal If this process is a child process.
     [[nodiscard]] virtual type_decl::EvalT evaluate() override;
 
     /// @brief 返回一个只读的表达式视图

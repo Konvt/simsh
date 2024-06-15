@@ -25,7 +25,7 @@ namespace hull {
 
     public:
       EvaluateError( type_decl::StringT message,
-        std::optional<type_decl::EvalT> result = std::nullopt )
+                     std::optional<type_decl::EvalT> result = std::nullopt )
         : TraceBack( std::move( message ) ), result_ { std::move( result ) } {}
       std::optional<type_decl::EvalT> value() const {
         return result_;
@@ -56,23 +56,23 @@ namespace hull {
         : TraceBack( std::move( message ) ) {}
     };
 
-    class ProcessSuicide : public TraceBack {
+    class TerminationSignal : public TraceBack {
       type_decl::EvalT exit_val_;
 
     protected:
-      ProcessSuicide( type_decl::StringT message, type_decl::EvalT exit_val )
+      TerminationSignal( type_decl::StringT message, type_decl::EvalT exit_val )
         : TraceBack( std::move( message ) ), exit_val_ { exit_val } {}
 
     public:
-      ProcessSuicide( type_decl::EvalT exit_val )
-        : ProcessSuicide( "current process must be killed", exit_val ) {}
+      TerminationSignal( type_decl::EvalT exit_val )
+        : TerminationSignal( "current process must be killed", exit_val ) {}
       type_decl::EvalT value() const noexcept { return exit_val_; }
     };
 
-    class StreamClosed : public ProcessSuicide {
+    class StreamClosed : public TerminationSignal {
     public:
       StreamClosed()
-        : ProcessSuicide( "target io stream has been closed", EOF ) {}
+        : TerminationSignal( "target io stream has been closed", EOF ) {}
     };
 
     namespace info {

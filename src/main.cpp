@@ -11,7 +11,7 @@ int main()
     cout << ">>> ";
     try {
       prsr.parse()->evaluate();
-    } catch ( const hull::error::ProcessSuicide& e ) {
+    } catch ( const hull::error::TerminationSignal& e ) {
       return e.value();
     } catch ( const hull::error::TraceBack& e ) {
       hull::utils::logger << e;
