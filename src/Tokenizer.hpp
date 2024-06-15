@@ -50,9 +50,9 @@ namespace hull {
   public:
     struct Token {
       TokenType type_;
-      type_decl::TokenT value_;
+      type_decl::TokensT value_;
 
-      Token( TokenType tp, type_decl::TokenT val )
+      Token( TokenType tp, type_decl::TokensT val )
         : type_ { std::move( tp ) }, value_ { std::move( val ) } {}
       Token() : Token( TokenType::ERROR, {} ) {}
       [[nodiscard]] bool is( TokenType tp ) const noexcept { return type_ == tp; }
@@ -75,7 +75,7 @@ namespace hull {
 
     /// @brief 消耗当前 token，并将 token 串返回
     /// @throw error::SyntaxError If `expect` isn't matched with current token.
-    type_decl::TokenT consume( TokenType expect );
+    type_decl::TokensT consume( TokenType expect );
 
     void reset( LineBuffer line_buf ) {
       if ( !line_buf.eof() ) {

@@ -43,7 +43,10 @@ namespace hull {
 
         line_input_.push_back( EOF );
       }
-      else line_input_.push_back( '\n' );
+      else {
+        received_eof_ = false;
+        line_input_.push_back( '\n' );
+      }
     }
     return line_input_[line_pos_];
   }
@@ -62,11 +65,11 @@ namespace hull {
     return token_list_.front();
   }
 
-  type_decl::TokenT Tokenizer::consume( TokenType expect )
+  type_decl::TokensT Tokenizer::consume( TokenType expect )
   {
     assert( token_list_.empty() == false );
     if ( token_list_.front().is( expect ) ) {
-      type_decl::TokenT discard_tokens = move( token_list_.front().value_ );
+      type_decl::TokensT discard_tokens = move( token_list_.front().value_ );
       token_list_.pop_front();
       return discard_tokens;
     }
@@ -91,7 +94,7 @@ namespace hull {
           new_token.value_.push_back( move( new_str ) );
         else {
           token_list_.push_back( move( new_token ) );
-          token_list_.push_back( Tokenizer::Token( new_type, type_decl::TokenT( 1, move( new_str ) ) ) );
+          token_list_.push_back( Tokenizer::Token( new_type, type_decl::TokensT( 1, move( new_str ) ) ) );
           break;
         }
       }

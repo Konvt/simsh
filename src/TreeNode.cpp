@@ -81,8 +81,8 @@ namespace hull {
       assert( r_child_ != nullptr );
       assert( r_child_->category_ == StmtKind::trivial );
 
-      auto& right_expr = static_cast<ExprNode&>(*r_child_.get());
-      if ( const size_t expr_size = right_expr.expression().size();
+      const auto& right_expr = r_child_->token();
+      if ( const size_t expr_size = right_expr.size();
            expr_size > 1 || expr_size == 0 ) {
         utils::logger << error::error_factory( error::info::ArgumentErrorInfo(
           "output redirection"sv, "argument number error"sv
@@ -90,7 +90,7 @@ namespace hull {
         return !val_decl::EvalSuccess;
       }
 
-      const auto& filename = right_expr.expression().front();
+      const auto& filename = right_expr.front();
       if ( access( filename.c_str(), F_OK ) < 0 && !utils::create_file( filename ) ) { // 判断能否获取文件描述符
         utils::logger << error::error_factory( error::info::InitErrorInfo(
           "output redirection"sv, "open file failed"sv, format( "cannot create '{}'", filename )
@@ -104,7 +104,7 @@ namespace hull {
       }
 
       type_decl::FDType file_d;
-      auto [match_result, matches] = utils::match_string( optr_,
+      auto [match_result, matches] = utils::match_string( tokens_.front(),
         (category_ == StmtKind::appnd_redrct || category_ == StmtKind::ovrwrit_redrct ?
           "^(\\d*)>{1,2}$"sv : "^(\\d*)&>$"sv) );
       assert( match_result == true );
@@ -147,8 +147,8 @@ namespace hull {
       assert( l_child_ != nullptr && r_child_ != nullptr );
       assert( r_child_->category_ == StmtKind::trivial );
 
-      auto& right_expr = static_cast<ExprNode&>(*r_child_.get());
-      if ( const size_t expr_size = right_expr.expression().size();
+      const auto& right_expr = r_child_->token();
+      if ( const size_t expr_size = right_expr.size();
            expr_size > 1 || expr_size == 0 ) {
         utils::logger << error::error_factory( error::info::ArgumentErrorInfo(
           "input redirection"sv, "argument number error"sv
@@ -156,7 +156,7 @@ namespace hull {
         return !val_decl::EvalSuccess;
       }
 
-      const auto& filename = right_expr.expression().front();
+      const auto& filename = right_expr.front();
       if ( access( filename.c_str(), F_OK ) < 0 ) {
         utils::logger << error::error_factory( error::info::InitErrorInfo(
           "input redirection"sv, "open file failed"sv, format( "'{}' does not exist", filename )
@@ -202,7 +202,7 @@ namespace hull {
     return !val_decl::EvalSuccess;
   }
 
-  type_decl::EvalT ExprNode::external_exec( const type_decl::TokenT& expression )
+  type_decl::EvalT ExprNode::external_exec( const type_decl::TokensT& expression )
   {
     utils::Pipe pipe;
     utils::close_blocking( pipe.reader().get() );
@@ -244,7 +244,7 @@ namespace hull {
     }
   }
 
-  type_decl::EvalT ExprNode::internal_exec( const type_decl::TokenT& expression )
+  type_decl::EvalT ExprNode::internal_exec( const type_decl::TokensT& expression )
   {
     switch ( expression.front().front() ) {
     case 'c': { // cd
@@ -276,9 +276,9 @@ namespace hull {
   type_decl::EvalT ExprNode::evaluate()
   {
     if ( !result_.has_value() ) {
-      if ( val_decl::internal_command.contains( expr_.front() ) )
-        result_ = internal_exec( expr_ );
-      else result_ = external_exec( expr_ );
+      if ( val_decl::internal_command.contains( tokens_.front() ) )
+        result_ = internal_exec( tokens_ );
+      else result_ = external_exec( tokens_ );
     }
     return result_.value();
   }
