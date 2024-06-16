@@ -282,6 +282,8 @@ namespace hull {
 
   type_decl::EvalT ExprNode::evaluate()
   {
+    ranges::for_each( tokens_, utils::tilde_expansion );
+
     if ( !result_.has_value() ) {
       if ( val_decl::internal_command.contains( tokens_.front() ) )
         result_ = internal_exec( tokens_ );

@@ -35,6 +35,6 @@
 <output_redirection> ::= (\d*)&>{1,2} <expression>
                        | (\d*)>{1,2} <expression>
 
-<input_redirection> ::= '<' <expression>
+<input_redirection> ::= < <expression>
 
 <expression> ::= [A-Za-z0-9_., +-*/@:]+

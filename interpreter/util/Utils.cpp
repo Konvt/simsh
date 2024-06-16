@@ -3,6 +3,7 @@
 #include <cassert>
 
 #include <unistd.h>
+#include <pwd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 
@@ -70,6 +71,16 @@ namespace hull {
         return false;
       else close( fd );
       return true;
+    }
+
+    void tilde_expansion( type_decl::StringT& token )
+    {
+      if ( !regex_search( token, regex( "^~(/.*)?$" ) ) )
+        return;
+
+      const passwd * const pw = getpwuid( getuid() ); // should nerver be freed or deleted here
+      if ( pw != nullptr )
+        token = format( "{}{}", pw->pw_dir, type_decl::StrViewT( token.begin() + 1, token.end() ) );
     }
 
     pair<bool, smatch> match_string( const type_decl::StringT& str, type_decl::StrViewT reg_str )
