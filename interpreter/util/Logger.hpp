@@ -6,9 +6,11 @@
 
 namespace hull {
   namespace utils {
-    /// @brief 用于“消耗”程序中所有异常类型的无状态日志输出器
+    /// @brief 用于“消耗”程序中所有异常类型的日志输出器
     class Logger {
-      Logger() noexcept  = default;
+      type_decl::StringT prefix_;
+
+      Logger() noexcept = default;
 
     public:
       Logger( const Logger& ) = delete;
@@ -16,6 +18,8 @@ namespace hull {
       ~Logger() noexcept = default;
 
       static Logger& inst() noexcept;
+
+      void set_prefix( type_decl::StringT prefix );
 
       Logger& operator<<( const error::TraceBack& e );
     };

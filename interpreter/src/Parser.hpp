@@ -32,9 +32,10 @@ namespace hull {
       : tknizr_ { std::move( line_buf ) } {}
     ~Parser() = default;
 
-    void reset( LineBuffer line_buf ) {
-      tknizr_.reset( std::move( line_buf ) );
-    }
+    void reset( LineBuffer line_buf ) { tknizr_.reset( std::move( line_buf ) ); }
+    void reset( Tokenizer tknizr ) { tknizr_ = std::move( tknizr ); }
+
+    Tokenizer& tokenizer() noexcept { return tknizr_; }
 
     [[nodiscard]] StmtNodePtr parse();
     [[nodiscard]] bool empty() const { return tknizr_.empty(); }

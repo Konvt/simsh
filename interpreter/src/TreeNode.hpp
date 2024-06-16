@@ -31,7 +31,8 @@ namespace hull {
     virtual ~StmtNode() = default;
 
     [[nodiscard]] StmtKind type() const noexcept { return category_; }
-    [[nodiscard]] const type_decl::TokensT& token() const noexcept { return tokens_; }
+    const type_decl::TokensT& token() const noexcept { return tokens_; }
+
     StmtNode* left() const noexcept { return l_child_.get(); }
     StmtNode* right() const noexcept { return r_child_.get(); }
 

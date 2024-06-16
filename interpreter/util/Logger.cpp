@@ -5,8 +5,15 @@ using namespace std;
 namespace hull {
   namespace utils {
     Logger& Logger::operator<<( const error::TraceBack& e ) {
-      cerr << e.what() << endl;
+      if ( prefix_.empty() )
+        cerr << e.what() << endl;
+      else cerr << (prefix_ + e.what()) << endl;
       return *this;
+    }
+
+    void Logger::set_prefix( type_decl::StringT prefix )
+    {
+      prefix_ = move( prefix );
     }
 
     Logger& Logger::inst() noexcept {

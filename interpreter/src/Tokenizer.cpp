@@ -51,10 +51,38 @@ namespace hull {
     return line_input_[line_pos_];
   }
 
-  void LineBuffer::discard() noexcept
+  void LineBuffer::consume() noexcept
   {
     assert( line_pos_ <= line_input_.size() );
     ++line_pos_;
+  }
+
+  void Tokenizer::reset( LineBuffer line_buf )
+  {
+    if ( !line_buf.eof() ) {
+      line_buf_ = std::move( line_buf );
+      token_list_.clear();
+    }
+  }
+
+  void Tokenizer::reset( type_decl::StringT prompt )
+  {
+    prompt_ = std::move( prompt );
+  }
+
+  void Tokenizer::reset( LineBuffer line_buf, type_decl::StringT prompt )
+  {
+    reset( std::move( line_buf ) );
+    reset( std::move( prompt ) );
+  }
+
+  Tokenizer& Tokenizer::operator=( Tokenizer&& rhs )
+  {
+    using std::swap;
+    swap( line_buf_, rhs.line_buf_ );
+    swap( prompt_, rhs.prompt_ );
+    swap( token_list_, rhs.token_list_ );
+    return *this;
   }
 
   Tokenizer::Token& Tokenizer::peek()
@@ -258,7 +286,7 @@ namespace hull {
       if ( save_char )
         token_str.push_back( character );
       if ( discard_char )
-        line_buf_.discard();
+        line_buf_.consume();
     }
 
     return make_pair( token_type, move( token_str ) );

@@ -43,7 +43,7 @@ namespace hull {
     [[nodiscard]] type_decl::CharT peek();
 
     /// @brief Discard the current character from the buffer.
-    void discard() noexcept;
+    void consume() noexcept;
   };
 
   class Tokenizer {
@@ -59,10 +59,17 @@ namespace hull {
       [[nodiscard]] bool is_not( TokenType tp ) const noexcept { return !is( tp ); }
     };
 
-    Tokenizer( LineBuffer line_buf )
+    Tokenizer( LineBuffer line_buf, type_decl::StringT prompt = "> " )
       : line_buf_ { std::move( line_buf ) }
-      , token_list_ {} {}
+      , prompt_ { std::move( prompt ) }, token_list_ {} {}
     ~Tokenizer() = default;
+    Tokenizer( Tokenizer&& rhs )
+      : Tokenizer( std::move( rhs.line_buf_ ), std::move( rhs.prompt_ ) ) {
+      using std::swap;
+      swap( token_list_, rhs.token_list_ );
+    }
+
+    Tokenizer& operator=( Tokenizer&& rhs );
 
     [[nodiscard]] size_t line_pos() const noexcept { return line_buf_.line_pos(); }
     [[nodiscard]] bool empty() const noexcept { return line_buf_.eof(); }
@@ -77,21 +84,28 @@ namespace hull {
     /// @throw error::SyntaxError If `expect` isn't matched with current token.
     type_decl::TokensT consume( TokenType expect );
 
-    void reset( LineBuffer line_buf ) {
-      if ( !line_buf.eof() ) {
-        line_buf_ = std::move( line_buf );
-        token_list_.clear();
-      }
-    }
+    void reset( LineBuffer line_buf );
+    void reset( type_decl::StringT prompt );
+    void reset( LineBuffer line_buf, type_decl::StringT prompt );
+
+    LineBuffer& line_buf() && noexcept { return line_buf_; }
+    const LineBuffer& line_buf() const & noexcept { return line_buf_; }
+
+    type_decl::StringT& prompt() && noexcept { return prompt_; }
+    const type_decl::StringT& prompt() const & noexcept { return prompt_; }
+
+    std::list<Token>& token_list() && noexcept { return token_list_; }
+    const std::list<Token>& token_list() const & noexcept { return token_list_; }
 
   private:
     LineBuffer line_buf_;
+    type_decl::StringT prompt_; // for getting further input when the token stream is blocked by line breaks
     std::list<Token> token_list_;
 
     void next();
 
     /// @throw error::ArgumentError If the state machine is stepped into a wrong state.
-    /// @throw error::TokenError If the state machine received an unexpected token.
+    /// @throw error::TokenError If the state machine received an unexpected character.
     [[nodiscard]] std::pair<TokenType, type_decl::StringT> dfa();
   };
 }
