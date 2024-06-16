@@ -22,6 +22,7 @@ namespace hull {
     switch ( category_ ) {
     case StmtKind::sequential: {
       assert( l_child_ != nullptr );
+      assert( siblings_.empty() );
 
       if ( r_child_ == nullptr )
         return l_child_->evaluate();
@@ -33,21 +34,28 @@ namespace hull {
 
     case StmtKind::logical_and: {
       assert( l_child_ != nullptr && r_child_ != nullptr );
+      assert( siblings_.empty() );
+
       return l_child_->evaluate() && r_child_->evaluate();
     }
 
     case StmtKind::logical_or: {
       assert( l_child_ != nullptr && r_child_ != nullptr );
+      assert( siblings_.empty() );
+
       return l_child_->evaluate() || r_child_->evaluate();
     }
 
     case StmtKind::logical_not: {
       assert( l_child_ != nullptr && r_child_ == nullptr );
+      assert( siblings_.empty() );
+
       return !l_child_->evaluate();
     }
 
     case StmtKind::pipeline: {
       assert( l_child_ != nullptr && r_child_ != nullptr );
+      assert( siblings_.empty() );
 
       utils::Pipe pipe;
       utils::close_blocking( pipe.reader().get() );
@@ -87,17 +95,16 @@ namespace hull {
     case StmtKind::merge_appnd: {
       assert( r_child_ != nullptr );
       assert( r_child_->category_ == StmtKind::trivial );
+      assert( siblings_.empty() );
 
-      const auto& right_expr = r_child_->token();
-      if ( const size_t expr_size = right_expr.size();
-           expr_size > 1 || expr_size == 0 ) {
+      if ( !r_child_->sibling().empty() ) {
         iout::logger << error::error_factory( error::info::ArgumentErrorInfo(
           "output redirection"sv, "argument number error"sv
         ) );
         return !val_decl::EvalSuccess;
       }
 
-      const auto& filename = right_expr.front();
+      const auto& filename = r_child_->token();
       if ( access( filename.c_str(), F_OK ) < 0 && !utils::create_file( filename ) ) { // 判断能否获取文件描述符
         iout::logger << error::error_factory( error::info::InitErrorInfo(
           "output redirection"sv, "open file failed"sv, format( "cannot create '{}'", filename )
@@ -111,9 +118,10 @@ namespace hull {
       }
 
       type_decl::FDType file_d;
-      auto [match_result, matches] = utils::match_string( tokens_.front(),
+      auto [match_result, matches] = utils::match_string( token_,
         (category_ == StmtKind::appnd_redrct || category_ == StmtKind::ovrwrit_redrct ?
           R"(^(\d*)>{1,2}$)"sv : R"(^(\d*)&>{1,2}$)"sv) );
+
       assert( match_result == true );
 
       const auto& fd_str = matches[1].str();
@@ -153,17 +161,16 @@ namespace hull {
     case StmtKind::stdin_redrct: {
       assert( l_child_ != nullptr && r_child_ != nullptr );
       assert( r_child_->category_ == StmtKind::trivial );
+      assert( siblings_.empty() );
 
-      const auto& right_expr = r_child_->token();
-      if ( const size_t expr_size = right_expr.size();
-           expr_size > 1 || expr_size == 0 ) {
+      if ( !r_child_->sibling().empty() ) {
         iout::logger << error::error_factory( error::info::ArgumentErrorInfo(
           "input redirection"sv, "argument number error"sv
         ) );
         return !val_decl::EvalSuccess;
       }
 
-      const auto& filename = right_expr.front();
+      const auto& filename = r_child_->token();
       if ( access( filename.c_str(), F_OK ) < 0 ) {
         iout::logger << error::error_factory( error::info::InitErrorInfo(
           "input redirection"sv, "open file failed"sv, format( "'{}' does not exist", filename )
@@ -209,7 +216,7 @@ namespace hull {
     return !val_decl::EvalSuccess;
   }
 
-  type_decl::EvalT ExprNode::external_exec( const type_decl::TokensT& expression )
+  type_decl::EvalT ExprNode::external_exec() const
   {
     utils::Pipe pipe;
     utils::close_blocking( pipe.reader().get() );
@@ -222,12 +229,15 @@ namespace hull {
       // child process
       pipe.reader().close();
 
-      vector<char*> exec_argv;
-      exec_argv.reserve( expression.size() + 1 );
-      ranges::transform( expression, back_inserter( exec_argv ),
-        []( const type_decl::StringT& str )-> char* {
-          return const_cast<char*>(str.data());
-      } );
+      vector<char*> exec_argv { const_cast<char*>( token_.data() ) };
+      exec_argv.reserve( siblings_.size() + 2 );
+      for ( const auto& sblng : siblings_ ) {
+        assert( sblng->type() == StmtKind::trivial );
+        assert( sblng->left() == nullptr && sblng->right() == nullptr );
+        assert( sblng->sibling().empty() );
+
+        exec_argv.push_back( const_cast<char*>(sblng->token().data()) );
+      }
       exec_argv.push_back( nullptr );
 
       execvp( exec_argv.front(), exec_argv.data() );
@@ -244,27 +254,30 @@ namespace hull {
       if ( pipe.reader().pop<bool>() )
         // output error, don't throw it.
         iout::logger << error::error_factory( error::info::InitErrorInfo(
-          expression.front(), "command error or not found"sv, {}
+          token_, "command error or not found"sv, {}
         ) );
 
       return WEXITSTATUS( status ) == val_decl::ExecSuccess;
     }
   }
 
-  type_decl::EvalT ExprNode::internal_exec( const type_decl::TokensT& expression )
+  type_decl::EvalT ExprNode::internal_exec() const
   {
-    switch ( expression.front().front() ) {
+    switch ( token_.front() ) {
     case 'c': { // cd
-      if ( expression.size() > 2 || expression.size() < 1 ) {
+      assert( siblings_.front()->type() == StmtKind::trivial );
+      assert( siblings_.front()->left() == nullptr && siblings_.front()->right() == nullptr );
+
+      if ( siblings_.size() > 1 ) {
         iout::logger << error::error_factory( error::info::ArgumentErrorInfo(
           "cd"sv, "the number of arguments error"sv
         ) );
         return !val_decl::EvalSuccess;
       }
-      return chdir( expression[1].c_str() );
+      return chdir( siblings_.front()->token().c_str() );
     } break;
     case 'e': { // exit
-      if ( expression.size() > 1 ) {
+      if ( siblings_.size() > 0 ) {
         iout::logger << error::error_factory( error::info::ArgumentErrorInfo(
           "exit"sv, "the number of arguments error"sv
         ) );
@@ -282,12 +295,12 @@ namespace hull {
 
   type_decl::EvalT ExprNode::evaluate()
   {
-    ranges::for_each( tokens_, utils::tilde_expansion );
+    assert( l_child_ == nullptr && r_child_ == nullptr );
 
     if ( !result_.has_value() ) {
-      if ( val_decl::internal_command.contains( tokens_.front() ) )
-        result_ = internal_exec( tokens_ );
-      else result_ = external_exec( tokens_ );
+      if ( val_decl::internal_command.contains( token_ ) )
+        result_ = internal_exec();
+      else result_ = external_exec();
     }
     return result_.value();
   }

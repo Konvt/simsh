@@ -19,7 +19,7 @@ namespace hull {
 
     bool create_file( type_decl::StrViewT filename, mode_t mode = 0 );
 
-    void tilde_expansion( type_decl::StringT& token );
+    type_decl::StringT tilde_expansion( const type_decl::StringT& token );
 
     std::pair<bool, std::smatch> match_string( const type_decl::StringT& str, type_decl::StrViewT reg_str );
   }

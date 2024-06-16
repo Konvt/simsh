@@ -73,14 +73,15 @@ namespace hull {
       return true;
     }
 
-    void tilde_expansion( type_decl::StringT& token )
+    type_decl::StringT tilde_expansion( const type_decl::StringT& token )
     {
-      if ( !regex_search( token, regex( "^~(/.*)?$" ) ) )
-        return;
+      if ( regex_search( token, regex( "^~(/.*)?$" ) ) ) {
+        const passwd * const pw = getpwuid( getuid() ); // should nerver be freed or deleted here
+        if ( pw != nullptr )
+          return format( "{}{}", pw->pw_dir, type_decl::StrViewT( token.begin() + 1, token.end() ) );
+      }
 
-      const passwd * const pw = getpwuid( getuid() ); // should nerver be freed or deleted here
-      if ( pw != nullptr )
-        token = format( "{}{}", pw->pw_dir, type_decl::StrViewT( token.begin() + 1, token.end() ) );
+      return token;
     }
 
     pair<bool, smatch> match_string( const type_decl::StringT& str, type_decl::StrViewT reg_str )

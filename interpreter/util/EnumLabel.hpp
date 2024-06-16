@@ -12,11 +12,11 @@ namespace hull {
   };
 
   enum class ExprKind {
-    command
+    command, string
   };
 
   enum class TokenType {
-    CMD,
+    CMD, STR,
     AND, OR, NOT, PIPE,
     OVR_REDIR, APND_REDIR, MERG_OUTPUT, MERG_APPND, // >, >>, &>, &>>
     STDIN_REDIR,

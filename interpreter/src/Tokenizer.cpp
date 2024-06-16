@@ -61,7 +61,7 @@ namespace hull {
   {
     if ( !line_buf.eof() ) {
       line_buf_ = std::move( line_buf );
-      token_list_.clear();
+      token_list_.reset();
     }
   }
 
@@ -87,52 +87,29 @@ namespace hull {
 
   Tokenizer::Token& Tokenizer::peek()
   {
-    if ( !token_list_.empty() )
-      return token_list_.front();
-    next();
-    return token_list_.front();
+    if ( !token_list_.has_value() )
+      token_list_ = next();
+
+    return *token_list_;
   }
 
-  type_decl::TokensT Tokenizer::consume( TokenType expect )
+  type_decl::TokenT Tokenizer::consume( TokenType expect )
   {
-    assert( token_list_.empty() == false );
-    if ( token_list_.front().is( expect ) ) {
-      type_decl::TokensT discard_tokens = move( token_list_.front().value_ );
-      token_list_.pop_front();
+    assert( token_list_.has_value() );
+    if ( token_list_->is( expect ) ) {
+      type_decl::TokenT discard_tokens = move( token_list_->value_ );
+      token_list_.reset();
       return discard_tokens;
     }
     throw error::error_factory( error::info::SyntaxErrorInfo(
-      line_buf_.line_pos(), expect, token_list_.front().type_
+      line_buf_.line_pos(), expect, token_list_->type_
     ) );
   }
 
-  void Tokenizer::next()
+  Tokenizer::Token Tokenizer::next()
   {
-    assert( token_list_.empty() == true );
-
-    Tokenizer::Token new_token;
-    {
-      auto [tkn_tp, tkn_str] = dfa();
-      new_token.type_ = tkn_tp; new_token.value_.push_back( move( tkn_str ) );
-    }
-    if ( new_token.is( TokenType::CMD ) ) {
-      while ( true ) {
-        auto [new_type, new_str] = dfa();
-        if ( new_type == TokenType::CMD )
-          new_token.value_.push_back( move( new_str ) );
-        else {
-          token_list_.push_back( move( new_token ) );
-          token_list_.push_back( Tokenizer::Token( new_type, type_decl::TokensT( 1, move( new_str ) ) ) );
-          break;
-        }
-      }
-    } else token_list_.push_back( move( new_token ) );
-  }
-
-  pair<TokenType, type_decl::StringT> Tokenizer::dfa()
-  {
-    TokenType token_type = TokenType::ERROR;
-    type_decl::StringT token_str;
+    Token new_token;
+    auto& [token_type, token_str] = new_token;
 
     enum class StateType {
       START, DONE,
@@ -222,7 +199,7 @@ namespace hull {
       case StateType::INSTR: {
         if ( character == '"' ) {
           save_char = false;
-          token_type = TokenType::CMD;
+          token_type = TokenType::STR;
           state = StateType::DONE;
         } else if ( ("\n\0"sv).find( character ) != type_decl::StrViewT::npos || character == EOF )
           throw error::error_factory( error::info::TokenErrorInfo(
@@ -290,6 +267,6 @@ namespace hull {
         line_buf_.consume();
     }
 
-    return make_pair( token_type, move( token_str ) );
+    return new_token;
   }
 }

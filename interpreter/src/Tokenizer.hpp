@@ -3,7 +3,7 @@
 
 #include <istream>
 #include <utility>
-#include <list>
+#include <optional>
 
 #include "Config.hpp"
 #include "EnumLabel.hpp"
@@ -50,9 +50,9 @@ namespace hull {
   public:
     struct Token {
       TokenType type_;
-      type_decl::TokensT value_;
+      type_decl::TokenT value_;
 
-      Token( TokenType tp, type_decl::TokensT val )
+      Token( TokenType tp, type_decl::TokenT val )
         : type_ { std::move( tp ) }, value_ { std::move( val ) } {}
       Token() : Token( TokenType::ERROR, {} ) {}
       [[nodiscard]] bool is( TokenType tp ) const noexcept { return type_ == tp; }
@@ -75,38 +75,36 @@ namespace hull {
     [[nodiscard]] bool empty() const noexcept { return line_buf_.eof(); }
 
     /// @brief Clear all unprocessed characters.
-    void clear() { line_buf_.clear(); token_list_.clear(); }
+    void clear() { line_buf_.clear(); token_list_.reset(); }
 
     /// @throw error::ArgumentError If the tokenizer is empty.
     Token& peek();
 
     /// @brief 消耗当前 token，并将 token 串返回
     /// @throw error::SyntaxError If `expect` isn't matched with current token.
-    type_decl::TokensT consume( TokenType expect );
+    type_decl::TokenT consume( TokenType expect );
 
     void reset( LineBuffer line_buf );
     void reset( type_decl::StringT prompt );
     void reset( LineBuffer line_buf, type_decl::StringT prompt );
 
-    LineBuffer& line_buf() && noexcept { return line_buf_; }
+    [[nodiscard]] LineBuffer line_buf() && noexcept { return std::move( line_buf_ ); }
     const LineBuffer& line_buf() const & noexcept { return line_buf_; }
 
-    type_decl::StringT& prompt() && noexcept { return prompt_; }
+    [[nodiscard]] type_decl::StringT prompt() && noexcept { return std::move( prompt_ ); }
     const type_decl::StringT& prompt() const & noexcept { return prompt_; }
 
-    std::list<Token>& token_list() && noexcept { return token_list_; }
-    const std::list<Token>& token_list() const & noexcept { return token_list_; }
+    [[nodiscard]] std::optional<Token> token_list() && noexcept { return std::move( token_list_ ); }
+    const std::optional<Token>& token_list() const & noexcept { return token_list_; }
 
   private:
     LineBuffer line_buf_;
     type_decl::StringT prompt_; // for getting further input when the token stream is blocked by line breaks
-    std::list<Token> token_list_;
-
-    void next();
+    std::optional<Token> token_list_;
 
     /// @throw error::ArgumentError If the state machine is stepped into a wrong state.
     /// @throw error::TokenError If the state machine received an unexpected character.
-    [[nodiscard]] std::pair<TokenType, type_decl::StringT> dfa();
+    [[nodiscard]] Token next();
   };
 }
 
