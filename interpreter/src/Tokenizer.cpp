@@ -251,6 +251,7 @@ namespace hull {
         else {
           save_char = false;
           discard_char = false;
+          token_type = TokenType::MERG_OUTPUT;
         }
       } break;
 

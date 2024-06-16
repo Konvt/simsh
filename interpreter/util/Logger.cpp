@@ -1,10 +1,10 @@
-#include <iostream>
 #include "Logger.hpp"
 using namespace std;
 
 namespace hull {
-  namespace utils {
-    Logger& Logger::operator<<( const error::TraceBack& e ) {
+  namespace iout {
+    Logger& Logger::operator<<( const error::TraceBack& e )
+    {
       if ( prefix_.empty() )
         cerr << e.what() << endl;
       else cerr << (prefix_ + e.what()) << endl;
@@ -16,12 +16,21 @@ namespace hull {
       prefix_ = move( prefix );
     }
 
-    Logger& Logger::inst() noexcept {
+    Logger& Logger::inst() noexcept
+    {
       static Logger logger;
       return logger;
     }
 
     Logger& logger = Logger::inst();
+
+    Prompter& Prompter::inst() noexcept
+    {
+      static Prompter prompter;
+      return prompter;
+    }
+
+    Prompter& prmptr = Prompter::inst();
   }
 }
 

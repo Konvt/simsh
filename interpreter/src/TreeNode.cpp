@@ -91,7 +91,7 @@ namespace hull {
       const auto& right_expr = r_child_->token();
       if ( const size_t expr_size = right_expr.size();
            expr_size > 1 || expr_size == 0 ) {
-        utils::logger << error::error_factory( error::info::ArgumentErrorInfo(
+        iout::logger << error::error_factory( error::info::ArgumentErrorInfo(
           "output redirection"sv, "argument number error"sv
         ) );
         return !val_decl::EvalSuccess;
@@ -99,12 +99,12 @@ namespace hull {
 
       const auto& filename = right_expr.front();
       if ( access( filename.c_str(), F_OK ) < 0 && !utils::create_file( filename ) ) { // 判断能否获取文件描述符
-        utils::logger << error::error_factory( error::info::InitErrorInfo(
+        iout::logger << error::error_factory( error::info::InitErrorInfo(
           "output redirection"sv, "open file failed"sv, format( "cannot create '{}'", filename )
         ) );
         return !val_decl::EvalSuccess;
       } else if ( access( filename.c_str(), W_OK ) < 0 ) {
-        utils::logger << error::error_factory( error::info::InitErrorInfo(
+        iout::logger << error::error_factory( error::info::InitErrorInfo(
           "output redirection"sv, "open file failed"sv, format( "'{}' cannot be written", filename )
         ) );
         return !val_decl::EvalSuccess;
@@ -157,7 +157,7 @@ namespace hull {
       const auto& right_expr = r_child_->token();
       if ( const size_t expr_size = right_expr.size();
            expr_size > 1 || expr_size == 0 ) {
-        utils::logger << error::error_factory( error::info::ArgumentErrorInfo(
+        iout::logger << error::error_factory( error::info::ArgumentErrorInfo(
           "input redirection"sv, "argument number error"sv
         ) );
         return !val_decl::EvalSuccess;
@@ -165,13 +165,13 @@ namespace hull {
 
       const auto& filename = right_expr.front();
       if ( access( filename.c_str(), F_OK ) < 0 ) {
-        utils::logger << error::error_factory( error::info::InitErrorInfo(
+        iout::logger << error::error_factory( error::info::InitErrorInfo(
           "input redirection"sv, "open file failed"sv, format( "'{}' does not exist", filename )
         ) );
         return !val_decl::EvalSuccess;
       }
       else if ( access( filename.c_str(), R_OK ) < 0 ) {
-        utils::logger << error::error_factory( error::info::InitErrorInfo(
+        iout::logger << error::error_factory( error::info::InitErrorInfo(
           "input redirection"sv, "open file failed"sv, format( "file '{}' cannot be read", filename )
         ) );
         return !val_decl::EvalSuccess;
@@ -243,7 +243,7 @@ namespace hull {
 
       if ( pipe.reader().pop<bool>() )
         // output error, don't throw it.
-        utils::logger << error::error_factory( error::info::InitErrorInfo(
+        iout::logger << error::error_factory( error::info::InitErrorInfo(
           expression.front(), "command error or not found"sv, {}
         ) );
 
@@ -256,7 +256,7 @@ namespace hull {
     switch ( expression.front().front() ) {
     case 'c': { // cd
       if ( expression.size() > 2 || expression.size() < 1 ) {
-        utils::logger << error::error_factory( error::info::ArgumentErrorInfo(
+        iout::logger << error::error_factory( error::info::ArgumentErrorInfo(
           "cd"sv, "the number of arguments error"sv
         ) );
         return !val_decl::EvalSuccess;
@@ -265,7 +265,7 @@ namespace hull {
     } break;
     case 'e': { // exit
       if ( expression.size() > 1 ) {
-        utils::logger << error::error_factory( error::info::ArgumentErrorInfo(
+        iout::logger << error::error_factory( error::info::ArgumentErrorInfo(
           "exit"sv, "the number of arguments error"sv
         ) );
         return !val_decl::EvalSuccess;

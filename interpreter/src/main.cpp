@@ -14,7 +14,7 @@ int main()
     } catch ( const hull::error::TerminationSignal& e ) {
       return e.value();
     } catch ( const hull::error::TraceBack& e ) {
-      hull::utils::logger << e;
+      hull::iout::logger << e;
     }
   }
 }
