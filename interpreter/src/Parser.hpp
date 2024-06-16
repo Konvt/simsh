@@ -17,6 +17,7 @@ namespace hull {
     Tokenizer tknizr_;
 
     [[nodiscard]] StmtNodePtr statement();
+    [[nodiscard]] StmtNodePtr nonempty_statement();
     [[nodiscard]] StmtNodePtr statement_extension( StmtNodePtr left_stmt );
 
     [[nodiscard]] StmtNodePtr inner_statement();

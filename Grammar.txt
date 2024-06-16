@@ -1,14 +1,16 @@
-<statement> ::= <expression> <statement_extension>
-              | <output_redirection> <statement_extension>
-              | '(' <inner_statement> <statement_extension>
-              | '!' <logical_not> <statement_extension>
+<statement> ::= <nonempty_statement>
               | '\n'
               | EOF
 
-<statement_extension> ::= <connector> <statement>
-                     | <redirection> <statement_extension>
-                     | '\n'
-                     | EOF
+<nonempty_statement> ::= <expression> <statement_extension>
+                       | <output_redirection> <statement_extension>
+                       | '(' <inner_statement> <statement_extension>
+                       | '!' <logical_not> <statement_extension>
+
+<statement_extension> ::= <connector> <nonempty_statement>
+                        | <redirection> <statement_extension>
+                        | '\n'
+                        | EOF
 
 <inner_statement> ::= <expression> <inner_statement_extension>
                      | <output_redirection> <inner_statement_extension>
@@ -37,4 +39,5 @@
 
 <input_redirection> ::= < <expression>
 
-<expression> ::= [A-Za-z0-9_., +-*/@:]+
+<expression> ::= [^&|!<>"':\(\)\^%$#\s]+
+               | " [^"\n]* "

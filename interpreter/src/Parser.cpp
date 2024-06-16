@@ -14,6 +14,24 @@ namespace hull {
 
   Parser::StmtNodePtr Parser::statement()
   {
+    switch ( const auto tkn_tp = tknizr_.peek().type_;
+             tkn_tp ) {
+    case TokenType::ENDFILE: // empty statement
+      [[fallthrough]];
+    case TokenType::NEWLINE: {
+      tknizr_.consume( tkn_tp );
+      return make_unique<ExprNode>( StmtKind::trivial,
+        ExprKind::command, val_decl::EvalSuccess );
+    }
+
+    default: {
+      return nonempty_statement();
+    }
+    }
+  }
+
+  Parser::StmtNodePtr Parser::nonempty_statement()
+  {
     Parser::StmtNodePtr node;
     switch ( const auto tkn_tp = tknizr_.peek().type_;
              tkn_tp ) {
@@ -42,14 +60,6 @@ namespace hull {
       node = logical_not();
     } break;
 
-    case TokenType::ENDFILE: // empty statement
-      [[fallthrough]];
-    case TokenType::NEWLINE: {
-      tknizr_.consume( tkn_tp );
-      return make_unique<ExprNode>( StmtKind::trivial,
-        ExprKind::command, val_decl::EvalSuccess );
-    }
-
     default: {
       throw error::error_factory( error::info::SyntaxErrorInfo(
         tknizr_.line_pos(), TokenType::CMD, tknizr_.peek().type_
@@ -67,25 +77,25 @@ namespace hull {
     case TokenType::AND: { // connector
       auto optr = tknizr_.consume( TokenType::AND );
       return make_unique<StmtNode>( StmtKind::logical_and, move( optr ),
-        move( left_stmt ), statement() );
+        move( left_stmt ), nonempty_statement() );
     }
 
     case TokenType::OR: {
       auto optr = tknizr_.consume( TokenType::OR );
       return make_unique<StmtNode>( StmtKind::logical_or, move( optr ),
-        move( left_stmt ), statement() );
+        move( left_stmt ), nonempty_statement() );
     }
 
     case TokenType::PIPE: {
       auto optr = tknizr_.consume( TokenType::PIPE );
       return make_unique<StmtNode>( StmtKind::pipeline, move( optr ),
-        move( left_stmt ), statement() );
+        move( left_stmt ), nonempty_statement() );
     }
 
     case TokenType::SEMI: {
       auto optr = tknizr_.consume( TokenType::SEMI );
       return make_unique<StmtNode>( StmtKind::sequential, move( optr ),
-        move( left_stmt ), statement() );
+        move( left_stmt ), nonempty_statement() );
     }
 
     case TokenType::OVR_REDIR: // redirection

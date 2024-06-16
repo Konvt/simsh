@@ -175,7 +175,7 @@ namespace hull {
       } break;
 
       case StateType::INCMD: {
-        if ( isspace(character) || regex_match( type_decl::StringT( 1, character ), regex( R"([&|!<>"':\()^%$#])" ) ) ) {
+        if ( regex_match( type_decl::StringT( 1, character ), regex( R"([&|!<>"':\(\)\^%$#\s])" ) ) ) {
           // 遇到了不应该出现在 command 中的字符，结束状态
           token_type = TokenType::CMD;
           save_char = false;
@@ -201,7 +201,7 @@ namespace hull {
           save_char = false;
           token_type = TokenType::STR;
           state = StateType::DONE;
-        } else if ( ("\n\0"sv).find( character ) != type_decl::StrViewT::npos || character == EOF )
+        } else if ( ("\n"sv).find( character ) != type_decl::StrViewT::npos || character == EOF )
           throw error::error_factory( error::info::TokenErrorInfo(
             line_buf_.line_pos(), '"', character
           ) );
