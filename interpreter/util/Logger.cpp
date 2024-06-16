@@ -1,3 +1,4 @@
+#include <format>
 #include "Logger.hpp"
 using namespace std;
 
@@ -7,7 +8,7 @@ namespace hull {
     {
       if ( prefix_.empty() )
         cerr << e.what() << endl;
-      else cerr << (prefix_ + e.what()) << endl;
+      else cerr << format( "{}{}\n", prefix_, e.what() );
       return *this;
     }
 

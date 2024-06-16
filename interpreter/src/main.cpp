@@ -8,7 +8,7 @@ int main()
   hull::Parser prsr;
 
   while ( !prsr.empty() ) {
-    cout << ">>> ";
+    hull::iout::prmptr << ">>> ";
     try {
       prsr.parse()->evaluate();
     } catch ( const hull::error::TerminationSignal& e ) {

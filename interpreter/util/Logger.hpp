@@ -39,12 +39,12 @@ namespace hull {
 
       static Prompter& inst() noexcept;
 
-      /// @brief 将 info 输出到 STDOUT 中，会自动换行
+      /// @brief 将 info 输出到 STDOUT 中
       template<typename T>
         requires requires(T info) {
           { std::cout << info };
       } Prompter& operator<<( T&& info ) noexcept {
-        std::cout << info << std::endl;
+        std::cout << info;
         return *this;
       }
     };

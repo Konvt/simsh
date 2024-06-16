@@ -231,13 +231,15 @@ namespace hull {
 
       vector<char*> exec_argv { const_cast<char*>( token_.data() ) };
       exec_argv.reserve( siblings_.size() + 2 );
-      for ( const auto& sblng : siblings_ ) {
-        assert( sblng->type() == StmtKind::trivial );
-        assert( sblng->left() == nullptr && sblng->right() == nullptr );
-        assert( sblng->sibling().empty() );
+      ranges::transform( siblings_, back_inserter( exec_argv ),
+        []( const hull::StmtNode::ChildNode & sblng ) -> char* {
+          assert( sblng->type() == StmtKind::trivial );
+          assert( sblng->left() == nullptr && sblng->right() == nullptr );
+          assert( sblng->sibling().empty() );
 
-        exec_argv.push_back( const_cast<char*>(sblng->token().data()) );
-      }
+          return const_cast<char*>(sblng->token().data());
+        }
+      );
       exec_argv.push_back( nullptr );
 
       execvp( exec_argv.front(), exec_argv.data() );
