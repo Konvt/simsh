@@ -60,8 +60,10 @@ namespace hull {
 
     bool create_file( type_decl::StrViewT filename, mode_t mode )
     {
-      if ( mode == 0 )
-        mode = 0644;
+      if ( mode == 0 ) {
+        umask( mode = umask( 0 ) );
+        mode = ~mode;
+      }
 
       auto fd = creat( filename.data(), mode );
       if ( fd < 0 )
