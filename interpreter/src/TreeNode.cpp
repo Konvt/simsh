@@ -82,7 +82,9 @@ namespace hull {
       [[fallthrough]];
     case StmtKind::ovrwrit_redrct:
       [[fallthrough]];
-    case StmtKind::merge_redrct: {
+    case StmtKind::merge_output:
+      [[fallthrough]];
+    case StmtKind::merge_appnd: {
       assert( r_child_ != nullptr );
       assert( r_child_->category_ == StmtKind::trivial );
 
@@ -111,7 +113,7 @@ namespace hull {
       type_decl::FDType file_d;
       auto [match_result, matches] = utils::match_string( tokens_.front(),
         (category_ == StmtKind::appnd_redrct || category_ == StmtKind::ovrwrit_redrct ?
-          R"(^(\d*)>{1,2}$)"sv : R"(^(\d*)&>$)"sv) );
+          R"(^(\d*)>{1,2}$)"sv : R"(^(\d*)&>{1,2}$)"sv) );
       assert( match_result == true );
 
       const auto& fd_str = matches[1].str();
@@ -125,10 +127,10 @@ namespace hull {
         ) );
       else if ( process_id == 0 ) {
         auto target_fd = open( filename.c_str(),
-          O_WRONLY | (category_ == StmtKind::appnd_redrct ? O_APPEND : O_TRUNC) );
+          O_WRONLY | (category_ == StmtKind::appnd_redrct ||category_ == StmtKind::merge_appnd ? O_APPEND : O_TRUNC) );
 
         dup2( target_fd, file_d );
-        if ( category_ == StmtKind::merge_redrct ) {
+        if ( category_ == StmtKind::merge_output || category_ == StmtKind::merge_appnd ) {
           if ( file_d != STDOUT_FILENO )
             dup2( target_fd, STDOUT_FILENO );
           if ( file_d != STDERR_FILENO )
@@ -182,12 +184,12 @@ namespace hull {
           "input redirection"sv, "failed to fork"sv, {}
         ) );
       else if ( process_id == 0 ) {
-        auto fd = open( filename.c_str(), O_RDONLY );
-        dup2( fd, STDIN_FILENO );
+        auto target_fd = open( filename.c_str(), O_RDONLY );
+        dup2( target_fd, STDIN_FILENO );
 
         l_child_->evaluate();
 
-        close( fd );
+        close( target_fd );
         throw error::TerminationSignal( EXIT_FAILURE );
       } else if ( waitpid( process_id, &status, 0 ) < 0 )
         throw error::error_factory( error::info::InitErrorInfo(

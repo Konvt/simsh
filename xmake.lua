@@ -11,8 +11,8 @@ end
 
 target("Hull")
   set_kind("binary")
-  add_files("src/*.cpp", "util/*.cpp")
-  add_includedirs("src/", "util/")
+  add_files("interpreter/src/*.cpp", "interpreter/util/*.cpp")
+  add_includedirs("interpreter/src/", "interpreter/util/")
 -- add_packages("nlohmann-json")
 
 --

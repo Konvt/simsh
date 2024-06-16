@@ -32,7 +32,7 @@
 <redirection> ::= <output_redirection>
                 | <input_redirection>
 
-<output_redirection> ::= (\d*)&> <expression>
+<output_redirection> ::= (\d*)&>{1,2} <expression>
                        | (\d*)>{1,2} <expression>
 
 <input_redirection> ::= '<' <expression>

@@ -23,7 +23,9 @@ namespace hull {
       [[fallthrough]];
     case TokenType::APND_REDIR:
       [[fallthrough]];
-    case TokenType::MERG_OUTPUT: {
+    case TokenType::MERG_OUTPUT:
+      [[fallthrough]];
+    case TokenType::MERG_APPND: {
       node = redirection( nullptr );
     } break;
 
@@ -86,9 +88,11 @@ namespace hull {
       [[fallthrough]];
     case TokenType::APND_REDIR:
       [[fallthrough]];
-    case TokenType::STDIN_REDIR:
+    case TokenType::MERG_OUTPUT:
       [[fallthrough]];
-    case TokenType::MERG_OUTPUT: {
+    case TokenType::MERG_APPND:
+      [[fallthrough]];
+    case TokenType::STDIN_REDIR: {
       return statement_extension( redirection( move( left_stmt ) ) );
     }
 
@@ -118,7 +122,9 @@ namespace hull {
       [[fallthrough]];
     case TokenType::APND_REDIR:
       [[fallthrough]];
-    case TokenType::MERG_OUTPUT: {
+    case TokenType::MERG_OUTPUT:
+      [[fallthrough]];
+    case TokenType::MERG_APPND: {
       node = redirection( nullptr );
     } break;
 
@@ -178,9 +184,11 @@ namespace hull {
       [[fallthrough]];
     case TokenType::APND_REDIR:
       [[fallthrough]];
-    case TokenType::STDIN_REDIR:
+    case TokenType::MERG_OUTPUT:
       [[fallthrough]];
-    case TokenType::MERG_OUTPUT: {
+    case TokenType::MERG_APPND:
+      [[fallthrough]];
+    case TokenType::STDIN_REDIR: {
       return inner_statement_extension( redirection( move( left_stmt ) ) );
     }
 
@@ -209,13 +217,17 @@ namespace hull {
       stmt_kind = StmtKind::appnd_redrct;
       token_str = tknizr_.consume( TokenType::APND_REDIR );
     } break;
+    case TokenType::MERG_OUTPUT: {
+      stmt_kind = StmtKind::merge_output;
+      token_str = tknizr_.consume( TokenType::MERG_OUTPUT );
+    } break;
+    case TokenType::MERG_APPND: {
+      stmt_kind = StmtKind::merge_appnd;
+      token_str = tknizr_.consume( TokenType::MERG_APPND );
+    } break;
     case TokenType::STDIN_REDIR: {
       stmt_kind = StmtKind::stdin_redrct;
       token_str = tknizr_.consume( TokenType::STDIN_REDIR );
-    } break;
-    case TokenType::MERG_OUTPUT: {
-      stmt_kind = StmtKind::merge_redrct;
-      token_str = tknizr_.consume( TokenType::MERG_OUTPUT );
     } break;
     default:
       throw error::error_factory( error::info::SyntaxErrorInfo(

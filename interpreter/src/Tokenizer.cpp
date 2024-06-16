@@ -108,8 +108,8 @@ namespace hull {
 
     enum class StateType {
       START, DONE,
-      INCMD, INNUM_LIKE, INSTR, INAND,
-      INPIPE_LIKE, INRARR, // means "right arrow"
+      INCMD, INDIGIT, INSTR, INAND, INMEG_OUTPUT,
+      INPIPE_LIKE, INRARR,
     };
 
     for ( StateType state = StateType::START; state != StateType::DONE; ) {
@@ -121,7 +121,7 @@ namespace hull {
         if ( character != '\n' && isspace( character ) )
           save_char = false;
         else if ( isdigit( character ) )
-          state = StateType::INNUM_LIKE;
+          state = StateType::INDIGIT;
         else {
           state = StateType::DONE;
           switch ( character ) {
@@ -179,7 +179,7 @@ namespace hull {
         }
       } break;
 
-      case StateType::INNUM_LIKE: {
+      case StateType::INDIGIT: {
         if ( character == '>' )
           state = StateType::INRARR;
         else if ( character == '&' )
@@ -207,13 +207,22 @@ namespace hull {
           state = StateType::DONE;
           token_type = TokenType::AND;
         } else if ( character == '>' ) { // &>
-          state = StateType::DONE;
-          token_type = TokenType::MERG_OUTPUT;
+          state = StateType::INMEG_OUTPUT;
         } else {
           token_type = TokenType::ERROR;
           throw error::error_factory( error::info::TokenErrorInfo(
             line_buf_.line_pos(), '&', character
           ) );
+        }
+      } break;
+
+      case StateType::INMEG_OUTPUT: {
+        state = StateType::DONE;
+        if ( character == '>' )
+          token_type = TokenType::MERG_APPND;
+        else {
+          save_char = false;
+          discard_char = false;
         }
       } break;
 
