@@ -1,3 +1,5 @@
+#include <ranges>
+#include <algorithm>
 #include <type_traits>
 #include <cassert>
 
@@ -38,7 +40,7 @@ namespace hull {
     case TokenType::CMD:
       [[fallthrough]];
     case TokenType::STR: {
-        node = expression();
+      node = expression();
     } break;
 
     case TokenType::OVR_REDIR:
@@ -223,7 +225,7 @@ namespace hull {
   Parser::StmtNodePtr Parser::redirection( Parser::StmtNodePtr left_stmt )
   {
     StmtKind stmt_kind = StmtKind::trivial;
-    type_decl::TokenT token_str;
+    type_decl::TokensT token_str;
     switch ( tknizr_.peek().type_ ) {
     case TokenType::OVR_REDIR: {
       stmt_kind = StmtKind::ovrwrit_redrct;
@@ -282,31 +284,32 @@ namespace hull {
 
   Parser::ExprNodePtr Parser::expression()
   {
-    StmtNode::SiblingNode expr_list;
+    assert( tknizr_.peek().is( TokenType::CMD ) || tknizr_.peek().is( TokenType::STR ) );
+
+    type_decl::TokensT expr_list;
     ExprKind expr_kind = ExprKind::string;
 
-    auto make_sibling = [this, &expr_kind]() -> StmtNode::ChildNode {
+    auto merge_tokens = [this, &expr_kind]() -> type_decl::TokensT {
+      assert( tknizr_.peek().value_.size() == 1 );
+
       if ( tknizr_.peek().is( TokenType::CMD ) ) {
         expr_kind = ExprKind::command;
-        return make_unique<ExprNode>( StmtKind::trivial,
-          ExprKind::command, utils::tilde_expansion( tknizr_.consume( TokenType::CMD ) ) );
+        auto token_list = tknizr_.consume( TokenType::CMD );
+
+        ranges::for_each( token_list, utils::tilde_expansion );
+        return token_list;
       }
 
-      return make_unique<ExprNode>( StmtKind::trivial,
-        ExprKind::string, tknizr_.consume( TokenType::STR ) );
+      return tknizr_.consume( TokenType::STR );
     };
 
-    static_assert(is_same_v<
-      decltype(move( *make_sibling() ).token()),
-      decltype(declval<StmtNode>().token())>);
-    auto token = move( *make_sibling() ).token();
-
+    expr_list.push_back( move( merge_tokens().front() ) );
     while ( tknizr_.peek().is( TokenType::CMD ) || tknizr_.peek().is( TokenType::STR ) ) {
       expr_kind = ExprKind::command; // 超过一条指令就会被视作命令
-      expr_list.push_back( make_sibling() );
+      expr_list.push_back( move( merge_tokens().front() ) );
     }
 
     return make_unique<ExprNode>( StmtKind::trivial,
-      expr_kind, move( token ), move( expr_list ) );
+      expr_kind, move( expr_list ) );
   }
 }

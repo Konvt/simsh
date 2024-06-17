@@ -22,7 +22,7 @@ namespace hull {
     switch ( category_ ) {
     case StmtKind::sequential: {
       assert( l_child_ != nullptr );
-      assert( siblings_.empty() );
+      assert( tokens_.size() == 1 );
 
       if ( r_child_ == nullptr )
         return l_child_->evaluate();
@@ -34,28 +34,28 @@ namespace hull {
 
     case StmtKind::logical_and: {
       assert( l_child_ != nullptr && r_child_ != nullptr );
-      assert( siblings_.empty() );
+      assert( tokens_.size() == 1 );
 
       return l_child_->evaluate() && r_child_->evaluate();
     }
 
     case StmtKind::logical_or: {
       assert( l_child_ != nullptr && r_child_ != nullptr );
-      assert( siblings_.empty() );
+      assert( tokens_.size() == 1 );
 
       return l_child_->evaluate() || r_child_->evaluate();
     }
 
     case StmtKind::logical_not: {
       assert( l_child_ != nullptr && r_child_ == nullptr );
-      assert( siblings_.empty() );
+      assert( tokens_.size() == 1 );
 
       return !l_child_->evaluate();
     }
 
     case StmtKind::pipeline: {
       assert( l_child_ != nullptr && r_child_ != nullptr );
-      assert( siblings_.empty() );
+      assert( tokens_.size() == 1 );
 
       utils::Pipe pipe;
       utils::close_blocking( pipe.reader().get() );
@@ -95,16 +95,16 @@ namespace hull {
     case StmtKind::merge_appnd: {
       assert( r_child_ != nullptr );
       assert( r_child_->category_ == StmtKind::trivial );
-      assert( siblings_.empty() );
+      assert( tokens_.size() == 1 );
 
-      if ( !r_child_->sibling().empty() ) {
+      if ( r_child_->tokens().size() != 1 ) {
         iout::logger << error::error_factory( error::info::ArgumentErrorInfo(
           "output redirection"sv, "argument number error"sv
         ) );
         return !val_decl::EvalSuccess;
       }
 
-      const auto& filename = r_child_->token();
+      const auto& filename = r_child_->tokens().front();
       if ( access( filename.c_str(), F_OK ) < 0 && !utils::create_file( filename ) ) { // 判断能否获取文件描述符
         iout::logger << error::error_factory( error::info::InitErrorInfo(
           "output redirection"sv, "open file failed"sv, format( "cannot create '{}'", filename )
@@ -118,7 +118,7 @@ namespace hull {
       }
 
       type_decl::FDType file_d;
-      auto [match_result, matches] = utils::match_string( token_,
+      auto [match_result, matches] = utils::match_string( tokens_.front(),
         (category_ == StmtKind::appnd_redrct || category_ == StmtKind::ovrwrit_redrct ?
           R"(^(\d*)>{1,2}$)"sv : R"(^(\d*)&>{1,2}$)"sv) );
 
@@ -161,16 +161,16 @@ namespace hull {
     case StmtKind::stdin_redrct: {
       assert( l_child_ != nullptr && r_child_ != nullptr );
       assert( r_child_->category_ == StmtKind::trivial );
-      assert( siblings_.empty() );
+      assert( tokens_.size() == 1 );
 
-      if ( !r_child_->sibling().empty() ) {
+      if ( r_child_->tokens().size() != 1 ) {
         iout::logger << error::error_factory( error::info::ArgumentErrorInfo(
           "input redirection"sv, "argument number error"sv
         ) );
         return !val_decl::EvalSuccess;
       }
 
-      const auto& filename = r_child_->token();
+      const auto& filename = r_child_->tokens().front();
       if ( access( filename.c_str(), F_OK ) < 0 ) {
         iout::logger << error::error_factory( error::info::InitErrorInfo(
           "input redirection"sv, "open file failed"sv, format( "'{}' does not exist", filename )
@@ -229,15 +229,11 @@ namespace hull {
       // child process
       pipe.reader().close();
 
-      vector<char*> exec_argv { const_cast<char*>( token_.data() ) };
-      exec_argv.reserve( siblings_.size() + 2 );
-      ranges::transform( siblings_, back_inserter( exec_argv ),
-        []( const hull::StmtNode::ChildNode & sblng ) -> char* {
-          assert( sblng->type() == StmtKind::trivial );
-          assert( sblng->left() == nullptr && sblng->right() == nullptr );
-          assert( sblng->sibling().empty() );
-
-          return const_cast<char*>(sblng->token().data());
+      vector<char*> exec_argv;
+      exec_argv.reserve( tokens_.size() + 1 );
+      ranges::transform( tokens_, back_inserter( exec_argv ),
+        []( const type_decl::StringT& tkn_str ) -> char* {
+          return const_cast<char*>(tkn_str.data());
         }
       );
       exec_argv.push_back( nullptr );
@@ -256,7 +252,7 @@ namespace hull {
       if ( pipe.reader().pop<bool>() )
         // output error, don't throw it.
         iout::logger << error::error_factory( error::info::InitErrorInfo(
-          token_, "command error or not found"sv, {}
+          tokens_.front(), "command error or not found"sv, {}
         ) );
 
       return WEXITSTATUS( status ) == val_decl::ExecSuccess;
@@ -265,21 +261,18 @@ namespace hull {
 
   type_decl::EvalT ExprNode::internal_exec() const
   {
-    switch ( token_.front() ) {
+    switch ( tokens_.front().front() ) {
     case 'c': { // cd
-      assert( siblings_.front()->type() == StmtKind::trivial );
-      assert( siblings_.front()->left() == nullptr && siblings_.front()->right() == nullptr );
-
-      if ( siblings_.size() > 1 ) {
+      if ( tokens_.size() != 2 ) {
         iout::logger << error::error_factory( error::info::ArgumentErrorInfo(
           "cd"sv, "the number of arguments error"sv
         ) );
         return !val_decl::EvalSuccess;
       }
-      return chdir( siblings_.front()->token().c_str() );
+      return chdir( tokens_[1].c_str() );
     } break;
     case 'e': { // exit
-      if ( siblings_.size() > 0 ) {
+      if ( tokens_.size() != 1 ) {
         iout::logger << error::error_factory( error::info::ArgumentErrorInfo(
           "exit"sv, "the number of arguments error"sv
         ) );
@@ -298,9 +291,10 @@ namespace hull {
   type_decl::EvalT ExprNode::evaluate()
   {
     assert( l_child_ == nullptr && r_child_ == nullptr );
+    assert( category_ == StmtKind::trivial );
 
     if ( !result_.has_value() ) {
-      if ( val_decl::internal_command.contains( token_ ) )
+      if ( val_decl::internal_command.contains( tokens_.front() ) )
         result_ = internal_exec();
       else result_ = external_exec();
     }

@@ -37,6 +37,7 @@ namespace hull {
     void reset( Tokenizer tknizr ) { tknizr_ = std::move( tknizr ); }
 
     Tokenizer& tokenizer() noexcept { return tknizr_; }
+    const Tokenizer& tokenizer() const noexcept { return tknizr_; }
 
     [[nodiscard]] StmtNodePtr parse();
     [[nodiscard]] bool empty() const { return tknizr_.empty(); }

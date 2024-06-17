@@ -26,7 +26,7 @@ namespace hull {
     using EvalT = int64_t;
 
     using FDType = int; // file descriptor
-    using TokenT = StringT;
+    using TokensT = std::vector<StringT>;
   }
 
   namespace val_decl {

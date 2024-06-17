@@ -61,7 +61,7 @@ namespace hull {
   {
     if ( !line_buf.eof() ) {
       line_buf_ = std::move( line_buf );
-      token_list_.reset();
+      current_token_.reset();
     }
   }
 
@@ -81,35 +81,41 @@ namespace hull {
     using std::swap;
     swap( line_buf_, rhs.line_buf_ );
     swap( prompt_, rhs.prompt_ );
-    swap( token_list_, rhs.token_list_ );
+    swap( current_token_, rhs.current_token_ );
     return *this;
   }
 
   Tokenizer::Token& Tokenizer::peek()
   {
-    if ( !token_list_.has_value() )
-      token_list_ = next();
+    if ( !current_token_.has_value() )
+      current_token_ = next();
 
-    return *token_list_;
+    return *current_token_;
   }
 
-  type_decl::TokenT Tokenizer::consume( TokenType expect )
+  type_decl::TokensT Tokenizer::consume( TokenType expect )
   {
-    assert( token_list_.has_value() );
-    if ( token_list_->is( expect ) ) {
-      type_decl::TokenT discard_tokens = move( token_list_->value_ );
-      token_list_.reset();
+    assert( current_token_.has_value() );
+    if ( current_token_->is( expect ) ) {
+      type_decl::TokensT discard_tokens = move( current_token_->value_ );
+      current_token_.reset();
       return discard_tokens;
     }
     throw error::error_factory( error::info::SyntaxErrorInfo(
-      line_buf_.line_pos(), expect, token_list_->type_
+      line_buf_.line_pos(), expect, current_token_->type_
     ) );
   }
 
   Tokenizer::Token Tokenizer::next()
   {
     Token new_token;
-    auto& [token_type, token_str] = new_token;
+    auto& [token_type, tokens_list] = new_token;
+    const auto get_insert_iter = []( auto&& container ) {
+      container.push_back( {} );
+      return prev( container.end() );
+    };
+
+    auto inserter = get_insert_iter( tokens_list );
 
     enum class StateType {
       START, DONE,
@@ -262,11 +268,13 @@ namespace hull {
       }
 
       if ( save_char )
-        token_str.push_back( character );
+        inserter->push_back( character );
       if ( discard_char )
         line_buf_.consume();
     }
 
+    if ( inserter->empty() )
+      tokens_list.erase( inserter );
     return new_token;
   }
 }
