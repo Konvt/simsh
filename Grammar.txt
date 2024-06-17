@@ -13,9 +13,9 @@
                         | EOF
 
 <inner_statement> ::= <expression> <inner_statement_extension>
-                     | <output_redirection> <inner_statement_extension>
-                     | '!' <logical_not> <inner_statement_extension>
-                     | '(' <inner_statement> <inner_statement_extension>
+                    | <output_redirection> <inner_statement_extension>
+                    | '!' <logical_not> <inner_statement_extension>
+                    | '(' <inner_statement> <inner_statement_extension>
 
 <inner_statement_extension> ::= <connector> <inner_statement>
                  | <redirection> <inner_statement_extension>
