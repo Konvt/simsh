@@ -1,3 +1,5 @@
+#include <ranges>
+#include <algorithm>
 #include <regex>
 #include <string>
 #include <cassert>
@@ -65,22 +67,10 @@ namespace hull {
     }
   }
 
-  void Tokenizer::reset( type_decl::StringT prompt )
-  {
-    prompt_ = std::move( prompt );
-  }
-
-  void Tokenizer::reset( LineBuffer line_buf, type_decl::StringT prompt )
-  {
-    reset( std::move( line_buf ) );
-    reset( std::move( prompt ) );
-  }
-
   Tokenizer& Tokenizer::operator=( Tokenizer&& rhs )
   {
     using std::swap;
     swap( line_buf_, rhs.line_buf_ );
-    swap( prompt_, rhs.prompt_ );
     swap( current_token_, rhs.current_token_ );
     return *this;
   }
@@ -119,8 +109,13 @@ namespace hull {
 
     enum class StateType {
       START, DONE,
-      INCMD, INDIGIT, INSTR, INAND, INMEG_OUTPUT,
-      INPIPE_LIKE, INRARR,
+      INCMD,
+      INDIGIT,
+      INSTR,
+      INAND,
+      INMEG_OUTPUT,
+      INPIPE_LIKE,
+      INRARR,
     };
 
     for ( StateType state = StateType::START; state != StateType::DONE; ) {
@@ -181,7 +176,7 @@ namespace hull {
       } break;
 
       case StateType::INCMD: {
-        if ( regex_match( type_decl::StringT( 1, character ), regex( R"([&|!<>"':\(\)\^%$#\s])" ) ) ) {
+        if ( regex_match( type_decl::StringT( 1, character ), regex( R"([&|!<>"';:\(\)\^%$#\s])" ) ) ) {
           // 遇到了不应该出现在 command 中的字符，结束状态
           token_type = TokenType::CMD;
           save_char = false;
@@ -273,8 +268,13 @@ namespace hull {
         line_buf_.consume();
     }
 
-    if ( inserter->empty() )
-      tokens_list.erase( inserter );
+    auto iter = ranges::find_if(
+      tokens_list | ranges::views::reverse,
+      []( auto&& e )->bool { return !e.empty(); }
+    ).base();
+    if ( iter != tokens_list.end() )
+      tokens_list.erase( iter, tokens_list.end() );
+
     return new_token;
   }
 }

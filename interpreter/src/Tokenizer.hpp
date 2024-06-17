@@ -59,12 +59,10 @@ namespace hull {
       [[nodiscard]] bool is_not( TokenType tp ) const noexcept { return !is( tp ); }
     };
 
-    Tokenizer( LineBuffer line_buf, type_decl::StringT prompt = "> " )
-      : line_buf_ { std::move( line_buf ) }
-      , prompt_ { std::move( prompt ) }, current_token_ {} {}
+    Tokenizer( LineBuffer line_buf )
+      : line_buf_ { std::move( line_buf ) }, current_token_ {} {}
     ~Tokenizer() = default;
-    Tokenizer( Tokenizer&& rhs )
-      : Tokenizer( std::move( rhs.line_buf_ ), std::move( rhs.prompt_ ) ) {
+    Tokenizer( Tokenizer&& rhs ) : Tokenizer( std::move( rhs.line_buf_ ) ) {
       using std::swap;
       swap( current_token_, rhs.current_token_ );
     }
@@ -85,21 +83,15 @@ namespace hull {
     type_decl::TokensT consume( TokenType expect );
 
     void reset( LineBuffer line_buf );
-    void reset( type_decl::StringT prompt );
-    void reset( LineBuffer line_buf, type_decl::StringT prompt );
 
     [[nodiscard]] LineBuffer line_buf() && noexcept { return std::move( line_buf_ ); }
     const LineBuffer& line_buf() const & noexcept { return line_buf_; }
-
-    [[nodiscard]] type_decl::StringT prompt() && noexcept { return std::move( prompt_ ); }
-    const type_decl::StringT& prompt() const & noexcept { return prompt_; }
 
     [[nodiscard]] std::optional<Token> token() && noexcept { return std::move( current_token_ ); }
     const std::optional<Token>& token() const & noexcept { return current_token_; }
 
   private:
     LineBuffer line_buf_;
-    type_decl::StringT prompt_; // for getting further input when the token stream is blocked by line breaks
     std::optional<Token> current_token_;
 
     /// @throw error::ArgumentError If the state machine is stepped into a wrong state.
