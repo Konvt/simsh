@@ -110,6 +110,7 @@ namespace simsh {
 
     enum class StateType {
       START, DONE,
+      INCOMMENT,
       INCMD,
       INDIGIT,
       INSTR,
@@ -148,6 +149,9 @@ namespace simsh {
             state = StateType::INSTR;
             save_char = false;
           } break;
+          case '#': {
+            state = StateType::INCOMMENT;
+          } break;
           case '&': {
             state = StateType::INAND;
           } break;
@@ -170,13 +174,24 @@ namespace simsh {
             token_type = TokenType::RPAREN;
           } break;
           default: {
-            if ( ("':^%#"sv).find( character ) != type_decl::StrViewT::npos )
+            if ( ("':^%"sv).find( character ) != type_decl::StrViewT::npos )
               throw error::TokenError(
               line_buf_.line_pos(), "any valid command character"sv, character
               );
             else state = StateType::INCMD;
           } break;
           }
+        }
+      } break;
+
+      case StateType::INCOMMENT: {
+        if ( character == '\n' ) {
+          token_type = TokenType::NEWLINE;
+          state = StateType::DONE;
+        }
+        else if ( character == EOF ) {
+          token_type = TokenType::ENDFILE;
+          state = StateType::DONE;
         }
       } break;
 
