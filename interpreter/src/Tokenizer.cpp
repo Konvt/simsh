@@ -163,7 +163,11 @@ namespace simsh {
             token_type = TokenType::RPAREN;
           } break;
           default: {
-            state = StateType::INCMD;
+            if ( ("':^%#"sv).find( character ) != type_decl::StrViewT::npos )
+              throw error::error_factory( error::info::TokenErrorInfo(
+              line_buf_.line_pos(), 'a', character
+              ) );
+            else state = StateType::INCMD;
           } break;
           }
         }

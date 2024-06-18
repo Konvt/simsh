@@ -4,6 +4,8 @@
 #include <type_traits>
 #include <concepts>
 #include <array>
+#include <ranges>
+#include <algorithm>
 
 #include "Config.hpp"
 
@@ -62,7 +64,17 @@ namespace simsh {
         requires std::is_trivially_copyable_v<std::decay_t<T>>
       void push( const T& value ) const {
         if ( !writer_closed_ )
-          write( pipefd_[writer_fd], &value, sizeof( value ) );
+          write( pipefd_[writer_fd], std::addressof( value ), sizeof( value ) );
+      }
+
+      template<template <typename> typename T, typename U>
+        requires std::is_trivially_copyable_v<U>
+      void push( const T<U>& value )const {
+        if ( !writer_closed_ )
+          std::ranges::for_each( value, [this]( const auto& ele ) -> void {
+              write( pipefd_[writer_fd], std::addressof( ele ), sizeof( ele ) );
+            }
+          );
       }
     };
 
