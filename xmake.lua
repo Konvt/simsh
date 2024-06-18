@@ -1,10 +1,9 @@
 add_rules("mode.debug", "mode.release")
 
 set_languages("c++20")
--- add_requires("vcpkg::nlohmann-json", {alias = "nlohmann-json"})
 
 if is_plat("mingw") or is_plat("linux")
-  then add_cxxflags("-finput-charset=UTF-8", "-Wall", "-Wpedantic")
+  then add_cxxflags("-Wall", "-Wpedantic", "-Wextra")
 elseif is_plat("windows")
   then add_cxxflags("/utf-8", "/EHsc", "/permissive")
 end
@@ -21,6 +20,7 @@ target("simsh")
     "interpreter-impl/util/",
     "shell-impl/src/"
   )
+  set_targetdir(os.curdir())
 
 --
 -- If you want to known more usage about xmake, please see https://xmake.io
