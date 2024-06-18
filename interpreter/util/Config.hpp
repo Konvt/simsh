@@ -1,5 +1,5 @@
-#ifndef __HULL_CONFIG__
-# define __HULL_CONFIG__
+#ifndef __SIMSH_CONFIG__
+# define __SIMSH_CONFIG__
 
 #include <string>
 #include <string_view>
@@ -9,16 +9,16 @@
 #include <cstdlib>
 
 #if defined(_MSC_VER) && defined(_MSVC_LANG) // for msvc
-# define __HULL_CPP_V__ _MSVC_LANG
+# define __SIMSH_CPP_V__ _MSVC_LANG
 #else
-# define __HULL_CPP_V__ __cplusplus
+# define __SIMSH_CPP_V__ __cplusplus
 #endif
 
-#if __HULL_CPP_V__ < 202002L
+#if __SIMSH_CPP_V__ < 202002L
 # error "The C++ standard version must be at least C++20."
 #endif
 
-namespace hull {
+namespace simsh {
   namespace type_decl {
     using CharT = int;
     using StringT = std::string;
@@ -26,7 +26,7 @@ namespace hull {
     using EvalT = int64_t;
 
     using FDType = int; // file descriptor
-    using TokensT = std::vector<StringT>;
+    using TokenT = StringT;
   }
 
   namespace val_decl {
@@ -38,4 +38,4 @@ namespace hull {
   }
 }
 
-#endif // __HULL_CONFIG__
+#endif // __SIMSH_CONFIG__

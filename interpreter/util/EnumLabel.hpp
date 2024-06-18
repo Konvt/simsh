@@ -1,9 +1,9 @@
-#ifndef __HULL_ENUM__
-# define __HULL_ENUM__
+#ifndef __SIMSH_ENUM__
+# define __SIMSH_ENUM__
 
 #include "Config.hpp"
 
-namespace hull {
+namespace simsh {
   enum class StmtKind {
     trivial,
     sequential,
@@ -32,4 +32,4 @@ namespace hull {
   };
 }
 
-#endif // __HULL_ENUM__
+#endif // __SIMSH_ENUM__

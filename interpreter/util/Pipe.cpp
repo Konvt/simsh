@@ -10,7 +10,7 @@
 #include "Exception.hpp"
 using namespace std;
 
-namespace hull {
+namespace simsh {
   namespace utils {
     Pipe::Pipe() : pipefd_ {}, reader_closed_ { false }, writer_closed_ { false }
     {

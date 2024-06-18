@@ -9,10 +9,12 @@ elseif is_plat("windows")
   then add_cxxflags("/utf-8", "/EHsc", "/permissive")
 end
 
-target("Hull")
+target("Simsh")
   set_kind("binary")
   add_files("interpreter/src/*.cpp", "interpreter/util/*.cpp")
+  add_files("shell/src/*.cpp", "shell/util/*.cpp")
   add_includedirs("interpreter/src/", "interpreter/util/")
+  add_includedirs("shell/src/", "shell/util/")
 -- add_packages("nlohmann-json")
 
 --

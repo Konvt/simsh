@@ -10,7 +10,7 @@
 #include "Utils.hpp"
 using namespace std;
 
-namespace hull {
+namespace simsh {
   namespace utils {
     type_decl::StringT format_char( type_decl::CharT character )
     {

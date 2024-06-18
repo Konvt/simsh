@@ -1,5 +1,5 @@
-#ifndef __HULL_SCANNER__
-# define __HULL_SCANNER__
+#ifndef __SIMSH_SCANNER__
+# define __SIMSH_SCANNER__
 
 #include <istream>
 #include <utility>
@@ -8,7 +8,7 @@
 #include "Config.hpp"
 #include "EnumLabel.hpp"
 
-namespace hull {
+namespace simsh {
   class LineBuffer {
     std::istream* input_stream_;
 
@@ -50,9 +50,9 @@ namespace hull {
   public:
     struct Token {
       TokenType type_;
-      type_decl::TokensT value_;
+      type_decl::TokenT value_;
 
-      Token( TokenType tp, type_decl::TokensT val )
+      Token( TokenType tp, type_decl::TokenT val )
         : type_ { std::move( tp ) }, value_ { std::move( val ) } {}
       Token() : Token( TokenType::ERROR, {} ) {}
       [[nodiscard]] bool is( TokenType tp ) const noexcept { return type_ == tp; }
@@ -80,7 +80,7 @@ namespace hull {
 
     /// @brief 消耗当前 token，并将 token 串返回
     /// @throw error::SyntaxError If `expect` isn't matched with current token.
-    type_decl::TokensT consume( TokenType expect );
+    type_decl::TokenT consume( TokenType expect );
 
     void reset( LineBuffer line_buf );
 
@@ -100,4 +100,4 @@ namespace hull {
   };
 }
 
-#endif // __HULL_SCANNER__
+#endif // __SIMSH_SCANNER__

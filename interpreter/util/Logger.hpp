@@ -1,12 +1,12 @@
-#ifndef __HULL_LOGGER__
-# define __HULL_LOGGER__
+#ifndef __SIMSH_LOGGER__
+# define __SIMSH_LOGGER__
 
 #include <iostream>
 
 #include "Config.hpp"
 #include "Exception.hpp"
 
-namespace hull {
+namespace simsh {
   namespace iout { // IO Utility
     /// @brief 用于“消耗”程序中所有异常类型的日志输出器
     class Logger {
@@ -53,4 +53,4 @@ namespace hull {
   }
 }
 
-#endif // __HULL_LOGGER__
+#endif // __SIMSH_LOGGER__

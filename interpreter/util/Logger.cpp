@@ -2,7 +2,7 @@
 #include "Logger.hpp"
 using namespace std;
 
-namespace hull {
+namespace simsh {
   namespace iout {
     Logger& Logger::operator<<( const error::TraceBack& e )
     {
@@ -34,5 +34,3 @@ namespace hull {
     Prompter& prmptr = Prompter::inst();
   }
 }
-
-

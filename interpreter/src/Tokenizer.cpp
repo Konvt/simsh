@@ -8,7 +8,7 @@
 #include "Exception.hpp"
 using namespace std;
 
-namespace hull {
+namespace simsh {
   void LineBuffer::swap_members( LineBuffer&& rhs ) noexcept
   {
     using std::swap;
@@ -83,11 +83,11 @@ namespace hull {
     return *current_token_;
   }
 
-  type_decl::TokensT Tokenizer::consume( TokenType expect )
+  type_decl::TokenT Tokenizer::consume( TokenType expect )
   {
     assert( current_token_.has_value() );
     if ( current_token_->is( expect ) ) {
-      type_decl::TokensT discard_tokens = move( current_token_->value_ );
+      type_decl::TokenT discard_tokens = move( current_token_->value_ );
       current_token_.reset();
       return discard_tokens;
     }
@@ -99,13 +99,7 @@ namespace hull {
   Tokenizer::Token Tokenizer::next()
   {
     Token new_token;
-    auto& [token_type, tokens_list] = new_token;
-    const auto get_insert_iter = []( auto&& container ) {
-      container.push_back( {} );
-      return prev( container.end() );
-    };
-
-    auto inserter = get_insert_iter( tokens_list );
+    auto& [token_type, token_str] = new_token;
 
     enum class StateType {
       START, DONE,
@@ -176,8 +170,14 @@ namespace hull {
       } break;
 
       case StateType::INCMD: {
-        if ( regex_match( type_decl::StringT( 1, character ), regex( R"([&|!<>"';:\(\)\^%$#\s])" ) ) ) {
+        if ( isspace( character ) ||
+             ("&|!<>\"';:()^%$#"sv).find( character ) != type_decl::StrViewT::npos ) {
           // 遇到了不应该出现在 command 中的字符，结束状态
+          if ( token_str.empty() ) {
+            throw error::error_factory( error::info::TokenErrorInfo(
+              line_buf_.line_pos(), 'a', character
+            ) );
+          }
           token_type = TokenType::CMD;
           save_char = false;
           discard_char = false;
@@ -263,17 +263,10 @@ namespace hull {
       }
 
       if ( save_char )
-        inserter->push_back( character );
+        token_str.push_back( character );
       if ( discard_char )
         line_buf_.consume();
     }
-
-    auto iter = ranges::find_if(
-      tokens_list | ranges::views::reverse,
-      []( auto&& e )->bool { return !e.empty(); }
-    ).base();
-    if ( iter != tokens_list.end() )
-      tokens_list.erase( iter, tokens_list.end() );
 
     return new_token;
   }

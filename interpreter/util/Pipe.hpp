@@ -1,5 +1,5 @@
-#ifndef __HULL_PIPES__
-# define __HULL_PIPES__
+#ifndef __SIMSH_PIPES__
+# define __SIMSH_PIPES__
 
 #include <type_traits>
 #include <concepts>
@@ -7,7 +7,7 @@
 
 #include "Config.hpp"
 
-namespace hull {
+namespace simsh {
   namespace utils {
     class PipeReader;
     class PipeWriter;
@@ -71,4 +71,4 @@ namespace hull {
 
 }
 
-#endif // __HULL_PIPES__
+#endif // __SIMSH_PIPES__

@@ -1,5 +1,5 @@
-#ifndef __HULL_UTILS__
-# define __HULL_UTILS__
+#ifndef __SIMSH_UTILS__
+# define __SIMSH_UTILS__
 
 #include <concepts>
 #include <type_traits>
@@ -11,7 +11,7 @@
 #include "Config.hpp"
 #include "EnumLabel.hpp"
 
-namespace hull {
+namespace simsh {
   namespace utils {
     type_decl::StringT format_char( type_decl::CharT character );
 
@@ -25,4 +25,4 @@ namespace hull {
   }
 }
 
-#endif // __HULL_UTILS__
+#endif // __SIMSH_UTILS__

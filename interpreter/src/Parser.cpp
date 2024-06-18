@@ -7,7 +7,7 @@
 #include "Utils.hpp"
 using namespace std;
 
-namespace hull {
+namespace simsh {
   Parser::StmtNodePtr Parser::parse()
   {
     tknizr_.clear();
@@ -225,7 +225,7 @@ namespace hull {
   Parser::StmtNodePtr Parser::redirection( Parser::StmtNodePtr left_stmt )
   {
     StmtKind stmt_kind = StmtKind::trivial;
-    type_decl::TokensT token_str;
+    type_decl::TokenT token_str;
     switch ( tknizr_.peek().type_ ) {
     case TokenType::OVR_REDIR: {
       stmt_kind = StmtKind::ovrwrit_redrct;
@@ -258,8 +258,11 @@ namespace hull {
         tknizr_.line_pos(), TokenType::CMD, tknizr_.peek().type_
       ) );
     }
+    StmtNode::SiblingNodes sibling;
+    sibling.push_back( expression() );
+
     return make_unique<StmtNode>( stmt_kind, move( token_str ),
-      move( left_stmt ), expression() );
+      move( left_stmt ), nullptr, move( sibling ) );
   }
 
   Parser::StmtNodePtr Parser::logical_not()
@@ -286,30 +289,26 @@ namespace hull {
   {
     assert( tknizr_.peek().is( TokenType::CMD ) || tknizr_.peek().is( TokenType::STR ) );
 
-    type_decl::TokensT expr_list;
-    ExprKind expr_kind = ExprKind::string;
+    ExprNode::SiblingNodes node_list;
 
-    auto merge_tokens = [this, &expr_kind]() -> type_decl::TokensT {
-      assert( tknizr_.peek().value_.size() == 1 );
-
-      if ( tknizr_.peek().is( TokenType::CMD ) ) {
-        expr_kind = ExprKind::command;
-        auto token_list = tknizr_.consume( TokenType::CMD );
-
-        ranges::for_each( token_list, utils::tilde_expansion );
-        return token_list;
-      }
-
-      return tknizr_.consume( TokenType::STR );
+    auto expr_kind_map = []( TokenType tkn_tp ) -> ExprKind {
+      assert( tkn_tp == TokenType::CMD || tkn_tp == TokenType::STR );
+      return tkn_tp == TokenType::CMD ? ExprKind::command : ExprKind::string;
     };
+    ExprKind node_kind = expr_kind_map( tknizr_.peek().type_ );
+    auto token = tknizr_.peek().is( TokenType::CMD )
+      ? tknizr_.consume( TokenType::CMD )
+      : tknizr_.consume( TokenType::STR );
 
-    expr_list.push_back( move( merge_tokens().front() ) );
     while ( tknizr_.peek().is( TokenType::CMD ) || tknizr_.peek().is( TokenType::STR ) ) {
-      expr_kind = ExprKind::command; // 超过一条指令就会被视作命令
-      expr_list.push_back( move( merge_tokens().front() ) );
+      assert( tknizr_.peek().value_.empty() == false );
+
+      const TokenType token_type = tknizr_.peek().type_;
+      node_list.push_back( make_unique<ExprNode>( StmtKind::trivial,
+        expr_kind_map( token_type ), tknizr_.consume( token_type ) ) );
     }
 
     return make_unique<ExprNode>( StmtKind::trivial,
-      expr_kind, move( expr_list ) );
+      node_list.empty() ? node_kind : ExprKind::command, move( token ), move( node_list ) );
   }
 }

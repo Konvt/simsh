@@ -4,7 +4,7 @@
 #include "Utils.hpp"
 using namespace std;
 
-namespace hull {
+namespace simsh {
   namespace error {
     EvaluateError error_factory( info::EvaluateErrorInfo context )
     {

@@ -1,5 +1,5 @@
-#ifndef __HULL_PARSER__
-# define __HULL_PARSER__
+#ifndef __SIMSH_PARSER__
+# define __SIMSH_PARSER__
 
 #include <concepts>
 #include <type_traits>
@@ -10,7 +10,7 @@
 #include "TreeNode.hpp"
 #include "Tokenizer.hpp"
 
-namespace hull {
+namespace simsh {
   class Parser {
     using StmtNodePtr = std::unique_ptr<StmtNode>;
     using ExprNodePtr = std::unique_ptr<ExprNode>;
@@ -49,4 +49,4 @@ namespace hull {
   };
 }
 
-#endif // __HULL_PARSER__
+#endif // __SIMSH_PARSER__

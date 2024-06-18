@@ -1,5 +1,5 @@
-#ifndef __HULL_EXCEPTION__
-# define __HULL_EXCEPTION__
+#ifndef __SIMSH_EXCEPTION__
+# define __SIMSH_EXCEPTION__
 
 #include <exception>
 #include <utility>
@@ -8,7 +8,7 @@
 
 #include "EnumLabel.hpp"
 
-namespace hull {
+namespace simsh {
   namespace error {
     class TraceBack : public std::exception {
     protected:
@@ -104,4 +104,4 @@ namespace hull {
   }
 }
 
-#endif // __HULL_EXCEPTION__
+#endif // __SIMSH_EXCEPTION__
