@@ -258,6 +258,8 @@ namespace simsh {
         tknizr_.line_pos(), TokenType::CMD, tknizr_.peek().type_
       );
     }
+
+    // The structure of syntax tree node requires that redirected file name parameters be stored in sibling nodes.
     StmtNode::SiblingNodes sibling;
     sibling.push_back( expression() );
 
@@ -300,6 +302,11 @@ namespace simsh {
       ? tknizr_.consume( TokenType::CMD )
       : tknizr_.consume( TokenType::STR );
 
+    /* Multiple CMD tokens or STR tokens are treated as a single command,
+     * so we need to combine them together and store into sibling nodes.
+
+     * This is because, according to the syntax tree node structure,
+     * all subsequent tokens of the command string are parameters of the first token. */
     while ( tknizr_.peek().is( TokenType::CMD ) || tknizr_.peek().is( TokenType::STR ) ) {
       assert( tknizr_.peek().value_.empty() == false );
 

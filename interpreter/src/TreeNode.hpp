@@ -18,6 +18,8 @@ namespace simsh {
   protected:
     StmtKind category_;
     ChildNode l_child_, r_child_;
+    // Each node stores only a string of token.
+    // Therefore, any parameters must be stored in siblings node.
     SiblingNodes siblings_;
 
     type_decl::TokenT token_;

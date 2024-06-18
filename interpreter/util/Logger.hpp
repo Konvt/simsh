@@ -8,9 +8,10 @@
 
 namespace simsh {
   namespace iout { // IO Utility
-    /// @brief 用于“消耗”程序中所有异常类型的日志输出器
+    /// @brief Log output used to "consume" all exception types in the program, output to stderr.
     class Logger {
       type_decl::StringT prefix_;
+      type_decl::StringT suffix_;
 
       Logger() noexcept = default;
 
@@ -21,14 +22,22 @@ namespace simsh {
 
       static Logger& inst() noexcept;
 
+      type_decl::StrViewT prefix() const noexcept { return prefix_; }
+      type_decl::StrViewT suffix() const noexcept { return suffix_; }
+
+      /// @brief Set a string prefix that comes with each output, which defaults to empty.
       void set_prefix( type_decl::StringT prefix );
+
+      /// @brief Set a string suffix that comes with each output, which defaults to empty.
+      void set_suffix( type_decl::StringT suffix );
 
       Logger& operator<<( const error::TraceBack& e );
     };
 
+    /// @brief Log output used to "consume" all exception types in the program, output to stderr.
     extern Logger& logger;
 
-    /// @brief 用于向终端输出提示的信息输出器
+    /// @brief An information output class used to output info to stdout.
     class Prompter {
       Prompter() noexcept = default;
 
@@ -39,7 +48,7 @@ namespace simsh {
 
       static Prompter& inst() noexcept;
 
-      /// @brief 将 info 输出到 STDOUT 中
+      /// @brief Output anything that can be inserted to `std::cout`.
       template<typename T>
         requires requires(T info) {
           { std::cout << info };
@@ -49,6 +58,7 @@ namespace simsh {
       }
     };
 
+    /// @brief An information output class used to output info to stdout.
     extern Prompter& prmptr;
   }
 }

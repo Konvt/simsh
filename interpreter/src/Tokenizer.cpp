@@ -47,6 +47,8 @@ namespace simsh {
       }
       else {
         received_eof_ = false;
+        // `getline` always discards the line break
+        // but line break is a syntactic token, thus we need push a new one.
         line_input_.push_back( '\n' );
       }
     }
@@ -57,6 +59,11 @@ namespace simsh {
   {
     assert( line_pos_ <= line_input_.size() );
     ++line_pos_;
+  }
+
+  void LineBuffer::backtrack( size_t num_chars ) noexcept
+  {
+    line_pos_ = line_pos_ <= num_chars ? 0 : line_pos_ - num_chars;
   }
 
   void Tokenizer::reset( LineBuffer line_buf )
@@ -176,7 +183,6 @@ namespace simsh {
       case StateType::INCMD: {
         if ( isspace( character ) ||
              ("&|!<>\"';:()^%$#"sv).find( character ) != type_decl::StrViewT::npos ) {
-          // 遇到了不应该出现在 command 中的字符，结束状态
           if ( token_str.empty() ) {
             throw error::TokenError(
               line_buf_.line_pos(), "any valid command character"sv, character

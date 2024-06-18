@@ -6,6 +6,7 @@
 #include "Logger.hpp"
 #include "Exception.hpp"
 
+#include <signal.h>
 #include <unistd.h>
 #include <pwd.h>
 #include <fcntl.h>
@@ -58,6 +59,8 @@ namespace simsh {
 
   int Shell::run()
   {
+    signal( SIGINT, SIG_IGN );
+    simsh::iout::logger.set_prefix( "simsh: " );
     Parser prsr;
 
     while ( !prsr.empty() ) {

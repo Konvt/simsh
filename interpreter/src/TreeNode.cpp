@@ -63,8 +63,9 @@ namespace simsh {
 
       for ( size_t i = 0; i < 2; ++i ) {
         if ( pid_t process_id = fork(); process_id < 0 )
+          // At runtime, only critical system call errors cause exceptions to be thrown.
           throw error::InitError(
-            "pipeline"sv, "failed to fork"sv // 在运行时，只有关键系统调用错误才会导致异常抛出
+            "pipeline"sv, "failed to fork"sv 
           );
         else if ( process_id == 0 ) {
           // child process
@@ -106,7 +107,8 @@ namespace simsh {
       }
 
       const auto& filename = siblings_.front()->token();
-      if ( access( filename.c_str(), F_OK ) < 0 && !utils::create_file( filename ) ) { // 判断能否获取文件描述符
+      // Check whether the file descriptor can be obtained.
+      if ( access( filename.c_str(), F_OK ) < 0 && !utils::create_file( filename ) ) {
         iout::logger << error::InitError(
           "output redirection"sv, format( "cannot create '{}'", filename )
         );
@@ -242,7 +244,9 @@ namespace simsh {
       execvp( exec_argv.front(), exec_argv.data() );
 
       pipe.writer().push( true );
-      throw error::TerminationSignal( EXIT_FAILURE ); // 保证各作用域对象析构正常进行
+      // Ensure that all scoped objects are destructed normally.
+      // In particular the object `utils::Pipe` above.
+      throw error::TerminationSignal( EXIT_FAILURE );
     } else {
       int status;
       if ( waitpid( process_id, &status, 0 ) < 0 )

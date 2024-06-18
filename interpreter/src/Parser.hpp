@@ -11,6 +11,7 @@
 #include "Tokenizer.hpp"
 
 namespace simsh {
+  /// @brief Recursive descent parser.
   class Parser {
     using StmtNodePtr = std::unique_ptr<StmtNode>;
     using ExprNodePtr = std::unique_ptr<ExprNode>;
@@ -33,15 +34,20 @@ namespace simsh {
       : tknizr_ { std::move( line_buf ) } {}
     ~Parser() = default;
 
+    /// @brief Reset the current line buffer with a new one.
     void reset( LineBuffer line_buf ) { tknizr_.reset( std::move( line_buf ) ); }
+
+    /// @brief Reset the current tokenizer with a new one.
     void reset( Tokenizer tknizr ) { tknizr_ = std::move( tknizr ); }
 
     Tokenizer& tokenizer() noexcept { return tknizr_; }
     const Tokenizer& tokenizer() const noexcept { return tknizr_; }
 
+    /// @return Syntax root node.
     [[nodiscard]] StmtNodePtr parse();
     [[nodiscard]] bool empty() const { return tknizr_.empty(); }
 
+    /// @brief Gets input from the specified input stream, one line at a time.
     [[nodiscard]] friend StmtNodePtr operator>>( std::istream& is, Parser& prsr ) {
       prsr.reset( is );
       return prsr.parse();

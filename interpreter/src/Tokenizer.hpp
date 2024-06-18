@@ -22,6 +22,7 @@ namespace simsh {
     LineBuffer( const LineBuffer& lhs ) = delete;
     LineBuffer& operator=( const LineBuffer& lhs ) = delete;
 
+    /// @brief Create a line buffer bound to the specified input stream.
     LineBuffer( std::istream& input_stream )
       : input_stream_ { std::addressof( input_stream ) }
       , received_eof_ { false }, line_pos_ {} {}
@@ -44,6 +45,9 @@ namespace simsh {
 
     /// @brief Discard the current character from the buffer.
     void consume() noexcept;
+
+    /// @brief Back `num_chars` characters, set to 0 if the line position is less than `num_chars`.
+    void backtrack( size_t num_chars ) noexcept;
   };
 
   class Tokenizer {
@@ -78,10 +82,11 @@ namespace simsh {
     /// @throw error::ArgumentError If the tokenizer is empty.
     Token& peek();
 
-    /// @brief 消耗当前 token，并将 token 串返回
+    /// @brief Discard the current token and return it.
     /// @throw error::SyntaxError If `expect` isn't matched with current token.
     type_decl::TokenT consume( TokenType expect );
 
+    /// @brief Reset the current line buffer with the new one.
     void reset( LineBuffer line_buf );
 
     [[nodiscard]] LineBuffer line_buf() && noexcept { return std::move( line_buf_ ); }
@@ -94,6 +99,7 @@ namespace simsh {
     LineBuffer line_buf_;
     std::optional<Token> current_token_;
 
+    /// @brief A dfa, which returns a single token.
     /// @throw error::ArgumentError If the state machine is stepped into a wrong state.
     /// @throw error::TokenError If the state machine received an unexpected character.
     [[nodiscard]] Token next();
