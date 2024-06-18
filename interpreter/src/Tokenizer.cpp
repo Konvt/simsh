@@ -91,9 +91,9 @@ namespace simsh {
       current_token_.reset();
       return discard_tokens;
     }
-    throw error::error_factory( error::info::SyntaxErrorInfo(
+    throw error::SyntaxError(
       line_buf_.line_pos(), expect, current_token_->type_
-    ) );
+    );
   }
 
   Tokenizer::Token Tokenizer::next()
@@ -164,9 +164,9 @@ namespace simsh {
           } break;
           default: {
             if ( ("':^%#"sv).find( character ) != type_decl::StrViewT::npos )
-              throw error::error_factory( error::info::TokenErrorInfo(
-              line_buf_.line_pos(), 'a', character
-              ) );
+              throw error::TokenError(
+              line_buf_.line_pos(), "any valid command character"sv, character
+              );
             else state = StateType::INCMD;
           } break;
           }
@@ -178,9 +178,9 @@ namespace simsh {
              ("&|!<>\"';:()^%$#"sv).find( character ) != type_decl::StrViewT::npos ) {
           // 遇到了不应该出现在 command 中的字符，结束状态
           if ( token_str.empty() ) {
-            throw error::error_factory( error::info::TokenErrorInfo(
-              line_buf_.line_pos(), 'a', character
-            ) );
+            throw error::TokenError(
+              line_buf_.line_pos(), "any valid command character"sv, character
+            );
           }
           token_type = TokenType::CMD;
           save_char = false;
@@ -207,9 +207,9 @@ namespace simsh {
           token_type = TokenType::STR;
           state = StateType::DONE;
         } else if ( ("\n"sv).find( character ) != type_decl::StrViewT::npos || character == EOF )
-          throw error::error_factory( error::info::TokenErrorInfo(
+          throw error::TokenError(
             line_buf_.line_pos(), '"', character
-          ) );
+          );
       } break;
 
       case StateType::INAND: { // &&
@@ -220,9 +220,9 @@ namespace simsh {
           state = StateType::INMEG_OUTPUT;
         } else {
           token_type = TokenType::ERROR;
-          throw error::error_factory( error::info::TokenErrorInfo(
+          throw error::TokenError(
             line_buf_.line_pos(), '&', character
-          ) );
+          );
         }
       } break;
 
@@ -260,9 +260,9 @@ namespace simsh {
       default: {
         state = StateType::DONE;
         token_type = TokenType::ERROR;
-        throw error::error_factory( error::info::ArgumentErrorInfo(
+        throw error::ArgumentError(
           "tokenizer"sv, "the state machine status is incorrect"sv
-        ) );
+        );
       } break;
       }
 

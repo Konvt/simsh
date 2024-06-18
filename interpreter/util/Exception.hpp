@@ -1,12 +1,14 @@
 #ifndef __SIMSH_EXCEPTION__
 # define __SIMSH_EXCEPTION__
 
+#include <format>
 #include <exception>
 #include <utility>
 #include <optional>
 #include <cstdio>
 
 #include "EnumLabel.hpp"
+#include "Utils.hpp"
 
 namespace simsh {
   namespace error {
@@ -24,9 +26,13 @@ namespace simsh {
       std::optional<type_decl::EvalT> result_;
 
     public:
-      EvaluateError( type_decl::StringT message,
+      EvaluateError( type_decl::StrViewT where, type_decl::StrViewT why,
                      std::optional<type_decl::EvalT> result = std::nullopt )
-        : TraceBack( std::move( message ) ), result_ { std::move( result ) } {}
+        : TraceBack( "" ), result_ { std::move( result ) } {
+        message_ = result.has_value()
+          ? std::format( "{}: {}, return status {}", where, why, *result )
+          : std::format( "{}: {}", where, why );
+      }
       std::optional<type_decl::EvalT> value() const {
         return result_;
       }
@@ -34,26 +40,31 @@ namespace simsh {
 
     class TokenError : public TraceBack {
     public:
-      TokenError( type_decl::StringT message )
-        : TraceBack( std::move( message ) ) {}
+      TokenError( size_t line_pos, type_decl::CharT expect, type_decl::CharT received )
+        : TraceBack( std::format( "in position {}: expect {}, but received {}",
+          line_pos, utils::format_char( expect ), utils::format_char( received ) ) ) {}
+      TokenError( size_t line_pos, type_decl::StrViewT expecting, type_decl::CharT received )
+        : TraceBack( std::format( "in position {}: expect {}, but received {}",
+          line_pos, expecting, utils::format_char( received ) ) ) {}
     };
 
     class SyntaxError : public TraceBack {
     public:
-      SyntaxError( type_decl::StringT message )
-        : TraceBack( std::move( message ) ) {}
+      SyntaxError( size_t line_pos, TokenType expect, TokenType found )
+        : TraceBack( std::format( "in position {}: expect {}, but found {}",
+          line_pos, utils::token_kind_map( expect ), utils::token_kind_map( found ) ) ) {}
     };
 
     class ArgumentError : public TraceBack {
     public:
-      ArgumentError( type_decl::StringT message )
-        : TraceBack( std::move( message ) ) {}
+      ArgumentError( type_decl::StrViewT where, type_decl::StrViewT why )
+        : TraceBack( std::format( "{}: {}", where, why ) ) {}
     };
 
     class InitError : public TraceBack {
     public:
-      InitError( type_decl::StringT message )
-        : TraceBack( std::move( message ) ) {}
+      InitError( type_decl::StrViewT where, type_decl::StrViewT why )
+        : TraceBack( std::format( "{}: {}", where, why ) ) {}
     };
 
     class TerminationSignal : public TraceBack {
@@ -74,33 +85,6 @@ namespace simsh {
       StreamClosed()
         : TerminationSignal( "target io stream has been closed", EOF ) {}
     };
-
-    namespace info {
-      using EvaluateErrorInfo = // where, why, eval_result
-        std::tuple<type_decl::StrViewT, type_decl::StrViewT, std::optional<type_decl::EvalT>>;
-
-      using TokenErrorInfo = // line_pos, expect, received
-        std::tuple<size_t, type_decl::CharT, type_decl::CharT>;
-
-      using SyntaxErrorInfo = // line_pos, expect, found
-        std::tuple<size_t, TokenType, TokenType>;
-
-      using ArgumentErrorInfo = // where, why
-        std::tuple<type_decl::StrViewT, type_decl::StrViewT>;
-
-      using InitErrorInfo = // where, why, causes or contexts
-        std::tuple<type_decl::StrViewT, type_decl::StrViewT, type_decl::StringT>;
-    }
-
-    EvaluateError error_factory( info::EvaluateErrorInfo context );
-
-    TokenError error_factory( info::TokenErrorInfo context );
-
-    SyntaxError error_factory( info::SyntaxErrorInfo context );
-
-    ArgumentError error_factory( info::ArgumentErrorInfo context );
-
-    InitError error_factory( info::InitErrorInfo context );
   }
 }
 

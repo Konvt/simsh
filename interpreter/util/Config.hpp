@@ -33,7 +33,7 @@ namespace simsh {
     inline constexpr type_decl::EvalT ExecSuccess = EXIT_SUCCESS;
     inline constexpr type_decl::EvalT EvalSuccess = static_cast<type_decl::EvalT>(true);
     inline const std::unordered_set<type_decl::StringT> internal_command {
-      { "cd" }, { "exit" }
+      "cd", "exit", "help"
     };
   }
 }

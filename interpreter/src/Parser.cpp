@@ -63,9 +63,9 @@ namespace simsh {
     } break;
 
     default: {
-      throw error::error_factory( error::info::SyntaxErrorInfo(
+      throw error::SyntaxError(
         tknizr_.line_pos(), TokenType::CMD, tknizr_.peek().type_
-      ) );
+      );
     }
     }
 
@@ -120,9 +120,9 @@ namespace simsh {
     }
 
     default:
-      throw error::error_factory( error::info::SyntaxErrorInfo(
+      throw error::SyntaxError(
         tknizr_.line_pos(), TokenType::NEWLINE, tknizr_.peek().type_
-      ) );
+      );
     }
   }
 
@@ -156,9 +156,9 @@ namespace simsh {
     } break;
 
     default: {
-      throw error::error_factory( error::info::SyntaxErrorInfo(
+      throw error::SyntaxError(
         tknizr_.line_pos(), TokenType::CMD, tknizr_.peek().type_
-      ) );
+      );
     }
     }
 
@@ -216,9 +216,9 @@ namespace simsh {
     }
 
     default:
-      throw error::error_factory( error::info::SyntaxErrorInfo(
+      throw error::SyntaxError(
         tknizr_.line_pos(), TokenType::RPAREN, tknizr_.peek().type_
-      ) );
+      );
     }
   }
 
@@ -248,15 +248,15 @@ namespace simsh {
       token_str = tknizr_.consume( TokenType::STDIN_REDIR );
     } break;
     default:
-      throw error::error_factory( error::info::SyntaxErrorInfo(
+      throw error::SyntaxError(
         tknizr_.line_pos(), TokenType::OVR_REDIR, tknizr_.peek().type_
-      ) );
+      );
     }
 
     if ( tknizr_.peek().type_ != TokenType::CMD ) {
-      throw error::error_factory( error::info::SyntaxErrorInfo(
+      throw error::SyntaxError(
         tknizr_.line_pos(), TokenType::CMD, tknizr_.peek().type_
-      ) );
+      );
     }
     StmtNode::SiblingNodes sibling;
     sibling.push_back( expression() );
@@ -278,9 +278,9 @@ namespace simsh {
 
       node = make_unique<StmtNode>( StmtKind::logical_not,
         move( optr ), inner_statement() );
-    } else throw error::error_factory( error::info::SyntaxErrorInfo(
+    } else throw error::SyntaxError(
       tknizr_.line_pos(), TokenType::CMD, tknizr_.peek().type_
-    ) );
+    );
 
     return node;
   }
