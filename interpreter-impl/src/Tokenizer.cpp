@@ -146,10 +146,11 @@ namespace simsh {
             token_type = TokenType::SEMI;
           } break;
           case '"': {
-            state = StateType::INSTR;
             save_char = false;
+            state = StateType::INSTR;
           } break;
           case '#': {
+          save_char = false;
             state = StateType::INCOMMENT;
           } break;
           case '&': {
@@ -185,11 +186,11 @@ namespace simsh {
       } break;
 
       case StateType::INCOMMENT: {
+        save_char = false;
         if ( character == '\n' ) {
           token_type = TokenType::NEWLINE;
           state = StateType::DONE;
-        }
-        else if ( character == EOF ) {
+        } else if ( character == EOF ) {
           token_type = TokenType::ENDFILE;
           state = StateType::DONE;
         }
