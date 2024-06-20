@@ -39,17 +39,17 @@ namespace simsh {
     class TokenError : public TraceBack {
     public:
       TokenError( size_t line_pos, type_decl::CharT expect, type_decl::CharT received )
-        : TraceBack( std::format( "in position {}: expect {}, but received {}",
+        : TraceBack( std::format( "at position {}: expect {}, but received {}",
           line_pos, utils::format_char( expect ), utils::format_char( received ) ) ) {}
       TokenError( size_t line_pos, type_decl::StrViewT expecting, type_decl::CharT received )
-        : TraceBack( std::format( "in position {}: expect {}, but received {}",
+        : TraceBack( std::format( "at position {}: expect {}, but received {}",
           line_pos, expecting, utils::format_char( received ) ) ) {}
     };
 
     class SyntaxError : public TraceBack {
     public:
       SyntaxError( size_t line_pos, TokenType expect, TokenType found )
-        : TraceBack( std::format( "in position {}: expect {}, but found {}",
+        : TraceBack( std::format( "at position {}: expect {}, but found {}",
           line_pos, utils::token_kind_map( expect ), utils::token_kind_map( found ) ) ) {}
     };
 

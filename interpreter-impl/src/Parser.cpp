@@ -21,8 +21,7 @@ namespace simsh {
       [[fallthrough]];
     case TokenType::NEWLINE: {
       tknizr_.consume( tkn_tp );
-      return make_unique<ExprNode>( StmtKind::trivial,
-        ExprKind::value, val_decl::EvalSuccess );
+      return make_unique<ExprNode>( ExprKind::value, val_decl::EvalSuccess );
     }
 
     default: {
@@ -76,26 +75,26 @@ namespace simsh {
     switch ( const auto tkn_tp = tknizr_.peek().type_;
              tkn_tp ) {
     case TokenType::AND: { // connector
-      auto optr = tknizr_.consume( TokenType::AND );
-      return make_unique<StmtNode>( StmtKind::logical_and, move( optr ),
+      tknizr_.consume( TokenType::AND );
+      return make_unique<StmtNode>( StmtKind::logical_and,
         move( left_stmt ), nonempty_statement() );
     }
 
     case TokenType::OR: {
-      auto optr = tknizr_.consume( TokenType::OR );
-      return make_unique<StmtNode>( StmtKind::logical_or, move( optr ),
+      tknizr_.consume( TokenType::OR );
+      return make_unique<StmtNode>( StmtKind::logical_or,
         move( left_stmt ), nonempty_statement() );
     }
 
     case TokenType::PIPE: {
-      auto optr = tknizr_.consume( TokenType::PIPE );
-      return make_unique<StmtNode>( StmtKind::pipeline, move( optr ),
+      tknizr_.consume( TokenType::PIPE );
+      return make_unique<StmtNode>( StmtKind::pipeline,
         move( left_stmt ), nonempty_statement() );
     }
 
     case TokenType::SEMI: {
-      auto optr = tknizr_.consume( TokenType::SEMI );
-      return make_unique<StmtNode>( StmtKind::sequential, move( optr ),
+      tknizr_.consume( TokenType::SEMI );
+      return make_unique<StmtNode>( StmtKind::sequential,
         move( left_stmt ), nonempty_statement() );
     }
 
@@ -172,32 +171,32 @@ namespace simsh {
   {
     switch ( tknizr_.peek().type_ ) {
     case TokenType::AND: { // connector
-      auto optr = tknizr_.consume( TokenType::AND );
-      return make_unique<StmtNode>( StmtKind::logical_and, move( optr ),
+      tknizr_.consume( TokenType::AND );
+      return make_unique<StmtNode>( StmtKind::logical_and,
         move( left_stmt ), inner_statement() );
     }
 
     case TokenType::OR: {
-      auto optr = tknizr_.consume( TokenType::OR );
-      return make_unique<StmtNode>( StmtKind::logical_or, move( optr ),
+      tknizr_.consume( TokenType::OR );
+      return make_unique<StmtNode>( StmtKind::logical_or,
         move( left_stmt ), inner_statement() );
     }
 
     case TokenType::PIPE: {
-      auto optr = tknizr_.consume( TokenType::PIPE );
-      return make_unique<StmtNode>( StmtKind::pipeline, move( optr ),
+      tknizr_.consume( TokenType::PIPE );
+      return make_unique<StmtNode>( StmtKind::pipeline,
         move( left_stmt ), inner_statement() );
     }
 
     case TokenType::SEMI: {
-      auto optr = tknizr_.consume( TokenType::SEMI );
+      tknizr_.consume( TokenType::SEMI );
 
       StmtNodePtr right_stmt;
       if ( tknizr_.peek().is( TokenType::RPAREN ) )
         tknizr_.consume( TokenType::RPAREN );
       else right_stmt = inner_statement();
 
-      return make_unique<StmtNode>( StmtKind::sequential, move( optr ),
+      return make_unique<StmtNode>( StmtKind::sequential,
         move( left_stmt ), move( right_stmt ) );
     }
 
@@ -231,7 +230,6 @@ namespace simsh {
   Parser::StmtNodePtr Parser::redirection( Parser::StmtNodePtr left_stmt )
   {
     StmtKind stmt_kind = StmtKind::trivial;
-    type_decl::TokenT optr;
     switch ( tknizr_.peek().type_ ) {
     case TokenType::OVR_REDIR:
       [[fallthrough]];
@@ -246,7 +244,6 @@ namespace simsh {
     }
     case TokenType::STDIN_REDIR: {
       stmt_kind = StmtKind::stdin_redrct;
-      optr = tknizr_.consume( TokenType::STDIN_REDIR );
     } break;
     default:
       throw error::SyntaxError(
@@ -265,30 +262,55 @@ namespace simsh {
     StmtNode::SiblingNodes arguments;
     arguments.push_back( expression() );
 
-    return make_unique<StmtNode>( stmt_kind, move( optr ),
+    return make_unique<StmtNode>( stmt_kind,
       move( left_stmt ), nullptr, move( arguments ) );
   }
 
   Parser::StmtNodePtr Parser::output_redirection( Parser::StmtNodePtr left_stmt )
   {
     StmtKind stmt_kind = StmtKind::trivial;
-    type_decl::TokenT optr;
+    StmtNode::SiblingNodes arguments;
+
+    auto extract_params = [this]( StmtNode::SiblingNodes& args, type_decl::StrViewT re_str, TokenType expecting ) {
+      auto [match_result, matches] = utils::match_string(
+        tknizr_.consume( expecting ),
+        re_str
+      );
+
+      assert( match_result == true );
+      if ( expecting == TokenType::MERG_STREAM ) {
+        for ( size_t i = 1; i <= 2; ++i ) {
+          if ( auto match_str = matches[i].str();
+               match_str.empty() )
+            args.push_back( make_unique<ExprNode>( ExprKind::value, val_decl::InvalidValue ) );
+          else args.push_back( make_unique<ExprNode>( ExprKind::value, stoi( match_str ) ) );
+        }
+      } else {
+        if ( auto match_str = matches[1].str();
+             match_str.empty() )
+          args.push_back( make_unique<ExprNode>( ExprKind::value, val_decl::InvalidValue ) );
+        else args.push_back( make_unique<ExprNode>( ExprKind::value, stoi( match_str ) ) );
+      }
+    };
+
     switch ( tknizr_.peek().type_ ) {
     case TokenType::OVR_REDIR: { // >
       stmt_kind = StmtKind::ovrwrit_redrct;
-      optr = tknizr_.consume( TokenType::OVR_REDIR );
+      extract_params( arguments, impl::redirection_regex, TokenType::OVR_REDIR );
+      assert( arguments.size() == 1 );
     } break;
     case TokenType::APND_REDIR: { // >>
       stmt_kind = StmtKind::appnd_redrct;
-      optr = tknizr_.consume( TokenType::APND_REDIR );
+      extract_params( arguments, impl::redirection_regex, TokenType::APND_REDIR );
+      assert( arguments.size() == 1 );
     } break;
     case TokenType::MERG_OUTPUT: { // &>
       stmt_kind = StmtKind::merge_output;
-      optr = tknizr_.consume( TokenType::MERG_OUTPUT );
+      tknizr_.consume( TokenType::MERG_OUTPUT );
     } break;
     case TokenType::MERG_APPND: { // &>>
       stmt_kind = StmtKind::merge_appnd;
-      optr = tknizr_.consume( TokenType::MERG_APPND );
+      tknizr_.consume( TokenType::MERG_APPND );
     } break;
     case TokenType::MERG_STREAM: { // >&
       return combined_redirection_extension( move( left_stmt ) );
@@ -299,97 +321,114 @@ namespace simsh {
       );
     }
 
-    StmtNode::SiblingNodes arguments;
     arguments.push_back( expression() );
 
     // The left operator takes precedence, which means `MERG_STREAM` will be the child node.
-    if ( tknizr_.peek().is( TokenType::MERG_STREAM ) ) { // output_redirection_extension
+    if ( tknizr_.peek().is( TokenType::MERG_STREAM ) ) { // output_redirecti
+      StmtNode::SiblingNodes subargs;
+      extract_params( subargs, impl::combined_redir_regex, TokenType::MERG_STREAM );
+      assert( subargs.size() == 2 );
+
       return make_unique<StmtNode>(
-        stmt_kind, move( optr ),
+        stmt_kind, 
         make_unique<StmtNode>( StmtKind::merge_stream,
-          tknizr_.consume( TokenType::MERG_STREAM ), move( left_stmt ) ),
+          move( left_stmt ), nullptr, move( subargs ) ),
         nullptr, move( arguments )
       );
     }
     return make_unique<StmtNode>( stmt_kind,
-      move( optr ), move( left_stmt ), nullptr, move( arguments ) );
+      move( left_stmt ), nullptr, move( arguments ) );
   }
 
   Parser::StmtNodePtr Parser::combined_redirection_extension( Parser::StmtNodePtr left_stmt )
   {
     assert( tknizr_.peek().is( TokenType::MERG_STREAM ) );
-    auto optr = tknizr_.consume( TokenType::MERG_STREAM );
 
+    StmtNode::SiblingNodes arguments;
+    auto extract_params = [this]( StmtNode::SiblingNodes& args, type_decl::StrViewT re_str, TokenType expecting ) {
+      auto [match_result, matches] = utils::match_string(
+        tknizr_.consume( expecting ),
+        re_str
+      );
+
+      assert( match_result == true );
+      if ( expecting == TokenType::MERG_STREAM ) {
+        for ( size_t i = 1; i <= 2; ++i ) {
+          if ( auto match_str = matches[i].str();
+               match_str.empty() )
+            args.push_back( make_unique<ExprNode>( ExprKind::value, val_decl::InvalidValue ) );
+          else args.push_back( make_unique<ExprNode>( ExprKind::value, stoi( match_str ) ) );
+        }
+      } else {
+        if ( auto match_str = matches[1].str();
+             match_str.empty() )
+          args.push_back( make_unique<ExprNode>( ExprKind::value, val_decl::InvalidValue ) );
+        else args.push_back( make_unique<ExprNode>( ExprKind::value, stoi( match_str ) ) );
+      }
+    };
+
+    extract_params( arguments, impl::combined_redir_regex, TokenType::MERG_STREAM );
+    assert( arguments.size() == 2 );
+
+    StmtNodePtr node = nullptr;
     switch ( tknizr_.peek().type_ ) {
     case TokenType::OVR_REDIR: { // >
-      auto sub_optr = tknizr_.consume( TokenType::OVR_REDIR );
-      StmtNode::SiblingNodes arguments;
-      arguments.push_back( expression() );
+      StmtNode::SiblingNodes subargs;
+      extract_params( subargs, impl::redirection_regex, TokenType::OVR_REDIR );
+      assert( subargs.size() == 1 );
+      subargs.push_back( expression() );
 
       // The left operator takes precedence, which means `MERG_STREAM` will be the parent node.
-      return make_unique<StmtNode>(
-        StmtKind::merge_stream, move( optr ),
-        make_unique<StmtNode>( StmtKind::ovrwrit_redrct,
-          move( sub_optr ), move( left_stmt ), nullptr, move( arguments ) )
-      );
-    }
+      node = make_unique<StmtNode>( StmtKind::ovrwrit_redrct,
+        move( left_stmt ), nullptr, move( subargs ) );
+    } break;
 
     case TokenType::APND_REDIR: { // >>
-      auto sub_optr = tknizr_.consume( TokenType::APND_REDIR );
-      StmtNode::SiblingNodes arguments;
-      arguments.push_back( expression() );
+      StmtNode::SiblingNodes subargs;
+      extract_params( subargs, impl::redirection_regex, TokenType::APND_REDIR );
+      assert( subargs.size() == 1 );
+      subargs.push_back( expression() );
 
-      return make_unique<StmtNode>(
-        StmtKind::merge_stream, move( optr ),
-        make_unique<StmtNode>( StmtKind::appnd_redrct,
-          move( sub_optr ), move( left_stmt ), nullptr, move( arguments ) )
-      );
-    }
+      node = make_unique<StmtNode>( StmtKind::appnd_redrct,
+        move( left_stmt ), nullptr, move( subargs ) );
+    } break;
 
     case TokenType::MERG_OUTPUT: { // &>
-      auto sub_optr = tknizr_.consume( TokenType::MERG_OUTPUT );
-      StmtNode::SiblingNodes arguments;
-      arguments.push_back( expression() );
+      tknizr_.consume( TokenType::MERG_OUTPUT );
+      StmtNode::SiblingNodes subargs;
+      subargs.push_back( expression() );
 
-      return make_unique<StmtNode>(
-        StmtKind::merge_stream, move( optr ),
-        make_unique<StmtNode>( StmtKind::merge_output,
-          move( sub_optr ), move( left_stmt ), nullptr, move( arguments ) )
-      );
-    }
+      node = make_unique<StmtNode>( StmtKind::merge_output,
+        move( left_stmt ), nullptr, move( subargs ) );
+    } break;
 
     case TokenType::MERG_APPND: { // &>>
-      auto sub_optr = tknizr_.consume( TokenType::MERG_APPND );
-      StmtNode::SiblingNodes arguments;
-      arguments.push_back( expression() );
+      tknizr_.consume( TokenType::MERG_APPND );
+      StmtNode::SiblingNodes subargs;
+      subargs.push_back( expression() );
 
-      return make_unique<StmtNode>(
-        StmtKind::merge_stream, move( optr ),
-        make_unique<StmtNode>( StmtKind::merge_appnd,
-          move( sub_optr ), move( left_stmt ), nullptr, move( arguments ) )
-      );
-    }
+      node = make_unique<StmtNode>( StmtKind::merge_appnd,
+        move( left_stmt ), nullptr, move( subargs ) );
+    } break;
 
-    default: {
-      return make_unique<StmtNode>( StmtKind::merge_stream,
-        move( optr ), move( left_stmt ) );
+    default:
+      break;
     }
-    }
+    return make_unique<StmtNode>( StmtKind::merge_stream,
+      move( node == nullptr ? left_stmt : node ), nullptr, move( arguments ) );
   }
 
   Parser::StmtNodePtr Parser::logical_not()
   {
-    auto optr = tknizr_.consume( TokenType::NOT );
+    tknizr_.consume( TokenType::NOT );
     StmtNodePtr node;
 
     if ( tknizr_.peek().is( TokenType::CMD ) || tknizr_.peek().is( TokenType::STR ) ) {
-      node = make_unique<StmtNode>( StmtKind::logical_not,
-        move( optr ), expression() );
+      node = make_unique<StmtNode>( StmtKind::logical_not, expression() );
     } else if ( tknizr_.peek().is( TokenType::LPAREN ) ) {
       tknizr_.consume( TokenType::LPAREN );
 
-      node = make_unique<StmtNode>( StmtKind::logical_not,
-        move( optr ), inner_statement() );
+      node = make_unique<StmtNode>( StmtKind::logical_not, inner_statement() );
     } else throw error::SyntaxError(
       tknizr_.line_pos(), TokenType::CMD, tknizr_.peek().type_
     );
@@ -399,7 +438,10 @@ namespace simsh {
 
   Parser::ExprNodePtr Parser::expression()
   {
-    assert( tknizr_.peek().is( TokenType::CMD ) || tknizr_.peek().is( TokenType::STR ) );
+    if ( !tknizr_.peek().is( TokenType::CMD ) && !tknizr_.peek().is( TokenType::STR ) )
+      throw error::SyntaxError(
+        tknizr_.line_pos(), TokenType::CMD, tknizr_.peek().type_
+      );
 
     ExprNode::SiblingNodes arguments;
 
@@ -421,11 +463,11 @@ namespace simsh {
       assert( tknizr_.peek().value_.empty() == false );
 
       const TokenType token_type = tknizr_.peek().type_;
-      arguments.push_back( make_unique<ExprNode>( StmtKind::trivial,
-        expr_kind_map( token_type ), tknizr_.consume( token_type ) ) );
+      arguments.push_back( make_unique<ExprNode>( expr_kind_map( token_type ),
+        tknizr_.consume( token_type ) ) );
     }
 
-    return make_unique<ExprNode>( StmtKind::trivial,
-      arguments.empty() ? node_kind : ExprKind::command, move( token ), move( arguments ) );
+    return make_unique<ExprNode>( arguments.empty() ? node_kind : ExprKind::command,
+      move( token ), move( arguments ) );
   }
 }

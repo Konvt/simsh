@@ -99,14 +99,10 @@ namespace simsh {
       assert( siblings_.empty() == false );
       assert( siblings_.front()->type() == StmtKind::trivial );
 
-      if ( siblings_.size() != 1 ) {
-        iout::logger << error::ArgumentError(
-          "output redirection"sv, "argument number error"sv
-        );
-        return !val_decl::EvalSuccess;
-      }
-
-      const auto& filename = siblings_.front()->token();
+      const auto& filename =
+        category_ == StmtKind::appnd_redrct || category_ == StmtKind::ovrwrit_redrct
+        ? static_cast<ExprNode*>(siblings_[1].get())->token()
+        : static_cast<ExprNode*>(siblings_.front().get())->token();
       // Check whether the file descriptor can be obtained.
       if ( access( filename.c_str(), F_OK ) < 0 && !utils::create_file( filename ) ) {
         iout::logger << error::InitError(
@@ -120,16 +116,13 @@ namespace simsh {
         return !val_decl::EvalSuccess;
       }
 
+      /* For `StmtKind::appnd_redrct` and `StmtKind::ovrwrit_redrct` node,
+       * the first element of `siblings_` is `ExprNode` of type `ExprKind::value`,
+       * which specifies the destination file descriptor. */
       type_decl::FDType file_d = STDOUT_FILENO;
-
       if ( category_ == StmtKind::appnd_redrct || category_ == StmtKind::ovrwrit_redrct ) {
-        auto [match_result, matches] = utils::match_string( token_,
-          R"(^(\d*)>{1,2}$)"sv );
-
-        assert( match_result == true );
-
-        const auto& fd_str = matches[1].str();
-        file_d = fd_str.empty() ? STDOUT_FILENO : stoi( fd_str );
+        assert( static_cast<ExprNode*>(siblings_.front().get())->kind() == ExprKind::value );
+        file_d = siblings_.front()->evaluate() == val_decl::InvalidValue ? STDOUT_FILENO : siblings_.front()->evaluate();
       }
 
       int status;
@@ -150,34 +143,36 @@ namespace simsh {
             dup2( target_fd, STDERR_FILENO );
         }
 
-        if ( l_child_ != nullptr )
+        if ( l_child_ != nullptr ) {
           l_child_->evaluate();
-
-        close( target_fd );
-        throw error::TerminationSignal( EXIT_FAILURE );
+          close( target_fd );
+          throw error::TerminationSignal( EXIT_FAILURE );
+        } else {
+          close( target_fd );
+          throw error::TerminationSignal( EXIT_SUCCESS );
+        }
       } else if ( waitpid( process_id, &status, 0 ) < 0 )
         throw error::InitError(
           "output redirection"sv, "failed to waitpid"sv
         );
 
-      return WEXITSTATUS( status ) == val_decl::ExecSuccess;
+      if ( l_child_ != nullptr && l_child_->type() == StmtKind::trivial )
+        return WEXITSTATUS( status ) == val_decl::ExecSuccess;
+      else return WEXITSTATUS( status );
     }
 
     case StmtKind::merge_stream: {
       assert( l_child_ != nullptr && r_child_ == nullptr );
-      assert( siblings_.empty() == true );
+      assert( siblings_.size() == 2 );
+      assert( siblings_[0]->type() == StmtKind::trivial && siblings_[1]->type() == StmtKind::trivial );
 
-      type_decl::FDType l_fd = STDERR_FILENO, r_fd = STDOUT_FILENO;
-      auto [match_result, matches] = utils::match_string( token_,
-        R"(^(\d*)>&(\d*)$)"sv );
-
-      assert( match_result == true );
-
-      for ( size_t i = 1; i <= 2; ++i ) {
-        const auto fd_str = matches[i].str();
-        if ( !fd_str.empty() )
-          (i == 1 ? l_fd : r_fd) = stoi( fd_str );
-      }
+      /* For `StmtKind::merge_stream` node,
+       * the first and second elements of `siblings_` is `ExprNode` of type `ExprKind::value`,
+       * which specifies the destination file descriptor. */
+      assert( static_cast<ExprNode*>(siblings_[0].get())->kind() == ExprKind::value );
+      assert( static_cast<ExprNode*>(siblings_[1].get())->kind() == ExprKind::value );
+      const auto l_fd = siblings_[0]->evaluate() == val_decl::InvalidValue ? STDERR_FILENO : siblings_[0]->evaluate();
+      const auto r_fd = siblings_[1]->evaluate() == val_decl::InvalidValue ? STDOUT_FILENO : siblings_[1]->evaluate();
 
       int status;
       if ( pid_t process_id = fork();
@@ -195,7 +190,9 @@ namespace simsh {
           "combined redirection"sv, "failed to waitpid"sv
         );
 
-      return WEXITSTATUS( status ) == val_decl::ExecSuccess;
+      if ( l_child_->type() == StmtKind::trivial )
+        return WEXITSTATUS( status ) == val_decl::ExecSuccess;
+      else return WEXITSTATUS( status );
     }
 
     case StmtKind::stdin_redrct: {
@@ -210,7 +207,7 @@ namespace simsh {
         return !val_decl::EvalSuccess;
       }
 
-      const auto& filename = siblings_.front()->token();
+      const auto& filename = static_cast<ExprNode*>(siblings_.front().get())->token();
       if ( access( filename.c_str(), F_OK ) < 0 ) {
         iout::logger << error::InitError(
           "input redirection"sv, format( "'{}' does not exist", filename )
@@ -273,7 +270,8 @@ namespace simsh {
       exec_argv.reserve( siblings_.size() + 2 );
       ranges::transform( siblings_, back_inserter( exec_argv ),
         []( const ChildNode& sblng ) -> char* {
-          return const_cast<char*>(sblng->token().data());
+          assert( sblng->type() == StmtKind::trivial );
+          return const_cast<char*>(static_cast<ExprNode*>(sblng.get())->token().data());
         }
       );
       exec_argv.push_back( nullptr );
@@ -312,7 +310,7 @@ namespace simsh {
         );
         return !val_decl::EvalSuccess;
       }
-      return chdir( siblings_.front()->token().c_str() );
+      return chdir( static_cast<ExprNode*>(siblings_.front().get())->token().c_str() );
     } break;
     case 'e': { // exit
       if ( !siblings_.empty() ) {

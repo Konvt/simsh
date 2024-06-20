@@ -1,7 +1,7 @@
 #ifndef __SIMSH_TREENODE__
 # define __SIMSH_TREENODE__
 
-#include <list>
+#include <vector>
 #include <memory>
 #include <optional>
 
@@ -12,7 +12,7 @@ namespace simsh {
   class StmtNode {
   public:
     using ChildNode = std::unique_ptr<StmtNode>;
-    using SiblingNodes = std::list<ChildNode>;
+    using SiblingNodes = std::vector<ChildNode>;
 
   protected:
     StmtKind category_;
@@ -22,17 +22,15 @@ namespace simsh {
      * Currently the arguments can only be saved as an unique_ptr pointing to `ExprNode`. */
     SiblingNodes siblings_;
 
-    type_decl::TokenT token_;
 
   public:
-    StmtNode( StmtKind stmt_type, type_decl::TokenT token = { "value" },
+    StmtNode( StmtKind stmt_type,
               ChildNode left_stmt = nullptr, ChildNode right_stmt = nullptr,
               SiblingNodes siblings = {} )
       : category_ { stmt_type }
       , l_child_ { std::move( left_stmt ) }
       , r_child_ { std::move( right_stmt ) }
-      , siblings_ { std::move( siblings ) }
-      , token_ { std::move( token ) } {}
+      , siblings_ { std::move( siblings ) } {}
     StmtNode( StmtKind stmt_type, SiblingNodes siblings )
       : StmtNode( stmt_type ) {
       siblings_ = std::move( siblings );
@@ -40,8 +38,6 @@ namespace simsh {
     virtual ~StmtNode() = default;
 
     [[nodiscard]] StmtKind type() const noexcept { return category_; }
-    [[nodiscard]] type_decl::TokenT token() && noexcept { return std::move( token_ ); }
-    const type_decl::TokenT& token() const & noexcept { return token_; }
 
     StmtNode* left() const & noexcept { return l_child_.get(); }
     StmtNode* right() const & noexcept { return r_child_.get(); }
@@ -60,6 +56,8 @@ namespace simsh {
     ExprKind type_;
     std::optional<type_decl::EvalT> result_;
 
+    type_decl::TokenT token_;
+
     /// @brief Execute the expression, and return 0 or 1 (a boolean), indicating whether the expression was successful.
     /// @brief The 'successful' means that the return value of child process was `EXIT_SUCCESS`.
     [[nodiscard]] type_decl::EvalT external_exec() const;
@@ -70,18 +68,21 @@ namespace simsh {
   public:
     template<typename T>
       requires std::disjunction_v<
-        std::is_same<std::decay_t<T>, type_decl::EvalT>,
+        std::is_arithmetic<std::decay_t<T>>,
         std::is_same<std::decay_t<T>, type_decl::TokenT>
       >
-    ExprNode( StmtKind stmt_type, ExprKind expr_type, T&& data, SiblingNodes siblings = {} )
-      : StmtNode( stmt_type, std::move( siblings ) )
-      , type_ { expr_type }, result_ { std::nullopt } {
+    ExprNode( ExprKind expr_type, T&& data, SiblingNodes siblings = {} )
+      : StmtNode( StmtKind::trivial, std::move( siblings ) )
+      , type_ { expr_type }, result_ { std::nullopt }, token_ {} {
       using DecayT = std::decay_t<T>;
-      if constexpr ( std::is_same_v<DecayT, type_decl::EvalT> )
+      if constexpr ( std::is_arithmetic_v<DecayT> )
         result_ = std::forward<T>( data );
       else token_ = std::forward<T>( data );
     }
     virtual ~ExprNode() = default;
+
+    [[nodiscard]] type_decl::TokenT token() && noexcept { return std::move( token_ ); }
+    const type_decl::TokenT& token() const & noexcept { return token_; }
 
     [[nodiscard]] ExprKind kind() const noexcept { return type_; }
     /// @throw error::TerminationSignal If this process is a child process.

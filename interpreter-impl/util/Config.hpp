@@ -4,6 +4,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_set>
+#include <limits>
 #include <cstdint>
 #include <cstdlib>
 
@@ -31,10 +32,16 @@ namespace simsh {
   namespace val_decl {
     inline constexpr type_decl::EvalT ExecSuccess = EXIT_SUCCESS;
     inline constexpr type_decl::EvalT EvalSuccess = static_cast<type_decl::EvalT>(true);
+    inline constexpr type_decl::EvalT InvalidValue = std::numeric_limits<type_decl::EvalT>::min();
     inline const std::unordered_set<type_decl::StringT> internal_command {
       "cd", "exit", "help"
     };
   }
+
+  namespace impl {
+    inline constexpr type_decl::StrViewT redirection_regex { R"(^(\d*)>{1,2}$)" };
+    inline constexpr type_decl::StrViewT combined_redir_regex { R"(^(\d*)>&(\d*)$)" };
+  };
 }
 
 #endif // __SIMSH_CONFIG__
