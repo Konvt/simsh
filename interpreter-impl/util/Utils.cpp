@@ -34,6 +34,8 @@ namespace simsh {
     type_decl::StrViewT token_kind_map( TokenType tkn )
     {
       switch ( tkn ) {
+      case TokenType::STR:
+        [[fallthrough]];
       case TokenType::CMD:         return "string"sv;
       case TokenType::AND:
         [[fallthrough]];
@@ -45,6 +47,12 @@ namespace simsh {
       case TokenType::OVR_REDIR:
         [[fallthrough]];
       case TokenType::APND_REDIR:
+        [[fallthrough]];
+      case TokenType::MERG_OUTPUT:
+        [[fallthrough]];
+      case TokenType::MERG_APPND:
+        [[fallthrough]];
+      case TokenType::MERG_STREAM:
         [[fallthrough]];
       case TokenType::STDIN_REDIR: return "redirection"sv;
       case TokenType::LPAREN:      return "left paren"sv;

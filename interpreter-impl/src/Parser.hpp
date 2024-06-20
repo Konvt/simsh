@@ -25,6 +25,9 @@ namespace simsh {
     [[nodiscard]] StmtNodePtr inner_statement_extension( StmtNodePtr left_stmt );
 
     [[nodiscard]] StmtNodePtr redirection( StmtNodePtr left_stmt );
+    [[nodiscard]] StmtNodePtr output_redirection( StmtNodePtr left_stmt );
+    [[nodiscard]] StmtNodePtr combined_redirection_extension( StmtNodePtr left_stmt );
+
     [[nodiscard]] StmtNodePtr logical_not();
     [[nodiscard]] ExprNodePtr expression();
 
@@ -47,7 +50,7 @@ namespace simsh {
     [[nodiscard]] StmtNodePtr parse();
     [[nodiscard]] bool empty() const { return tknizr_.empty(); }
 
-    /// @brief Gets input from the specified input stream, one line at a time.
+    /// @brief Reset and get input from a new input stream.
     [[nodiscard]] friend StmtNodePtr operator>>( std::istream& is, Parser& prsr ) {
       prsr.reset( is );
       return prsr.parse();

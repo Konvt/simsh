@@ -9,23 +9,23 @@ namespace simsh {
     sequential,
     logical_and, logical_or, logical_not,
     pipeline,
-    ovrwrit_redrct, appnd_redrct,
-    merge_output, merge_appnd,
+    ovrwrit_redrct, appnd_redrct, // >, >>
+    merge_output, merge_appnd, merge_stream, // &>, &>>, >&
     stdin_redrct,
     here_doc, here_str
   };
 
   enum class ExprKind {
-    command, string
+    command, string, value
   };
 
   enum class TokenType {
     CMD, STR,
     AND, OR, NOT,
     PIPE,
-    OVR_REDIR, APND_REDIR,
-    MERG_OUTPUT, MERG_APPND,
-    STDIN_REDIR,
+    OVR_REDIR, APND_REDIR, // >, >>
+    MERG_OUTPUT, MERG_APPND, MERG_STREAM, // &>, &>>, >&
+    STDIN_REDIR, // <
     LPAREN, RPAREN,
     NEWLINE, SEMI,
     ENDFILE, ERROR

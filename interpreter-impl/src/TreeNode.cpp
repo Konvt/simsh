@@ -120,15 +120,17 @@ namespace simsh {
         return !val_decl::EvalSuccess;
       }
 
-      type_decl::FDType file_d;
-      auto [match_result, matches] = utils::match_string( token_,
-        (category_ == StmtKind::appnd_redrct || category_ == StmtKind::ovrwrit_redrct ?
-          R"(^(\d*)>{1,2}$)"sv : R"(^(\d*)&>{1,2}$)"sv) );
+      type_decl::FDType file_d = STDOUT_FILENO;
 
-      assert( match_result == true );
+      if ( category_ == StmtKind::appnd_redrct || category_ == StmtKind::ovrwrit_redrct ) {
+        auto [match_result, matches] = utils::match_string( token_,
+          R"(^(\d*)>{1,2}$)"sv );
 
-      const auto& fd_str = matches[1].str();
-      file_d = fd_str.empty() ? STDOUT_FILENO : stoi( fd_str );
+        assert( match_result == true );
+
+        const auto& fd_str = matches[1].str();
+        file_d = fd_str.empty() ? STDOUT_FILENO : stoi( fd_str );
+      }
 
       int status;
       if ( pid_t process_id = fork();
@@ -156,6 +158,41 @@ namespace simsh {
       } else if ( waitpid( process_id, &status, 0 ) < 0 )
         throw error::InitError(
           "output redirection"sv, "failed to waitpid"sv
+        );
+
+      return WEXITSTATUS( status ) == val_decl::ExecSuccess;
+    }
+
+    case StmtKind::merge_stream: {
+      assert( l_child_ != nullptr && r_child_ == nullptr );
+      assert( siblings_.empty() == true );
+
+      type_decl::FDType l_fd = STDERR_FILENO, r_fd = STDOUT_FILENO;
+      auto [match_result, matches] = utils::match_string( token_,
+        R"(^(\d*)>&(\d*)$)"sv );
+
+      assert( match_result == true );
+
+      for ( size_t i = 1; i <= 2; ++i ) {
+        const auto fd_str = matches[i].str();
+        if ( !fd_str.empty() )
+          (i == 1 ? l_fd : r_fd) = stoi( fd_str );
+      }
+
+      int status;
+      if ( pid_t process_id = fork();
+           process_id < 0 )
+        throw error::InitError(
+          "combined redirection"sv, "failed to fork"sv
+        );
+      else if ( process_id == 0 ) {
+        dup2( r_fd, l_fd );
+
+        l_child_->evaluate();
+        throw error::TerminationSignal( EXIT_FAILURE );
+      } else if ( waitpid( process_id, &status, 0 ) < 0 )
+        throw error::InitError(
+          "combined redirection"sv, "failed to waitpid"sv
         );
 
       return WEXITSTATUS( status ) == val_decl::ExecSuccess;
@@ -308,12 +345,16 @@ namespace simsh {
     assert( l_child_ == nullptr && r_child_ == nullptr );
     assert( category_ == StmtKind::trivial );
 
+    token_ = token_ == "$$" ? format( "{}", getpid() ) : token_;
     for ( auto& sblng : siblings_ ) {
       assert( sblng->type() == StmtKind::trivial );
 
       if ( ExprNode& node = static_cast<ExprNode&>(*sblng.get());
-           node.type_ != ExprKind::string )
-        utils::tilde_expansion( node.token_ );
+           node.type_ == ExprKind::command ) {
+        if ( node.token_ == "$$" )
+          node.token_ = format( "{}", getpid() );
+        else utils::tilde_expansion( node.token_ );
+      }
     }
 
     if ( !result_.has_value() ) {

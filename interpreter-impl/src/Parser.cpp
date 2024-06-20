@@ -23,7 +23,7 @@ namespace simsh {
     case TokenType::NEWLINE: {
       tknizr_.consume( tkn_tp );
       return make_unique<ExprNode>( StmtKind::trivial,
-        ExprKind::command, val_decl::EvalSuccess );
+        ExprKind::value, val_decl::EvalSuccess );
     }
 
     default: {
@@ -108,6 +108,8 @@ namespace simsh {
       [[fallthrough]];
     case TokenType::MERG_APPND:
       [[fallthrough]];
+    case TokenType::MERG_STREAM:
+      [[fallthrough]];
     case TokenType::STDIN_REDIR: {
       return statement_extension( redirection( move( left_stmt ) ) );
     }
@@ -142,7 +144,9 @@ namespace simsh {
       [[fallthrough]];
     case TokenType::MERG_OUTPUT:
       [[fallthrough]];
-    case TokenType::MERG_APPND: {
+    case TokenType::MERG_APPND:
+      [[fallthrough]];
+    case TokenType::MERG_STREAM: {
       node = redirection( nullptr );
     } break;
 
@@ -206,6 +210,8 @@ namespace simsh {
       [[fallthrough]];
     case TokenType::MERG_APPND:
       [[fallthrough]];
+    case TokenType::MERG_STREAM:
+      [[fallthrough]];
     case TokenType::STDIN_REDIR: {
       return inner_statement_extension( redirection( move( left_stmt ) ) );
     }
@@ -225,27 +231,22 @@ namespace simsh {
   Parser::StmtNodePtr Parser::redirection( Parser::StmtNodePtr left_stmt )
   {
     StmtKind stmt_kind = StmtKind::trivial;
-    type_decl::TokenT token_str;
+    type_decl::TokenT optr;
     switch ( tknizr_.peek().type_ ) {
-    case TokenType::OVR_REDIR: {
-      stmt_kind = StmtKind::ovrwrit_redrct;
-      token_str = tknizr_.consume( TokenType::OVR_REDIR );
-    } break;
-    case TokenType::APND_REDIR: {
-      stmt_kind = StmtKind::appnd_redrct;
-      token_str = tknizr_.consume( TokenType::APND_REDIR );
-    } break;
-    case TokenType::MERG_OUTPUT: {
-      stmt_kind = StmtKind::merge_output;
-      token_str = tknizr_.consume( TokenType::MERG_OUTPUT );
-    } break;
-    case TokenType::MERG_APPND: {
-      stmt_kind = StmtKind::merge_appnd;
-      token_str = tknizr_.consume( TokenType::MERG_APPND );
-    } break;
+    case TokenType::OVR_REDIR:
+      [[fallthrough]];
+    case TokenType::APND_REDIR:
+      [[fallthrough]];
+    case TokenType::MERG_OUTPUT:
+      [[fallthrough]];
+    case TokenType::MERG_APPND:
+      [[fallthrough]];
+    case TokenType::MERG_STREAM: {
+      return output_redirection( move( left_stmt ) );
+    }
     case TokenType::STDIN_REDIR: {
       stmt_kind = StmtKind::stdin_redrct;
-      token_str = tknizr_.consume( TokenType::STDIN_REDIR );
+      optr = tknizr_.consume( TokenType::STDIN_REDIR );
     } break;
     default:
       throw error::SyntaxError(
@@ -259,12 +260,121 @@ namespace simsh {
       );
     }
 
-    // The structure of syntax tree node requires that redirected file name parameters be stored in sibling nodes.
+    // The structure of syntax tree node
+    // requires that redirected file name parameters be stored in sibling nodes.
     StmtNode::SiblingNodes sibling;
     sibling.push_back( expression() );
 
-    return make_unique<StmtNode>( stmt_kind, move( token_str ),
+    return make_unique<StmtNode>( stmt_kind, move( optr ),
       move( left_stmt ), nullptr, move( sibling ) );
+  }
+
+  Parser::StmtNodePtr Parser::output_redirection( Parser::StmtNodePtr left_stmt )
+  {
+    StmtKind stmt_kind = StmtKind::trivial;
+    type_decl::TokenT optr;
+    switch ( tknizr_.peek().type_ ) {
+    case TokenType::OVR_REDIR: { // >
+      stmt_kind = StmtKind::ovrwrit_redrct;
+      optr = tknizr_.consume( TokenType::OVR_REDIR );
+    } break;
+    case TokenType::APND_REDIR: { // >>
+      stmt_kind = StmtKind::appnd_redrct;
+      optr = tknizr_.consume( TokenType::APND_REDIR );
+    } break;
+    case TokenType::MERG_OUTPUT: { // &>
+      stmt_kind = StmtKind::merge_output;
+      optr = tknizr_.consume( TokenType::MERG_OUTPUT );
+    } break;
+    case TokenType::MERG_APPND: { // &>>
+      stmt_kind = StmtKind::merge_appnd;
+      optr = tknizr_.consume( TokenType::MERG_APPND );
+    } break;
+    case TokenType::MERG_STREAM: { // >&
+      return combined_redirection_extension( move( left_stmt ) );
+    }
+    default:
+      throw error::SyntaxError(
+        tknizr_.line_pos(), TokenType::OVR_REDIR, tknizr_.peek().type_
+      );
+    }
+
+    StmtNode::SiblingNodes sibling;
+    sibling.push_back( expression() );
+
+    // The left operator takes precedence, which means `MERG_STREAM` will be the child node.
+    if ( tknizr_.peek().is( TokenType::MERG_STREAM ) ) { // output_redirection_extension
+      return make_unique<StmtNode>(
+        stmt_kind, move( optr ),
+        make_unique<StmtNode>( StmtKind::merge_stream,
+          tknizr_.consume( TokenType::MERG_STREAM ), move( left_stmt ) ),
+        nullptr, move( sibling )
+      );
+    }
+    return make_unique<StmtNode>( stmt_kind,
+      move( optr ), move( left_stmt ), nullptr, move( sibling ) );
+  }
+
+  Parser::StmtNodePtr Parser::combined_redirection_extension( Parser::StmtNodePtr left_stmt )
+  {
+    assert( tknizr_.peek().is( TokenType::MERG_STREAM ) );
+    auto optr = tknizr_.consume( TokenType::MERG_STREAM );
+
+    switch ( tknizr_.peek().type_ ) {
+    case TokenType::OVR_REDIR: { // >
+      auto sub_optr = tknizr_.consume( TokenType::OVR_REDIR );
+      StmtNode::SiblingNodes sibling;
+      sibling.push_back( expression() );
+
+      // The left operator takes precedence, which means `MERG_STREAM` will be the parent node.
+      return make_unique<StmtNode>(
+        StmtKind::merge_stream, move( optr ),
+        make_unique<StmtNode>( StmtKind::ovrwrit_redrct,
+          move( sub_optr ), move( left_stmt ), nullptr, move( sibling ) )
+      );
+    }
+
+    case TokenType::APND_REDIR: { // >>
+      auto sub_optr = tknizr_.consume( TokenType::APND_REDIR );
+      StmtNode::SiblingNodes sibling;
+      sibling.push_back( expression() );
+
+      return make_unique<StmtNode>(
+        StmtKind::merge_stream, move( optr ),
+        make_unique<StmtNode>( StmtKind::appnd_redrct,
+          move( sub_optr ), move( left_stmt ), nullptr, move( sibling ) )
+      );
+    }
+
+    case TokenType::MERG_OUTPUT: { // &>
+      auto sub_optr = tknizr_.consume( TokenType::MERG_OUTPUT );
+      StmtNode::SiblingNodes sibling;
+      sibling.push_back( expression() );
+
+      return make_unique<StmtNode>(
+        StmtKind::merge_stream, move( optr ),
+        make_unique<StmtNode>( StmtKind::merge_output,
+          move( sub_optr ), move( left_stmt ), nullptr, move( sibling ) )
+      );
+    }
+
+    case TokenType::MERG_APPND: { // &>>
+      auto sub_optr = tknizr_.consume( TokenType::MERG_APPND );
+      StmtNode::SiblingNodes sibling;
+      sibling.push_back( expression() );
+
+      return make_unique<StmtNode>(
+        StmtKind::merge_stream, move( optr ),
+        make_unique<StmtNode>( StmtKind::merge_appnd,
+          move( sub_optr ), move( left_stmt ), nullptr, move( sibling ) )
+      );
+    }
+
+    default: {
+      return make_unique<StmtNode>( StmtKind::merge_stream,
+        move( optr ), move( left_stmt ) );
+    }
+    }
   }
 
   Parser::StmtNodePtr Parser::logical_not()

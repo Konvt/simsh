@@ -34,10 +34,18 @@
 <redirection> ::= <output_redirection>
                 | <input_redirection>
 
-<output_redirection> ::= (\d*)&>{1,2} <expression>
-                       | (\d*)>{1,2} <expression>
+<output_redirection> ::= &>{1,2} <expression> <output_redirection_extension>
+                       | (\d*)>{1,2} <expression> <output_redirection_extension>
+                       | (\d*)>&(\d*) <combined_redirection_extension>
+
+<output_redirection_extension> ::= (\d*)>&(\d*)
+                                 | ε
+
+<combined_redirection_extension> ::= &>{1,2} <expression>
+                                   | (\d*)>{1,2} <expression>
+                                   | ε
 
 <input_redirection> ::= < <expression>
 
-<expression> ::= [^&|!<>"':\(\)\^%$#\s]+
+<expression> ::= [^&|!<>"':\(\)\^%#\s]+
                | " [^"\n]* "

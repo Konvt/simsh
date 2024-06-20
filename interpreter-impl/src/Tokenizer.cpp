@@ -113,11 +113,11 @@ namespace simsh {
       INCOMMENT,
       INCMD,
       INDIGIT,
-      INSTR,
-      INAND,
-      INMEG_OUTPUT,
-      INPIPE_LIKE,
-      INRARR,
+      INSTR, // "string"
+      INAND, // &&, &>
+      INMEG_OUTPUT, INMEG_STREAM, // &>, >&
+      INPIPE_LIKE, // ||, |
+      INRARR, // >, >>, >&
     };
 
     for ( StateType state = StateType::START; state != StateType::DONE; ) {
@@ -198,27 +198,23 @@ namespace simsh {
 
       case StateType::INCMD: {
         if ( isspace( character ) ||
-             ("&|!<>\"';:()^%$#"sv).find( character ) != type_decl::StrViewT::npos ) {
+             ("&|!<>\"';:()^%#"sv).find( character ) != type_decl::StrViewT::npos ) {
           if ( token_str.empty() ) {
             throw error::TokenError(
               line_buf_.line_pos(), "any valid command character"sv, character
             );
           }
           token_type = TokenType::CMD;
-          save_char = false;
-          discard_char = false;
+          save_char = (discard_char = false);
           state = StateType::DONE;
         }
       } break;
 
       case StateType::INDIGIT: {
-        if ( character == '>' )
+        if ( character == '>' ) // get (\d+)>, expecting '&' or '>'
           state = StateType::INRARR;
-        else if ( character == '&' )
-          state = StateType::INAND;
-        else if ( !isdigit( character ) ) {
-          save_char = false;
-          discard_char = false;
+        else if ( !isdigit( character ) ) { // get (\d+), then expecting CMD characters
+          save_char = (discard_char = false);
           state = StateType::INCMD;
         }
       } break;
@@ -234,13 +230,13 @@ namespace simsh {
           );
       } break;
 
-      case StateType::INAND: { // &&
-        if ( character == '&' ) {
+      case StateType::INAND: {
+        if ( character == '&' ) { // get &&, done
           state = StateType::DONE;
           token_type = TokenType::AND;
-        } else if ( character == '>' ) { // &>
-          state = StateType::INMEG_OUTPUT;
-        } else {
+        } else if ( character == '>' )
+          state = StateType::INMEG_OUTPUT; // get &>, still expecting '>' or nothing
+        else {
           token_type = TokenType::ERROR;
           throw error::TokenError(
             line_buf_.line_pos(), '&', character
@@ -249,32 +245,41 @@ namespace simsh {
       } break;
 
       case StateType::INMEG_OUTPUT: {
-        state = StateType::DONE;
         if ( character == '>' )
-          token_type = TokenType::MERG_APPND;
+          token_type = TokenType::MERG_APPND; // get &>>
         else {
-          save_char = false;
-          discard_char = false;
-          token_type = TokenType::MERG_OUTPUT;
+          save_char = (discard_char = false);
+          token_type = TokenType::MERG_OUTPUT; // get &>
+        }
+        state = StateType::DONE;
+      } break;
+
+      case StateType::INMEG_STREAM: { // get (\d*)>&, expecting (\d*) or nothing
+        if ( !isdigit( character ) ) {
+          save_char = (discard_char = false);
+          token_type = TokenType::MERG_STREAM;
+          state = StateType::DONE;
         }
       } break;
 
       case StateType::INPIPE_LIKE: {
         if ( character != '|' ) {
-          save_char = false;
-          discard_char = false;
+          save_char = (discard_char = false);
           token_type = TokenType::PIPE;
         } else token_type = TokenType::OR;
         state = StateType::DONE;
       } break;
 
       case StateType::INRARR: {
-        if ( character != '>' ) {
-          save_char = false;
-          discard_char = false;
-          token_type = TokenType::OVR_REDIR;
-        } else token_type = TokenType::APND_REDIR;
         state = StateType::DONE;
+        if ( character == '&' ) // get (\d*)>&, expecting (\d*) or nothing
+          state = StateType::INMEG_STREAM;
+        else if ( character == '>' ) // get >>, done
+          token_type = TokenType::APND_REDIR;
+        else { // get >, done
+          save_char = (discard_char = false);
+          token_type = TokenType::OVR_REDIR;
+        }
       } break;
 
       case StateType::DONE:
