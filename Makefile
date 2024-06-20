@@ -27,7 +27,6 @@ debug:
 	$(MAKE) -s rebuild OPT_LEVEL=g && gdb -q -tui $(TARGET)
 -include $(DEP)
 
-# 生成目标文件
 $(TARGET): $(INTERPRETER_SRC_OBJ) $(INTERPRETER_UTIL_OBJ) $(SHELL_SRC_OBJ)
 	$(CC) $(CFLAGS) -o $@ $^
 
