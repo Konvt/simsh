@@ -18,8 +18,9 @@ namespace simsh {
   protected:
     StmtKind category_;
     ChildNode l_child_, r_child_;
-    // Each node stores only a string of token.
-    // Therefore, any parameters must be stored in siblings node.
+    /* Each node stores only a string of token.
+     * Therefore, any additional arguments must be stored in siblings node.
+     * Currently the arguments can only be saved as an unique_ptr pointing to `ExprNode`. */
     SiblingNodes siblings_;
 
     type_decl::TokenT token_;
@@ -60,12 +61,11 @@ namespace simsh {
     ExprKind type_;
     std::optional<type_decl::EvalT> result_;
 
-    /// @brief 执行表达式，并将“执行结果是否成功”的布尔值作为求值结果返回
-    /// @return 子进程返回值
+    /// @brief Execute the expression, and return 0 or 1 (a boolean), indicating whether the expression was successful.
+    /// @brief The 'successful' means that the return value of child process was `EXIT_SUCCESS`.
     [[nodiscard]] type_decl::EvalT external_exec() const;
 
-    /// @brief 内部指令执行，不会跨进程
-    /// @return 执行结果
+    /// @brief Internal instruction execution, not cross-process.
     [[nodiscard]] type_decl::EvalT internal_exec() const;
 
   public:

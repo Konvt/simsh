@@ -9,7 +9,7 @@ namespace simsh {
       "Single statement:\n\tcommand\n\tcommand;\n"
       "Connect statement:\n\tcommand1 [&& | || | ;] command2\n"
       "Pipeline:\n\tcommand1 | command2\n"
-      "Redirection:\n\tcommand [> | >> | &> | &>> | <] filename\n"
+      "Redirection:\n\tcommand [> | >> | &> | &>> | <] filename [>&]\n"
       "Logical not:\n\t!command\n"
       "Nested statement:\n\t(command1 && (command2 || comand3))\n"
       "Comment:\n\tcommand # Here is a comment.\n"

@@ -150,7 +150,7 @@ namespace simsh {
             state = StateType::INSTR;
           } break;
           case '#': {
-          save_char = false;
+            save_char = false;
             state = StateType::INCOMMENT;
           } break;
           case '&': {
