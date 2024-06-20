@@ -40,5 +40,4 @@ namespace simsh {
   };
 }
 
-
 #endif // __SHIMSH_SHELL__

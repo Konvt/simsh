@@ -4,7 +4,6 @@
 #include <list>
 #include <memory>
 #include <optional>
-#include <concepts>
 
 #include "Config.hpp"
 #include "EnumLabel.hpp"

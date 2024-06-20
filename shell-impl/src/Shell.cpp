@@ -96,4 +96,3 @@ namespace simsh {
     return EXIT_SUCCESS;
   }
 }
-

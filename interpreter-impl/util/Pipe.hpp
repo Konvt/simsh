@@ -45,7 +45,10 @@ namespace simsh {
       void close();
       type_decl::FDType get() const;
       template<typename T>
-        requires std::is_trivially_copyable_v<T>
+        requires std::conjunction_v<
+          std::negation<std::is_void<T>>, // forbidden any void pointers
+          std::is_trivially_copyable<T>
+        >
       T pop() const {
         T value {};
         if ( !reader_closed_ )
@@ -70,6 +73,7 @@ namespace simsh {
       template<typename T>
         requires std::conjunction_v<
           std::negation<std::is_same<std::decay_t<T>, char*>>,
+          std::negation<std::is_void<std::decay_t<T>>>, // forbidden any void pointers
           std::is_trivially_copyable<std::decay_t<T>>
         >
       void push( const T& value ) const {
@@ -81,7 +85,8 @@ namespace simsh {
         requires std::is_trivially_copyable_v<U>
       void push( const T<U>& value )const {
         if ( !writer_closed_ )
-          std::ranges::for_each( value, [this]( const auto& ele ) -> void {
+          std::ranges::for_each( value,
+            [this]( const auto& ele ) -> void {
               this->push( ele );
             }
           );

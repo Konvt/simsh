@@ -3,7 +3,6 @@
 
 #include <string>
 #include <string_view>
-#include <vector>
 #include <unordered_set>
 #include <cstdint>
 #include <cstdlib>

@@ -1,5 +1,4 @@
 #include <cassert>
-#include <stdexcept>
 
 #include <unistd.h>
 #include <fcntl.h>

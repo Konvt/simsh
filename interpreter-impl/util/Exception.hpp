@@ -1,11 +1,9 @@
 #ifndef __SIMSH_EXCEPTION__
 # define __SIMSH_EXCEPTION__
 
-#include <format>
 #include <exception>
-#include <utility>
+#include <format>
 #include <optional>
-#include <cstdio>
 
 #include "EnumLabel.hpp"
 #include "Utils.hpp"

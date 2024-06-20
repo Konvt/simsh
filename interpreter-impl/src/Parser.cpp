@@ -1,6 +1,5 @@
 #include <ranges>
 #include <algorithm>
-#include <type_traits>
 #include <cassert>
 
 #include "Parser.hpp"
