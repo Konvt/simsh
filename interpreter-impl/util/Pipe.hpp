@@ -6,6 +6,7 @@
 #include <array>
 #include <ranges>
 #include <algorithm>
+#include <cstring>
 
 #include "Config.hpp"
 
@@ -60,8 +61,17 @@ namespace simsh {
 
       void close();
       type_decl::FDType get() const;
+
+      void push( const char* const value ) const {
+        if ( !writer_closed_ )
+          write( pipefd_[writer_fd], value, sizeof( char ) * strlen( value ) );
+      }
+
       template<typename T>
-        requires std::is_trivially_copyable_v<std::decay_t<T>>
+        requires std::conjunction_v<
+          std::negation<std::is_same<std::decay_t<T>, char*>>,
+          std::is_trivially_copyable<std::decay_t<T>>
+        >
       void push( const T& value ) const {
         if ( !writer_closed_ )
           write( pipefd_[writer_fd], std::addressof( value ), sizeof( value ) );
@@ -72,7 +82,7 @@ namespace simsh {
       void push( const T<U>& value )const {
         if ( !writer_closed_ )
           std::ranges::for_each( value, [this]( const auto& ele ) -> void {
-              write( pipefd_[writer_fd], std::addressof( ele ), sizeof( ele ) );
+              this->push( ele );
             }
           );
       }

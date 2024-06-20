@@ -350,11 +350,10 @@ namespace simsh {
       assert( sblng->type() == StmtKind::trivial );
 
       if ( ExprNode& node = static_cast<ExprNode&>(*sblng.get());
-           node.type_ == ExprKind::command ) {
-        if ( node.token_ == "$$" )
-          node.token_ = format( "{}", getpid() );
-        else utils::tilde_expansion( node.token_ );
-      }
+           node.token_ == "$$" )
+        node.token_ = format( "{}", getpid() );
+      else if ( node.type_ == ExprKind::command )
+        utils::tilde_expansion( node.token_ );
     }
 
     if ( !result_.has_value() ) {

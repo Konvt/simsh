@@ -17,6 +17,23 @@
 using namespace std;
 
 namespace simsh {
+  int BaseShell::run()
+  {
+    signal( SIGINT, SIG_IGN );
+
+    Parser prsr;
+    while ( !prsr.empty() ) {
+      try {
+        prsr.parse()->evaluate();
+      } catch ( const error::TerminationSignal& e ) {
+        return e.value();
+      } catch ( const error::TraceBack& e ) {
+        iout::logger << e;
+      }
+    }
+    return EXIT_SUCCESS;
+  }
+
   void Shell::update_prompt()
   {
     if ( current_dir_.size() >= home_dir_.size() &&
@@ -60,6 +77,7 @@ namespace simsh {
   int Shell::run()
   {
     signal( SIGINT, SIG_IGN );
+
     simsh::iout::logger.set_prefix( "simsh: " );
     Parser prsr;
 

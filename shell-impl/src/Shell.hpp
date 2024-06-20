@@ -4,7 +4,16 @@
 #include "Config.hpp"
 
 namespace simsh {
-  class Shell {
+  /// @brief The simplest implementation of the shell.
+  class BaseShell {
+  public:
+    BaseShell() = default;
+    virtual ~BaseShell() = default;
+
+    virtual int run();
+  };
+
+  class Shell : public BaseShell {
   public:
     static constexpr type_decl::StrViewT default_fmt = "\x1b[32;1m{}@{}\x1b[0m:\x1b[34;1m{}\x1b[0m$ ";
     static constexpr type_decl::StrViewT root_fmt = "{}@{}:{}# ";
@@ -25,9 +34,9 @@ namespace simsh {
     Shell() {
       detect_info();
     }
-    ~Shell() = default;
+    virtual ~Shell() = default;
 
-    int run();
+    int run() override;
   };
 }
 
