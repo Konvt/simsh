@@ -8,6 +8,8 @@ cmake_policy(SET CMP0091 NEW)
 project(simsh LANGUAGES CXX)
 
 # target
+set(CMAKE_C_COMPILER "/usr/bin/gcc")
+set(CMAKE_CXX_COMPILER "/usr/bin/g++")
 add_executable(simsh "")
 set_target_properties(simsh PROPERTIES OUTPUT_NAME "simsh")
 set_target_properties(simsh PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/.")
@@ -19,21 +21,23 @@ target_include_directories(simsh PRIVATE
 target_compile_options(simsh PRIVATE
     $<$<COMPILE_LANGUAGE:C>:-m64>
     $<$<COMPILE_LANGUAGE:CXX>:-m64>
+    $<$<COMPILE_LANGUAGE:C>:-DNDEBUG>
+    $<$<COMPILE_LANGUAGE:CXX>:-DNDEBUG>
     $<$<COMPILE_LANGUAGE:CXX>:-Wall>
     $<$<COMPILE_LANGUAGE:CXX>:-Wpedantic>
     $<$<COMPILE_LANGUAGE:CXX>:-Wextra>
+    $<$<COMPILE_LANGUAGE:CXX>:-Wshadow>
 )
 set_target_properties(simsh PROPERTIES CXX_EXTENSIONS OFF)
 target_compile_features(simsh PRIVATE cxx_std_20)
 if(MSVC)
-    target_compile_options(simsh PRIVATE $<$<CONFIG:Debug>:-Od>)
+    target_compile_options(simsh PRIVATE $<$<CONFIG:Release>:-Ox -fp:fast>)
 else()
-    target_compile_options(simsh PRIVATE -O0)
+    target_compile_options(simsh PRIVATE -O3)
 endif()
 if(MSVC)
-    target_compile_options(simsh PRIVATE -Zi)
 else()
-    target_compile_options(simsh PRIVATE -g)
+    target_compile_options(simsh PRIVATE -fvisibility=hidden)
 endif()
 if(MSVC)
     set_property(TARGET simsh PROPERTY
@@ -52,3 +56,4 @@ target_sources(simsh PRIVATE
     shell-impl/src/main.cpp
     shell-impl/src/Shell.cpp
 )
+

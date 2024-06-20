@@ -14,9 +14,11 @@ namespace simsh {
   };
 
   class Shell : public BaseShell {
-  public:
     static constexpr type_decl::StrViewT default_fmt = "\x1b[32;1m{}@{}\x1b[0m:\x1b[34;1m{}\x1b[0m$ ";
     static constexpr type_decl::StrViewT root_fmt = "{}@{}:{}# ";
+    static constexpr type_decl::StrViewT welcome_mes =
+      "Welcome to simsh, the simple implementation of shell\n"
+      "Type help for more information\n";
 
   private:
     type_decl::StringT prompt_;

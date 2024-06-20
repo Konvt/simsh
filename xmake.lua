@@ -2,11 +2,7 @@ add_rules("mode.debug", "mode.release")
 
 set_languages("c++20")
 
-if is_plat("mingw") or is_plat("linux")
-  then add_cxxflags("-Wall", "-Wpedantic", "-Wextra")
-elseif is_plat("windows")
-  then add_cxxflags("/utf-8", "/EHsc", "/permissive")
-end
+add_cxxflags("-Wall", "-Wpedantic", "-Wextra", "-Wshadow")
 
 target("simsh")
   set_kind("binary")

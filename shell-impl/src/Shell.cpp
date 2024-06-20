@@ -81,6 +81,8 @@ namespace simsh {
     simsh::iout::logger.set_prefix( "simsh: " );
     Parser prsr;
 
+    simsh::iout::prmptr << welcome_mes;
+
     while ( !prsr.empty() ) {
       detect_info();
       iout::prmptr << prompt_;
