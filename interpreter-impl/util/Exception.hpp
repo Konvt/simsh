@@ -20,22 +20,6 @@ namespace simsh {
       virtual const char* what() const noexcept { return message_.c_str(); }
     };
 
-    class EvaluateError : public TraceBack {
-      std::optional<type_decl::EvalT> result_;
-
-    public:
-      EvaluateError( type_decl::StrViewT where, type_decl::StrViewT why,
-                     std::optional<type_decl::EvalT> result = std::nullopt )
-        : TraceBack( "" ), result_ { std::move( result ) } {
-        message_ = result.has_value()
-          ? std::format( "{}: {}, return status {}", where, why, *result )
-          : std::format( "{}: {}", where, why );
-      }
-      std::optional<type_decl::EvalT> value() const {
-        return result_;
-      }
-    };
-
     class TokenError : public TraceBack {
     public:
       TokenError( size_t line_pos, type_decl::CharT expect, type_decl::CharT received )
@@ -59,10 +43,10 @@ namespace simsh {
         : TraceBack( std::format( "{}: {}", where, why ) ) {}
     };
 
-    class InitError : public TraceBack {
+    class SystemCallError : public TraceBack {
     public:
-      InitError( type_decl::StrViewT where, type_decl::StrViewT why )
-        : TraceBack( std::format( "{}: {}", where, why ) ) {}
+      SystemCallError( type_decl::StringT where )
+        : TraceBack( std::move( where ) ) {}
     };
 
     class TerminationSignal : public TraceBack {

@@ -11,7 +11,6 @@ namespace simsh {
     /// @brief Log output used to "consume" all exception types in the program, output to stderr.
     class Logger {
       type_decl::StringT prefix_;
-      type_decl::StringT suffix_;
 
       Logger() noexcept = default;
 
@@ -23,15 +22,13 @@ namespace simsh {
       static Logger& inst() noexcept;
 
       type_decl::StrViewT prefix() const noexcept { return prefix_; }
-      type_decl::StrViewT suffix() const noexcept { return suffix_; }
 
       /// @brief Set a string prefix that comes with each output, which defaults to empty.
       void set_prefix( type_decl::StringT prefix );
 
-      /// @brief Set a string suffix that comes with each output, which defaults to empty.
-      void set_suffix( type_decl::StringT suffix );
-
       Logger& operator<<( const error::TraceBack& e );
+      /// @brief Print the exception via `perror`.
+      Logger& print( const error::TraceBack& e );
     };
 
     /// @brief Log output used to "consume" all exception types in the program, output to stderr.

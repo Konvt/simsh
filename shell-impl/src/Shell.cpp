@@ -24,6 +24,8 @@ namespace simsh {
     while ( !prsr_.empty() ) {
       try {
         prsr_.parse()->evaluate();
+      } catch ( const error::SystemCallError& e ) {
+        iout::logger.print( e );
       } catch ( const error::TerminationSignal& e ) {
         return e.value();
       } catch ( const error::TraceBack& e ) {
@@ -87,6 +89,8 @@ namespace simsh {
 
       try {
         prsr_.parse()->evaluate();
+      } catch ( const error::SystemCallError& e ) {
+        iout::logger.print( e );
       } catch ( const error::TerminationSignal& e ) {
         return e.value();
       } catch ( const error::TraceBack& e ) {

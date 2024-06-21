@@ -64,9 +64,7 @@ namespace simsh {
       for ( size_t i = 0; i < 2; ++i ) {
         if ( pid_t process_id = fork(); process_id < 0 )
           // At runtime, only critical system call errors cause exceptions to be thrown.
-          throw error::InitError(
-            "pipeline"sv, "failed to fork"sv 
-          );
+          throw error::SystemCallError( "fork" );
         else if ( process_id == 0 ) {
           // child process
           if ( i == 0 ) {
@@ -80,9 +78,7 @@ namespace simsh {
           }
           throw error::TerminationSignal( EXIT_FAILURE );
         } else if ( waitpid( process_id, nullptr, 0 ) < 0 )
-          throw error::InitError(
-            "pipeline", "failed to waitpid"sv
-          );
+          throw error::SystemCallError( "waitpid" );
       }
 
       return val_decl::EvalSuccess;
@@ -105,14 +101,10 @@ namespace simsh {
         : static_cast<ExprNode*>(siblings_.front().get())->token();
       // Check whether the file descriptor can be obtained.
       if ( access( filename.c_str(), F_OK ) < 0 && !utils::create_file( filename ) ) {
-        iout::logger << error::InitError(
-          "output redirection"sv, format( "cannot create '{}'", filename )
-        );
+        iout::logger.print( error::SystemCallError( filename ) );
         return !val_decl::EvalSuccess;
       } else if ( access( filename.c_str(), W_OK ) < 0 ) {
-        iout::logger << error::InitError(
-          "output redirection"sv, format( "'{}' cannot be written", filename )
-        );
+        iout::logger.print( error::SystemCallError( filename ) );
         return !val_decl::EvalSuccess;
       }
 
@@ -128,9 +120,7 @@ namespace simsh {
       int status;
       if ( pid_t process_id = fork();
            process_id < 0 )
-        throw error::InitError(
-          "output redirection"sv, "failed to fork"sv
-        );
+        throw error::SystemCallError( "fork" );
       else if ( process_id == 0 ) {
         auto target_fd = open( filename.c_str(),
           O_WRONLY | (category_ == StmtKind::appnd_redrct ||category_ == StmtKind::merge_appnd ? O_APPEND : O_TRUNC) );
@@ -152,9 +142,7 @@ namespace simsh {
           throw error::TerminationSignal( EXIT_SUCCESS );
         }
       } else if ( waitpid( process_id, &status, 0 ) < 0 )
-        throw error::InitError(
-          "output redirection"sv, "failed to waitpid"sv
-        );
+        throw error::SystemCallError( "waitpid" );
 
       if ( l_child_ != nullptr && l_child_->type() == StmtKind::trivial )
         return WEXITSTATUS( status ) == val_decl::ExecSuccess;
@@ -177,18 +165,14 @@ namespace simsh {
       int status;
       if ( pid_t process_id = fork();
            process_id < 0 )
-        throw error::InitError(
-          "combined redirection"sv, "failed to fork"sv
-        );
+        throw error::SystemCallError( "fork" );
       else if ( process_id == 0 ) {
         dup2( r_fd, l_fd );
 
         l_child_->evaluate();
         throw error::TerminationSignal( EXIT_FAILURE );
       } else if ( waitpid( process_id, &status, 0 ) < 0 )
-        throw error::InitError(
-          "combined redirection"sv, "failed to waitpid"sv
-        );
+        throw error::SystemCallError( "waitpid" );
 
       if ( l_child_->type() == StmtKind::trivial )
         return WEXITSTATUS( status ) == val_decl::ExecSuccess;
@@ -209,24 +193,18 @@ namespace simsh {
 
       const auto& filename = static_cast<ExprNode*>(siblings_.front().get())->token();
       if ( access( filename.c_str(), F_OK ) < 0 ) {
-        iout::logger << error::InitError(
-          "input redirection"sv, format( "'{}' does not exist", filename )
-        );
+        iout::logger.print( error::SystemCallError( filename ) );
         return !val_decl::EvalSuccess;
       }
       else if ( access( filename.c_str(), R_OK ) < 0 ) {
-        iout::logger << error::InitError(
-          "input redirection"sv, format( "file '{}' cannot be read", filename )
-        );
+        iout::logger.print( error::SystemCallError( filename ) );
         return !val_decl::EvalSuccess;
       }
 
       int status;
       if ( pid_t process_id = fork();
            process_id < 0 )
-        throw error::InitError(
-          "input redirection"sv, "failed to fork"sv
-        );
+        throw error::SystemCallError( "fork" );
       else if ( process_id == 0 ) {
         auto target_fd = open( filename.c_str(), O_RDONLY );
         dup2( target_fd, STDIN_FILENO );
@@ -236,9 +214,7 @@ namespace simsh {
         close( target_fd );
         throw error::TerminationSignal( EXIT_FAILURE );
       } else if ( waitpid( process_id, &status, 0 ) < 0 )
-        throw error::InitError(
-          "input redirection"sv, "failed to waitpid"sv
-        );
+        throw error::SystemCallError( "waitpid" );
 
       return WEXITSTATUS( status ) == val_decl::ExecSuccess;
     }
@@ -258,11 +234,9 @@ namespace simsh {
     utils::Pipe pipe;
     utils::close_blocking( pipe.reader().get() );
 
-    if ( const pid_t process_id = fork(); process_id < 0 ) {
-      throw error::InitError(
-        "excute"sv, "failed to fork"sv
-      );
-    } else if ( process_id == 0 ) {
+    if ( const pid_t process_id = fork(); process_id < 0 )
+      throw error::SystemCallError( "fork" );
+    else if ( process_id == 0 ) {
       // child process
       pipe.reader().close();
 
@@ -285,13 +259,11 @@ namespace simsh {
     } else {
       int status;
       if ( waitpid( process_id, &status, 0 ) < 0 )
-        throw error::InitError(
-          "excute"sv, "failed to waitpid"sv
-        );
+        throw error::SystemCallError( "waitpid" );
 
       if ( pipe.reader().pop<bool>() )
         // output error, don't throw it.
-        iout::logger << error::InitError(
+        iout::logger << error::ArgumentError(
           token_, "command error or not found"sv
         );
 
@@ -303,14 +275,28 @@ namespace simsh {
   {
     switch ( token_.front() ) {
     case 'c': { // cd
-      assert( siblings_.size() != 0 );
+      auto exec_result = val_decl::EvalSuccess;
+
       if ( siblings_.size() > 1 ) {
         iout::logger << error::ArgumentError(
           "cd"sv, "the number of arguments error"sv
         );
-        return !val_decl::EvalSuccess;
+        exec_result = !val_decl::EvalSuccess;
+      } else if ( siblings_.size() == 0 ) {
+        type_decl::StringT home_dir = "~";
+        utils::tilde_expansion( home_dir );
+        if ( chdir( home_dir.c_str() ) < 0 ) {
+          iout::logger.print( error::SystemCallError( format( "cd: {}", home_dir.c_str() ) ) );
+        exec_result = !val_decl::EvalSuccess;
+        }
       }
-      return chdir( static_cast<ExprNode*>(siblings_.front().get())->token().c_str() );
+
+      if ( type_decl::StrViewT target_dir = static_cast<ExprNode*>(siblings_.front().get())->token();
+           chdir( target_dir.data() ) < 0 ) {
+        iout::logger.print( error::SystemCallError( format( "cd: {}", target_dir.data() ) ) );
+        exec_result = !val_decl::EvalSuccess;
+      }
+      return exec_result;
     } break;
     case 'e': { // exit
       if ( !siblings_.empty() ) {

@@ -8,18 +8,21 @@ namespace simsh {
     {
       if ( prefix_.empty() )
         cerr << e.what() << endl;
-      else cerr << format( "{}{}{}\n", prefix_, e.what(), suffix_ );
+      else cerr << format( "{}{}\n", prefix_, e.what() );
+      return *this;
+    }
+
+    Logger& Logger::print( const error::TraceBack& e )
+    {
+      if ( !prefix_.empty() )
+        cerr << prefix_;
+      perror( e.what() );
       return *this;
     }
 
     void Logger::set_prefix( type_decl::StringT prefix )
     {
       prefix_ = move( prefix );
-    }
-
-    void Logger::set_suffix( type_decl::StringT suffix )
-    {
-      suffix_ = move( suffix );
     }
 
     Logger& Logger::inst() noexcept

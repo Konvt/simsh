@@ -244,6 +244,7 @@ namespace simsh {
     }
     case TokenType::STDIN_REDIR: {
       stmt_kind = StmtKind::stdin_redrct;
+      tknizr_.consume( TokenType::STDIN_REDIR );
     } break;
     default:
       throw error::SyntaxError(

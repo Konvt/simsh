@@ -13,7 +13,7 @@ namespace simsh {
       : pipefd_ {}, reader_closed_ { false }, writer_closed_ { false }
     {
       if ( pipe( pipefd_.data() ) < 0 )
-        throw error::InitError( __func__, "failed to create pipe"sv );
+        throw error::SystemCallError( "pipe" );
     }
 
     Pipe::Pipe( Pipe&& rhs ) noexcept
