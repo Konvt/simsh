@@ -50,7 +50,7 @@ namespace simsh {
         requires requires(T info) {
           { std::cout << info };
       } Prompter& operator<<( T&& info ) noexcept {
-        std::cout << info;
+        std::cout << info << std::flush;
         return *this;
       }
     };

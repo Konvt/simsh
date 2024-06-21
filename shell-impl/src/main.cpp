@@ -19,7 +19,7 @@ int main(int argc, char **argv)
   if ( argc == 0 )
     abort();
   else if ( argc == 1 )
-    return simsh::Shell().run();
+    return simsh::shell::Shell().run();
 
   if ( "-c"sv == argv[1] || argc > 2 ) {
     if (  argc == 2 && "-c"sv == argv[1] ) {
@@ -37,7 +37,7 @@ int main(int argc, char **argv)
     } else if ( process_id == 0 ) {
       pipe.writer().close();
       dup2( pipe.reader().get(), STDIN_FILENO );
-      return simsh::BaseShell().run();
+      return simsh::shell::BaseShell().run();
     } else {
       const auto args = "-c"sv == argv[1] ? span( argv + 2, argc - 2 ) : span( argv + 1, argc - 1 );
       for ( auto e : args ) {
@@ -61,6 +61,6 @@ int main(int argc, char **argv)
         format( "{}: {}", argv[1], "could not open the file" ) );
       return EXIT_FAILURE;
     }
-    return simsh::BaseShell( simsh::Parser( ifs ) ).run();
+    return simsh::shell::BaseShell( simsh::Parser( ifs ) ).run();
   }
 }
