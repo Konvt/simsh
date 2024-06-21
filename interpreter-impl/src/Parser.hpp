@@ -33,7 +33,16 @@ namespace simsh {
     Parser() : tknizr_ { std::cin } {}
     Parser( LineBuffer line_buf )
       : tknizr_ { std::move( line_buf ) } {}
+    Parser( Tokenizer tknizr )
+      : tknizr_ { std::move( tknizr ) } {}
+    Parser( Parser&& rhs )
+      : tknizr_ { std::move( rhs.tknizr_ ) } {}
     ~Parser() = default;
+    Parser& operator=( Parser&& rhs ) {
+      using std::swap;
+      swap( tknizr_, rhs.tknizr_ );
+      return *this;
+    }
 
     /// @brief Reset the current line buffer with a new one.
     void reset( LineBuffer line_buf ) { tknizr_.reset( std::move( line_buf ) ); }

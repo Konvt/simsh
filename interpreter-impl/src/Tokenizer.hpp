@@ -79,7 +79,6 @@ namespace simsh {
     /// @brief Clear all unprocessed characters.
     void clear() { line_buf_.clear(); current_token_.reset(); }
 
-    /// @throw error::ArgumentError If the tokenizer is empty.
     Token& peek();
 
     /// @brief Discard the current token and return it.

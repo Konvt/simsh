@@ -1,11 +1,16 @@
 #include <span>
 #include <string>
+#include <fstream>
 
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
 #include "Pipe.hpp"
+#include "Parser.hpp"
+#include "Logger.hpp"
+#include "Exception.hpp"
+
 #include "Shell.hpp"
 using namespace std;
 
@@ -16,25 +21,42 @@ int main(int argc, char **argv)
   else if ( argc == 1 )
     return simsh::Shell().run();
 
-  simsh::utils::Pipe pipe;
-  if ( auto process_id = fork();
-       process_id < 0 ) {
-    perror( "fork" );
-    return EXIT_FAILURE;
-  } else if ( process_id == 0 ) {
-    pipe.writer().close();
-    dup2( pipe.reader().get(), STDIN_FILENO );
-    return simsh::BaseShell().run();
-  } else {
-    for ( auto e : span( argv + 1, argc - 1 ) ) {
-      pipe.writer().push( e );
-      pipe.writer().push( ' ' );
+  if ( "-c"sv == argv[1] || argc > 2 ) {
+    if (  argc == 2 && "-c"sv == argv[1] ) {
+      simsh::iout::logger << simsh::error::ArgumentError(
+        "simsh: -c:", "option requires an argument"
+      );
+      return EXIT_FAILURE;
     }
-    pipe.writer().push( '\n' );
-    pipe.writer().close();
 
-    int status;
-    waitpid( process_id, &status, 0 );
-    return WEXITSTATUS( status );
+    simsh::utils::Pipe pipe;
+    if ( auto process_id = fork();
+         process_id < 0 ) {
+      perror( "fork" );
+      return EXIT_FAILURE;
+    } else if ( process_id == 0 ) {
+      pipe.writer().close();
+      dup2( pipe.reader().get(), STDIN_FILENO );
+      return simsh::BaseShell().run();
+    } else {
+      const auto args = "-c"sv == argv[1] ? span( argv + 2, argc - 2 ) : span( argv + 1, argc - 1 );
+      for ( auto e : args ) {
+        pipe.writer().push( e );
+        pipe.writer().push( ' ' );
+      }
+      pipe.writer().push( '\n' );
+      pipe.writer().close();
+
+      int status;
+      waitpid( process_id, &status, 0 );
+      return WEXITSTATUS( status );
+    }
+  } else {
+    ifstream ifs { argv[1] };
+    if ( !ifs ) {
+      perror( argv[1] );
+      return EXIT_FAILURE;
+    }
+    return simsh::BaseShell( simsh::Parser( ifs ) ).run();
   }
 }

@@ -21,10 +21,9 @@ namespace simsh {
   {
     signal( SIGINT, SIG_IGN );
 
-    Parser prsr;
-    while ( !prsr.empty() ) {
+    while ( !prsr_.empty() ) {
       try {
-        prsr.parse()->evaluate();
+        prsr_.parse()->evaluate();
       } catch ( const error::TerminationSignal& e ) {
         return e.value();
       } catch ( const error::TraceBack& e ) {
@@ -79,16 +78,15 @@ namespace simsh {
     signal( SIGINT, SIG_IGN );
 
     simsh::iout::logger.set_prefix( "simsh: " );
-    Parser prsr;
 
     simsh::iout::prmptr << welcome_mes;
 
-    while ( !prsr.empty() ) {
+    while ( !prsr_.empty() ) {
       detect_info();
       iout::prmptr << prompt_;
 
       try {
-        prsr.parse()->evaluate();
+        prsr_.parse()->evaluate();
       } catch ( const error::TerminationSignal& e ) {
         return e.value();
       } catch ( const error::TraceBack& e ) {

@@ -2,11 +2,17 @@
 # define __SHIMSH_SHELL__
 
 #include "Config.hpp"
+#include "Parser.hpp"
 
 namespace simsh {
   /// @brief The simplest implementation of the shell.
   class BaseShell {
+  protected:
+    Parser prsr_;
+
   public:
+    BaseShell( Parser prsr )
+      : prsr_ { std::move( prsr ) } {}
     BaseShell() = default;
     virtual ~BaseShell() = default;
 
@@ -17,10 +23,16 @@ namespace simsh {
     static constexpr type_decl::StrViewT default_fmt = "\x1b[32;1m{}@{}\x1b[0m:\x1b[34;1m{}\x1b[0m$ ";
     static constexpr type_decl::StrViewT root_fmt = "{}@{}:{}# ";
     static constexpr type_decl::StrViewT welcome_mes =
-      "Welcome to simsh, the simple implementation of shell\n"
-      "Type help for more information\n";
+      "\x1b[36;1m"
+      "      _               _     \n"
+      "  ___(_)_ __ ___  ___| |__  \n"
+      " / __| | '_ ` _ \\/ __| '_ \\ \n"
+      " \\__ \\ | | | | | \\__ \\ | | |\n"
+      " |___/_|_| |_| |_|___/_| |_|\n"
+      "                            \n"
+      "\x1b[0m"
+      "Type \x1b[32mhelp\x1b[0m for more information\n";
 
-  private:
     type_decl::StringT prompt_;
 
     type_decl::StringT host_name_;
@@ -33,7 +45,9 @@ namespace simsh {
     void detect_info();
 
   public:
-    Shell() {
+    Shell( Parser prsr )
+      : BaseShell( std::move( prsr ) ) {}
+    Shell() : BaseShell() {
       detect_info();
     }
     virtual ~Shell() = default;

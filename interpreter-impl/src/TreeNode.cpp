@@ -344,6 +344,8 @@ namespace simsh {
     assert( category_ == StmtKind::trivial );
 
     token_ = token_ == "$$" ? format( "{}", getpid() ) : token_;
+    if ( type_ == ExprKind::command )
+      utils::tilde_expansion( token_ );
     for ( auto& sblng : siblings_ ) {
       assert( sblng->type() == StmtKind::trivial );
 
