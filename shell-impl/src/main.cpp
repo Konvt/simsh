@@ -32,7 +32,7 @@ int main(int argc, char **argv)
     simsh::utils::Pipe pipe;
     if ( auto process_id = fork();
          process_id < 0 ) {
-      perror( "fork" );
+      simsh::iout::logger.print( simsh::error::SystemCallError( "fork" ) );
       return EXIT_FAILURE;
     } else if ( process_id == 0 ) {
       pipe.writer().close();
@@ -48,13 +48,17 @@ int main(int argc, char **argv)
       pipe.writer().close();
 
       int status;
-      waitpid( process_id, &status, 0 );
+      if ( waitpid( process_id, &status, 0 ) < 0 ) {
+        simsh::iout::logger.print( simsh::error::SystemCallError( "waitpid" ) );
+        return EXIT_FAILURE;
+      }
       return WEXITSTATUS( status );
     }
   } else {
     ifstream ifs { argv[1] };
     if ( !ifs ) {
-      perror( argv[1] );
+      simsh::iout::logger << simsh::error::SystemCallError(
+        format( "{}: {}", argv[1], "could not open the file" ) );
       return EXIT_FAILURE;
     }
     return simsh::BaseShell( simsh::Parser( ifs ) ).run();

@@ -38,7 +38,7 @@ namespace simsh {
   void Shell::update_prompt()
   {
     if ( current_dir_.size() >= home_dir_.size() &&
-      current_dir_.compare( 0, home_dir_.size(), home_dir_ ) == 0 )
+         current_dir_.compare( 0, home_dir_.size(), home_dir_ ) == 0 )
       current_dir_.replace( 0, home_dir_.size(), "~" );
     if ( user_name_ == "root" )
       prompt_ = format( root_fmt, user_name_, host_name_, current_dir_ );
