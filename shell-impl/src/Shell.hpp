@@ -21,8 +21,10 @@ namespace simsh {
     };
 
     class Shell : public BaseShell {
-      static constexpr type_decl::StrViewT default_fmt = "\x1b[32;1m{}@{}\x1b[0m:\x1b[34;1m{}\x1b[0m$ ";
-      static constexpr type_decl::StrViewT root_fmt = "{}@{}:{}# ";
+#define CLEAR_LINE "\x1b[1K\r"
+      static constexpr type_decl::StrViewT default_fmt = CLEAR_LINE "\x1b[32;1m{}@{}\x1b[0m:\x1b[34;1m{}\x1b[0m$ ";
+      static constexpr type_decl::StrViewT root_fmt = CLEAR_LINE "{}@{}:{}# ";
+#undef CLEAR_LINE
       static constexpr type_decl::StrViewT welcome_mes =
         "\x1b[36;1m"
         "      _               _     \n"

@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <signal.h>
 
 #include "TreeNode.hpp"
 #include "Exception.hpp"
@@ -234,6 +235,13 @@ namespace simsh {
     utils::Pipe pipe;
     utils::close_blocking( pipe.reader().get() );
 
+    sigset_t new_set, old_set;
+    sigemptyset( &new_set );
+    sigaddset( &new_set, SIGINT );
+    // block the signal in parent process
+    if ( sigprocmask( SIG_BLOCK, &new_set, &old_set ) < 0 )
+      throw error::SystemCallError( "sigprocmask" );
+
     if ( const pid_t process_id = fork(); process_id < 0 )
       throw error::SystemCallError( "fork" );
     else if ( process_id == 0 ) {
@@ -249,6 +257,11 @@ namespace simsh {
         }
       );
       exec_argv.push_back( nullptr );
+
+      // set the signal in child process to default
+      sigemptyset( &new_set );
+      sigprocmask( SIG_SETMASK, &new_set, nullptr );
+      signal( SIGINT, SIG_DFL );
 
       execvp( exec_argv.front(), exec_argv.data() );
 
@@ -266,6 +279,12 @@ namespace simsh {
         iout::logger << error::ArgumentError(
           token_, "command error or not found"sv
         );
+
+      // resuming the signal processing in parent process 
+      if ( sigprocmask( SIG_SETMASK, &old_set, nullptr ) < 0 ) {
+        iout::logger << error::SystemCallError( "sigprocmask" );
+        throw error::TerminationSignal( EXIT_FAILURE );
+      }
 
       return WEXITSTATUS( status ) == val_decl::ExecSuccess;
     }

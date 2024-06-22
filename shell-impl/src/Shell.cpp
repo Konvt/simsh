@@ -33,14 +33,18 @@ namespace simsh {
     {
       /// stupid hack method, but it works
       static auto handler = std::forward<F>( functor );
-      return []( int signum ) { handler( signum ); };
+      return +[]( int signum ) {
+        [[maybe_unused]] auto _ = signum;
+        handler( signum );
+      };
     }
 
     int BaseShell::run()
     {
-      signal( SIGINT, []( int _ ) -> void {
+      signal( SIGINT, []( int signum ) -> void {
+        [[maybe_unused]] auto _ = signum;
         iout::prmptr << "\n";
-        } );
+      } );
 
       while ( !prsr_.empty() ) {
         try {
@@ -99,8 +103,9 @@ namespace simsh {
     int Shell::run()
     {
       signal( SIGINT, make_sighandler(
-        [this]( int _ ) -> void {
-          iout::prmptr << format( "\n{}", prompt() );
+        [this]( int signum ) -> void {
+          [[maybe_unused]] auto _ = signum;
+          iout::prmptr << prompt();
         } ) );
       simsh::iout::logger.set_prefix( "simsh: " );
       simsh::iout::prmptr << welcome_mes;
@@ -119,6 +124,7 @@ namespace simsh {
           iout::logger << e;
         }
       }
+      iout::prmptr << "\nexit";
       return EXIT_SUCCESS;
     }
   }
