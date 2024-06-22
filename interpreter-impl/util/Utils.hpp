@@ -25,6 +25,37 @@ namespace simsh {
 
     std::pair<bool, std::smatch> match_string( const type_decl::StringT& str, type_decl::StrViewT reg_str );
 
+    /// @brief A wrapper that helps to convert any lambda to a C-style function interface,
+    /// @brief which means function pointer.
+    /// @tparam F The type of the lambda.
+    /// @tparam InstTag A tag to distinguish different lambda instances.
+    /// @author Ayano_Aishi
+    /// @source https://www.bilibili.com/video/BV1Hm421j7qc
+    template<typename F, size_t InstTag = 0>
+    struct functor_wrapper {
+      static inline const F* ptr = nullptr;
+
+      template<typename... Args>
+        requires std::is_invocable_v<F, Args...>
+      static std::invoke_result_t<F, Args...> invoking( Args... args ) {
+        return std::invoke( *ptr, args... );
+      }
+
+      template<typename... Args, size_t = 0>
+        requires std::is_invocable_v<F, Args...>
+      decltype(&invoking<Args...>) to_fnptr() noexcept {
+        return &invoking<Args...>;
+      }
+    };
+
+    template<size_t InstTag = 0, typename F>
+      requires std::is_lvalue_reference_v<std::remove_cv_t<F>>
+    functor_wrapper<std::decay_t<F>, InstTag> make_fntor_wrapper( F&& f )
+    {
+      functor_wrapper<std::decay_t<F>, InstTag>::ptr = std::addressof( f );
+      return functor_wrapper<std::decay_t<F>, InstTag>();
+    }
+
     // declare function_traits struct
     template<typename Func>
     struct function_traits;

@@ -26,14 +26,14 @@ namespace simsh {
       static constexpr type_decl::StrViewT root_fmt = CLEAR_LINE "{}@{}:{}# ";
 #undef CLEAR_LINE
       static constexpr type_decl::StrViewT welcome_mes =
-        "\x1b[36;1m"
+        "\n\x1b[36;1m"
         "      _               _     \n"
         "  ___(_)_ __ ___  ___| |__  \n"
         " / __| | '_ ` _ \\/ __| '_ \\ \n"
         " \\__ \\ | | | | | \\__ \\ | | |\n"
         " |___/_|_| |_| |_|___/_| |_|\n"
         "                            \n"
-        "\x1b[0m"
+        "\x1b[0m\n"
         "Type \x1b[32mhelp\x1b[0m for more information\n";
 
       type_decl::StringT prompt_;

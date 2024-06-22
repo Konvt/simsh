@@ -19,26 +19,6 @@ using namespace std;
 
 namespace simsh {
   namespace shell {
-    /// @brief SHOULD NOT be used outside of THIS `Shell.cpp` file.
-    template<typename F, size_t InstTag = 0>
-      requires std::conjunction_v<
-        std::is_same<
-          typename utils::function_traits<sighandler_t>::result_type,
-          typename utils::function_traits<F>::result_type>,
-        std::is_same<
-          typename utils::function_traits<sighandler_t>::arguments,
-          typename utils::function_traits<F>::arguments>
-      >
-    inline sighandler_t make_sighandler( F&& functor )
-    {
-      /// stupid hack method, but it works
-      static auto handler = std::forward<F>( functor );
-      return +[]( int signum ) {
-        [[maybe_unused]] auto _ = signum;
-        handler( signum );
-      };
-    }
-
     int BaseShell::run()
     {
       signal( SIGINT, []( int signum ) -> void {
@@ -102,11 +82,20 @@ namespace simsh {
 
     int Shell::run()
     {
-      signal( SIGINT, make_sighandler(
-        [this]( int signum ) -> void {
-          [[maybe_unused]] auto _ = signum;
-          iout::prmptr << prompt();
-        } ) );
+      auto sigint_handler = [this]( int signum ) -> void {
+        [[maybe_unused]] auto _ = signum;
+        iout::prmptr << prompt();
+      };
+
+      static_assert(
+        is_same_v<utils::function_traits<decltype(sigint_handler)>::result_type,
+          utils::function_traits<sighandler_t>::result_type> &&
+        is_same_v<utils::function_traits<decltype(sigint_handler)>::arguments,
+          utils::function_traits<sighandler_t>::arguments>,
+        "'sigint_handler' and 'sighandler_t' must have the same signature"
+      );
+
+      signal( SIGINT, utils::make_fntor_wrapper( sigint_handler ).to_fnptr<int>() );
       simsh::iout::logger.set_prefix( "simsh: " );
       simsh::iout::prmptr << welcome_mes;
 
