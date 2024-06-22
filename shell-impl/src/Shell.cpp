@@ -19,6 +19,23 @@ using namespace std;
 
 namespace simsh {
   namespace shell {
+    /// @brief SHOULD NOT be used outside of THIS `Shell.cpp` file.
+    template<typename F, size_t InstTag = 0>
+      requires std::conjunction_v<
+        std::is_same<
+          typename utils::function_traits<sighandler_t>::result_type,
+          typename utils::function_traits<F>::result_type>,
+        std::is_same<
+          typename utils::function_traits<sighandler_t>::arguments,
+          typename utils::function_traits<F>::arguments>
+      >
+    inline sighandler_t make_sighandler( F&& functor )
+    {
+      /// stupid hack method, but it works
+      static auto handler = std::forward<F>( functor );
+      return []( int signum ) { handler( signum ); };
+    }
+
     int BaseShell::run()
     {
       signal( SIGINT, []( int _ ) -> void {
@@ -81,7 +98,7 @@ namespace simsh {
 
     int Shell::run()
     {
-      signal( SIGINT, utils::make_sighandler(
+      signal( SIGINT, make_sighandler(
         [this]( int _ ) -> void {
           iout::prmptr << format( "\n{}", prompt() );
         } ) );

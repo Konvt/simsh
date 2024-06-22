@@ -22,7 +22,6 @@ namespace simsh {
      * Currently the arguments can only be saved as an unique_ptr pointing to `ExprNode`. */
     SiblingNodes siblings_;
 
-
   public:
     StmtNode( StmtKind stmt_type,
               ChildNode left_stmt = nullptr, ChildNode right_stmt = nullptr,
@@ -46,7 +45,9 @@ namespace simsh {
     const SiblingNodes& siblings() const & noexcept { return siblings_; }
     [[nodiscard]] SiblingNodes siblings() && noexcept { return std::move( siblings_ ); }
 
-    /// @brief 对语句进行求值，若是平凡语句（表达式）则返回表达式求值结果，否则遵循语法规则对两侧子结点递归求值
+    /// @brief Evaluates the statement. If it is an trivial statement (expression),
+    /// @brief returns the expression evaluation result.
+    /// @brief Otherwise, the two sides of the child node are evaluated recursively according to the grammar rules
     /// @throw error::SystemCallError If a specific system call error occurs (i.e. `fork` and `waitpid`).
     /// @throw error::TerminationSignal If this process is a child process.
     virtual type_decl::EvalT evaluate();
