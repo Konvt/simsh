@@ -296,22 +296,18 @@ namespace simsh {
     case 'c': { // cd
       auto exec_result = val_decl::EvalSuccess;
 
+      type_decl::StringT target_dir;
       if ( siblings_.size() > 1 ) {
         iout::logger << error::ArgumentError(
           "cd"sv, "the number of arguments error"sv
         );
         exec_result = !val_decl::EvalSuccess;
       } else if ( siblings_.size() == 0 ) {
-        type_decl::StringT home_dir = "~";
-        utils::tilde_expansion( home_dir );
-        if ( chdir( home_dir.c_str() ) < 0 ) {
-          iout::logger.print( error::SystemCallError( format( "cd: {}", home_dir.c_str() ) ) );
-        exec_result = !val_decl::EvalSuccess;
-        }
-      }
+        target_dir = "~";
+        utils::tilde_expansion( target_dir );
+      } else target_dir = static_cast<ExprNode*>(siblings_.front().get())->token();
 
-      if ( type_decl::StrViewT target_dir = static_cast<ExprNode*>(siblings_.front().get())->token();
-           chdir( target_dir.data() ) < 0 ) {
+      if ( chdir( target_dir.data() ) < 0 ) {
         iout::logger.print( error::SystemCallError( format( "cd: {}", target_dir.data() ) ) );
         exec_result = !val_decl::EvalSuccess;
       }
