@@ -27,7 +27,7 @@ namespace simsh {
     line_pos_ = 0;
   }
 
-  type_decl::CharT LineBuffer::peek()
+  types::CharT LineBuffer::peek()
   {
     assert( input_stream_ != nullptr );
     if ( line_pos_ >= line_input_.size() ) {
@@ -86,11 +86,11 @@ namespace simsh {
     return *current_token_;
   }
 
-  type_decl::TokenT Tokenizer::consume( TokenType expect )
+  types::TokenT Tokenizer::consume( TokenType expect )
   {
     assert( current_token_.has_value() );
     if ( current_token_->is( expect ) ) {
-      type_decl::TokenT discard_tokens = move( current_token_->value_ );
+      types::TokenT discard_tokens = move( current_token_->value_ );
       current_token_.reset();
       return discard_tokens;
     }
@@ -104,7 +104,7 @@ namespace simsh {
     Token new_token;
     auto& [token_type, token_str] = new_token;
 
-    enum class StateType {
+    enum class StateType : uint8_t {
       START, DONE,
       INCOMMENT,
       INCMD,
@@ -171,7 +171,7 @@ namespace simsh {
             token_type = TokenType::RPAREN;
           } break;
           default: {
-            if ( ("':^%"sv).find( character ) != type_decl::StrViewT::npos )
+            if ( ("':^%"sv).find( character ) != types::StrViewT::npos )
               throw error::TokenError(
               line_buf_.line_pos(), "any valid command character"sv, character
               );
@@ -194,7 +194,7 @@ namespace simsh {
 
       case StateType::INCMD: {
         if ( isspace( character ) ||
-             ("&|!<>\"';:()^%#"sv).find( character ) != type_decl::StrViewT::npos ) {
+             ("&|!<>\"';:()^%#"sv).find( character ) != types::StrViewT::npos ) {
           if ( token_str.empty() ) {
             throw error::TokenError(
               line_buf_.line_pos(), "any valid command character"sv, character
@@ -220,7 +220,7 @@ namespace simsh {
           save_char = false;
           token_type = TokenType::STR;
           state = StateType::DONE;
-        } else if ( ("\n"sv).find( character ) != type_decl::StrViewT::npos || character == EOF )
+        } else if ( ("\n"sv).find( character ) != types::StrViewT::npos || character == EOF )
           throw error::TokenError(
             line_buf_.line_pos(), '"', character
           );

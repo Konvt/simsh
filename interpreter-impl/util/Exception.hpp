@@ -5,27 +5,27 @@
 #include <format>
 #include <optional>
 
-#include "EnumLabel.hpp"
+#include "Config.hpp"
 #include "Utils.hpp"
 
 namespace simsh {
   namespace error {
     class TraceBack : public std::exception {
     protected:
-      type_decl::StringT message_;
+      types::StringT message_;
 
     public:
-      TraceBack( type_decl::StringT message )
+      TraceBack( types::StringT message )
         : message_ { std::move( message ) } {}
       virtual const char* what() const noexcept { return message_.c_str(); }
     };
 
     class TokenError : public TraceBack {
     public:
-      TokenError( size_t line_pos, type_decl::CharT expect, type_decl::CharT received )
+      TokenError( size_t line_pos, types::CharT expect, types::CharT received )
         : TraceBack( std::format( "at position {}: expect {}, but received {}",
           line_pos, utils::format_char( expect ), utils::format_char( received ) ) ) {}
-      TokenError( size_t line_pos, type_decl::StrViewT expecting, type_decl::CharT received )
+      TokenError( size_t line_pos, types::StrViewT expecting, types::CharT received )
         : TraceBack( std::format( "at position {}: expect {}, but received {}",
           line_pos, expecting, utils::format_char( received ) ) ) {}
     };
@@ -39,27 +39,27 @@ namespace simsh {
 
     class ArgumentError : public TraceBack {
     public:
-      ArgumentError( type_decl::StrViewT where, type_decl::StrViewT why )
+      ArgumentError( types::StrViewT where, types::StrViewT why )
         : TraceBack( std::format( "{}: {}", where, why ) ) {}
     };
 
     class SystemCallError : public TraceBack {
     public:
-      SystemCallError( type_decl::StringT where )
+      SystemCallError( types::StringT where )
         : TraceBack( std::move( where ) ) {}
     };
 
     class TerminationSignal : public TraceBack {
-      type_decl::EvalT exit_val_;
+      types::EvalT exit_val_;
 
     protected:
-      TerminationSignal( type_decl::StringT message, type_decl::EvalT exit_val )
+      TerminationSignal( types::StringT message, types::EvalT exit_val )
         : TraceBack( std::move( message ) ), exit_val_ { exit_val } {}
 
     public:
-      TerminationSignal( type_decl::EvalT exit_val )
+      TerminationSignal( types::EvalT exit_val )
         : TerminationSignal( "current process must be killed", exit_val ) {}
-      type_decl::EvalT value() const noexcept { return exit_val_; }
+      types::EvalT value() const noexcept { return exit_val_; }
     };
 
     class StreamClosed : public TerminationSignal {

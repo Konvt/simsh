@@ -22,10 +22,10 @@ namespace simsh {
 
     class Shell : public BaseShell {
 #define CLEAR_LINE "\x1b[1K\r"
-      static constexpr type_decl::StrViewT default_fmt = CLEAR_LINE "\x1b[32;1m{}@{}\x1b[0m:\x1b[34;1m{}\x1b[0m$ ";
-      static constexpr type_decl::StrViewT root_fmt = CLEAR_LINE "{}@{}:{}# ";
+      static constexpr types::StrViewT default_fmt = CLEAR_LINE "\x1b[32;1m{}@{}\x1b[0m:\x1b[34;1m{}\x1b[0m$ ";
+      static constexpr types::StrViewT root_fmt = CLEAR_LINE "{}@{}:{}# ";
 #undef CLEAR_LINE
-      static constexpr type_decl::StrViewT welcome_mes =
+      static constexpr types::StrViewT welcome_mes =
         "\n\x1b[36;1m"
         "      _               _     \n"
         "  ___(_)_ __ ___  ___| |__  \n"
@@ -36,13 +36,13 @@ namespace simsh {
         "\x1b[0m\n"
         "Type \x1b[32mhelp\x1b[0m for more information\n";
 
-      type_decl::StringT prompt_;
+      types::StringT prompt_;
 
-      type_decl::StringT host_name_;
-      type_decl::StringT home_dir_;
-      type_decl::StringT current_dir_;
+      types::StringT host_name_;
+      types::StringT home_dir_;
+      types::StringT current_dir_;
 
-      type_decl::StringT user_name_;
+      types::StringT user_name_;
 
       void update_prompt();
       void detect_info();
@@ -54,7 +54,7 @@ namespace simsh {
         detect_info();
       }
       virtual ~Shell() = default;
-      type_decl::StrViewT prompt() const { return prompt_; }
+      types::StrViewT prompt() const { return prompt_; }
 
       int run() override;
     };

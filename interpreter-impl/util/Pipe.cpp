@@ -64,7 +64,7 @@ namespace simsh {
       }
     }
 
-    type_decl::FDType PipeReader::get() const
+    types::FDType PipeReader::get() const
     {
       return pipefd_[reader_fd];
     }
@@ -77,12 +77,12 @@ namespace simsh {
       }
     }
 
-    type_decl::FDType PipeWriter::get() const
+    types::FDType PipeWriter::get() const
     {
       return pipefd_[writer_fd];
     }
 
-    bool close_blocking( type_decl::FDType fd )
+    bool close_blocking( types::FDType fd )
     {
       return fcntl( fd, F_SETFL, fcntl( fd, F_GETFL ) | O_NONBLOCK ) > 0;
     }

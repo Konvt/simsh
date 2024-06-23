@@ -4,13 +4,16 @@
 #include <iostream>
 #include <memory>
 
-#include "Exception.hpp"
+#include "Config.hpp"
 #include "TreeNode.hpp"
 #include "Tokenizer.hpp"
 
 namespace simsh {
   /// @brief Recursive descent parser.
   class Parser {
+    static constexpr types::StrViewT redirection_regex { R"(^(\d*)>{1,2}$)" };
+    static constexpr types::StrViewT combined_redir_regex { R"(^(\d*)>&(\d*)$)" };
+
     using StmtNodePtr = std::unique_ptr<StmtNode>;
     using ExprNodePtr = std::unique_ptr<ExprNode>;
     Tokenizer tknizr_;

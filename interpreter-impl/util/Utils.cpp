@@ -12,7 +12,7 @@ using namespace std;
 
 namespace simsh {
   namespace utils {
-    type_decl::StringT format_char( type_decl::CharT character )
+    types::StringT format_char( types::CharT character )
     {
       switch ( character ) {
       case '\0': return "'\\0'";
@@ -31,7 +31,7 @@ namespace simsh {
       }
     }
 
-    type_decl::StrViewT token_kind_map( TokenType tkn )
+    types::StrViewT token_kind_map( TokenType tkn )
     {
       switch ( tkn ) {
       case TokenType::STR:         return "string"sv;
@@ -61,7 +61,7 @@ namespace simsh {
       }
     }
 
-    bool create_file( type_decl::StrViewT filename, mode_t mode )
+    bool create_file( types::StrViewT filename, mode_t mode )
     {
       if ( mode == 0 ) {
         umask( mode = umask( 0 ) );
@@ -75,16 +75,18 @@ namespace simsh {
       return true;
     }
 
-    void tilde_expansion( type_decl::StringT& token )
+    types::StrViewT get_homedir()
     {
-      if ( regex_search( token, regex( "^~(/.*)?$" ) ) ) {
-        const passwd * const pw = getpwuid( getuid() ); // should nerver be freed or deleted here
-        if ( pw != nullptr )
-          token = format( "{}{}", pw->pw_dir, type_decl::StrViewT( token.begin() + 1, token.end() ) );
-      }
+      return getpwuid( getuid() )->pw_dir;
     }
 
-    pair<bool, smatch> match_string( const type_decl::StringT& str, type_decl::StrViewT reg_str )
+    void tilde_expansion( types::StringT& token )
+    {
+      if ( regex_search( token, regex( "^~(/.*)?$" ) ) )
+        token = format( "{}{}", get_homedir(), types::StrViewT( token.begin() + 1, token.end() ) );
+    }
+
+    pair<bool, smatch> match_string( const types::StringT& str, types::StrViewT reg_str )
     {
       regex pattern { reg_str.data() };
       smatch matches;

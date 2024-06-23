@@ -20,7 +20,7 @@ namespace simsh {
       return *this;
     }
 
-    void Logger::set_prefix( type_decl::StringT prefix )
+    void Logger::set_prefix( types::StringT prefix )
     {
       prefix_ = move( prefix );
     }

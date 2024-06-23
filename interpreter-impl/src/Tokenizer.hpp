@@ -14,7 +14,7 @@ namespace simsh {
 
     bool received_eof_;
     size_t line_pos_;
-    type_decl::StringT line_input_;
+    types::StringT line_input_;
 
     void swap_members( LineBuffer&& rhs ) noexcept;
 
@@ -41,7 +41,7 @@ namespace simsh {
 
     /// @brief Peek the current character.
     /// @throw error::StreamClosed If `peek` is called again when EOF has been returned.
-    [[nodiscard]] type_decl::CharT peek();
+    [[nodiscard]] types::CharT peek();
 
     /// @brief Discard the current character from the buffer.
     void consume() noexcept;
@@ -54,9 +54,9 @@ namespace simsh {
   public:
     struct Token {
       TokenType type_;
-      type_decl::TokenT value_;
+      types::TokenT value_;
 
-      Token( TokenType tp, type_decl::TokenT val )
+      Token( TokenType tp, types::TokenT val )
         : type_ { std::move( tp ) }, value_ { std::move( val ) } {}
       Token() : Token( TokenType::ERROR, {} ) {}
       [[nodiscard]] bool is( TokenType tp ) const noexcept { return type_ == tp; }
@@ -83,7 +83,7 @@ namespace simsh {
 
     /// @brief Discard the current token and return it.
     /// @throw error::SyntaxError If `expect` isn't matched with current token.
-    type_decl::TokenT consume( TokenType expect );
+    types::TokenT consume( TokenType expect );
 
     /// @brief Reset the current line buffer with the new one.
     void reset( LineBuffer line_buf );

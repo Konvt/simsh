@@ -4,7 +4,7 @@
 #include "Config.hpp"
 
 namespace simsh {
-  enum class StmtKind {
+  enum class StmtKind : uint8_t {
     trivial,
     sequential,
     logical_and, logical_or, logical_not,
@@ -15,11 +15,11 @@ namespace simsh {
     here_doc, here_str
   };
 
-  enum class ExprKind {
+  enum class ExprKind : uint8_t {
     command, string, value
   };
 
-  enum class TokenType {
+  enum class TokenType : uint8_t {
     CMD, STR,
     AND, OR, NOT,
     PIPE,

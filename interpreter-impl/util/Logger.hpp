@@ -10,7 +10,7 @@ namespace simsh {
   namespace iout { // IO Utility
     /// @brief Log output used to "consume" all exception types in the program, output to stderr.
     class Logger {
-      type_decl::StringT prefix_;
+      types::StringT prefix_;
 
       Logger() noexcept = default;
 
@@ -21,12 +21,14 @@ namespace simsh {
 
       static Logger& inst() noexcept;
 
-      type_decl::StrViewT prefix() const noexcept { return prefix_; }
+      types::StrViewT prefix() const noexcept { return prefix_; }
 
       /// @brief Set a string prefix that comes with each output, which defaults to empty.
-      void set_prefix( type_decl::StringT prefix );
+      void set_prefix( types::StringT prefix );
 
+      /// @brief Print the exception information via `std::cerr`.
       Logger& operator<<( const error::TraceBack& e );
+
       /// @brief Print the exception via `perror`.
       Logger& print( const error::TraceBack& e );
     };

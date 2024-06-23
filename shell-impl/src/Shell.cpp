@@ -21,7 +21,7 @@ namespace simsh {
   namespace shell {
     int BaseShell::run()
     {
-      signal( SIGINT, []( int signum ) -> void {
+      signal( SIGINT, +[]( int signum ) -> void {
         [[maybe_unused]] auto _ = signum;
         iout::prmptr << "\n";
       } );

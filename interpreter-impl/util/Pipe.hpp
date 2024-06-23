@@ -18,10 +18,10 @@ namespace simsh {
     /// @brief Anonymous pipes.
     class Pipe {
     protected:
-      static constexpr type_decl::FDType reader_fd = 0;
-      static constexpr type_decl::FDType writer_fd = 1;
+      static constexpr types::FDType reader_fd = 0;
+      static constexpr types::FDType writer_fd = 1;
 
-      std::array<type_decl::FDType, 2> pipefd_;
+      std::array<types::FDType, 2> pipefd_;
       bool reader_closed_, writer_closed_;
 
     public:
@@ -43,7 +43,7 @@ namespace simsh {
       PipeReader& operator=( const PipeReader& ) = delete;
 
       void close();
-      type_decl::FDType get() const;
+      types::FDType get() const;
       template<typename T>
         requires std::conjunction_v<
           std::negation<std::is_void<std::remove_pointer_t<std::decay_t<T>>>>, // forbidden any void pointers
@@ -63,7 +63,7 @@ namespace simsh {
       PipeWriter& operator=( const PipeReader& ) = delete;
 
       void close();
-      type_decl::FDType get() const;
+      types::FDType get() const;
 
       void push( const char* const value ) const {
         if ( !writer_closed_ )
@@ -93,7 +93,7 @@ namespace simsh {
       }
     };
 
-    bool close_blocking( type_decl::FDType fd );
+    bool close_blocking( types::FDType fd );
   }
 
 }

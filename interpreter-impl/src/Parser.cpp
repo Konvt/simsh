@@ -3,6 +3,8 @@
 #include <cassert>
 
 #include "Parser.hpp"
+#include "Constants.hpp"
+#include "Exception.hpp"
 #include "Utils.hpp"
 using namespace std;
 
@@ -21,7 +23,7 @@ namespace simsh {
       [[fallthrough]];
     case TokenType::NEWLINE: {
       tknizr_.consume( tkn_tp );
-      return make_unique<ExprNode>( ExprKind::value, val_decl::EvalSuccess );
+      return make_unique<ExprNode>( ExprKind::value, constants::EvalSuccess );
     }
 
     default: {
@@ -272,7 +274,7 @@ namespace simsh {
     StmtKind stmt_kind = StmtKind::trivial;
     StmtNode::SiblingNodes arguments;
 
-    auto extract_params = [this]( StmtNode::SiblingNodes& args, type_decl::StrViewT re_str, TokenType expecting ) {
+    auto extract_params = [this]( StmtNode::SiblingNodes& args, types::StrViewT re_str, TokenType expecting ) {
       auto [match_result, matches] = utils::match_string(
         tknizr_.consume( expecting ),
         re_str
@@ -283,13 +285,13 @@ namespace simsh {
         for ( size_t i = 1; i <= 2; ++i ) {
           if ( auto match_str = matches[i].str();
                match_str.empty() )
-            args.push_back( make_unique<ExprNode>( ExprKind::value, val_decl::InvalidValue ) );
+            args.push_back( make_unique<ExprNode>( ExprKind::value, constants::InvalidValue ) );
           else args.push_back( make_unique<ExprNode>( ExprKind::value, stoi( match_str ) ) );
         }
       } else {
         if ( auto match_str = matches[1].str();
              match_str.empty() )
-          args.push_back( make_unique<ExprNode>( ExprKind::value, val_decl::InvalidValue ) );
+          args.push_back( make_unique<ExprNode>( ExprKind::value, constants::InvalidValue ) );
         else args.push_back( make_unique<ExprNode>( ExprKind::value, stoi( match_str ) ) );
       }
     };
@@ -297,12 +299,12 @@ namespace simsh {
     switch ( tknizr_.peek().type_ ) {
     case TokenType::OVR_REDIR: { // >
       stmt_kind = StmtKind::ovrwrit_redrct;
-      extract_params( arguments, impl::redirection_regex, TokenType::OVR_REDIR );
+      extract_params( arguments, redirection_regex, TokenType::OVR_REDIR );
       assert( arguments.size() == 1 );
     } break;
     case TokenType::APND_REDIR: { // >>
       stmt_kind = StmtKind::appnd_redrct;
-      extract_params( arguments, impl::redirection_regex, TokenType::APND_REDIR );
+      extract_params( arguments, redirection_regex, TokenType::APND_REDIR );
       assert( arguments.size() == 1 );
     } break;
     case TokenType::MERG_OUTPUT: { // &>
@@ -327,7 +329,7 @@ namespace simsh {
     // The left operator takes precedence, which means `MERG_STREAM` will be the child node.
     if ( tknizr_.peek().is( TokenType::MERG_STREAM ) ) { // output_redirecti
       StmtNode::SiblingNodes subargs;
-      extract_params( subargs, impl::combined_redir_regex, TokenType::MERG_STREAM );
+      extract_params( subargs, combined_redir_regex, TokenType::MERG_STREAM );
       assert( subargs.size() == 2 );
 
       return make_unique<StmtNode>(
@@ -346,7 +348,7 @@ namespace simsh {
     assert( tknizr_.peek().is( TokenType::MERG_STREAM ) );
 
     StmtNode::SiblingNodes arguments;
-    auto extract_params = [this]( StmtNode::SiblingNodes& args, type_decl::StrViewT re_str, TokenType expecting ) {
+    auto extract_params = [this]( StmtNode::SiblingNodes& args, types::StrViewT re_str, TokenType expecting ) {
       auto [match_result, matches] = utils::match_string(
         tknizr_.consume( expecting ),
         re_str
@@ -357,25 +359,25 @@ namespace simsh {
         for ( size_t i = 1; i <= 2; ++i ) {
           if ( auto match_str = matches[i].str();
                match_str.empty() )
-            args.push_back( make_unique<ExprNode>( ExprKind::value, val_decl::InvalidValue ) );
+            args.push_back( make_unique<ExprNode>( ExprKind::value, constants::InvalidValue ) );
           else args.push_back( make_unique<ExprNode>( ExprKind::value, stoi( match_str ) ) );
         }
       } else {
         if ( auto match_str = matches[1].str();
              match_str.empty() )
-          args.push_back( make_unique<ExprNode>( ExprKind::value, val_decl::InvalidValue ) );
+          args.push_back( make_unique<ExprNode>( ExprKind::value, constants::InvalidValue ) );
         else args.push_back( make_unique<ExprNode>( ExprKind::value, stoi( match_str ) ) );
       }
     };
 
-    extract_params( arguments, impl::combined_redir_regex, TokenType::MERG_STREAM );
+    extract_params( arguments, combined_redir_regex, TokenType::MERG_STREAM );
     assert( arguments.size() == 2 );
 
     StmtNodePtr node = nullptr;
     switch ( tknizr_.peek().type_ ) {
     case TokenType::OVR_REDIR: { // >
       StmtNode::SiblingNodes subargs;
-      extract_params( subargs, impl::redirection_regex, TokenType::OVR_REDIR );
+      extract_params( subargs, redirection_regex, TokenType::OVR_REDIR );
       assert( subargs.size() == 1 );
       subargs.push_back( expression() );
 
@@ -386,7 +388,7 @@ namespace simsh {
 
     case TokenType::APND_REDIR: { // >>
       StmtNode::SiblingNodes subargs;
-      extract_params( subargs, impl::redirection_regex, TokenType::APND_REDIR );
+      extract_params( subargs, redirection_regex, TokenType::APND_REDIR );
       assert( subargs.size() == 1 );
       subargs.push_back( expression() );
 

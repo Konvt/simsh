@@ -11,6 +11,7 @@
 #include <signal.h>
 
 #include "TreeNode.hpp"
+#include "Constants.hpp"
 #include "Exception.hpp"
 #include "Logger.hpp"
 #include "Pipe.hpp"
@@ -19,7 +20,7 @@
 using namespace std;
 
 namespace simsh {
-  type_decl::EvalT StmtNode::evaluate()
+  types::EvalT StmtNode::evaluate()
   {
     switch ( category_ ) {
     case StmtKind::sequential: {
@@ -82,7 +83,7 @@ namespace simsh {
           throw error::SystemCallError( "waitpid" );
       }
 
-      return val_decl::EvalSuccess;
+      return constants::EvalSuccess;
     }
 
     case StmtKind::appnd_redrct:
@@ -103,19 +104,19 @@ namespace simsh {
       // Check whether the file descriptor can be obtained.
       if ( access( filename.c_str(), F_OK ) < 0 && !utils::create_file( filename ) ) {
         iout::logger.print( error::SystemCallError( filename ) );
-        return !val_decl::EvalSuccess;
+        return !constants::EvalSuccess;
       } else if ( access( filename.c_str(), W_OK ) < 0 ) {
         iout::logger.print( error::SystemCallError( filename ) );
-        return !val_decl::EvalSuccess;
+        return !constants::EvalSuccess;
       }
 
       /* For `StmtKind::appnd_redrct` and `StmtKind::ovrwrit_redrct` node,
        * the first element of `siblings_` is `ExprNode` of type `ExprKind::value`,
        * which specifies the destination file descriptor. */
-      type_decl::FDType file_d = STDOUT_FILENO;
+      types::FDType file_d = STDOUT_FILENO;
       if ( category_ == StmtKind::appnd_redrct || category_ == StmtKind::ovrwrit_redrct ) {
         assert( static_cast<ExprNode*>(siblings_.front().get())->kind() == ExprKind::value );
-        file_d = siblings_.front()->evaluate() == val_decl::InvalidValue ? STDOUT_FILENO : siblings_.front()->evaluate();
+        file_d = siblings_.front()->evaluate() == constants::InvalidValue ? STDOUT_FILENO : siblings_.front()->evaluate();
       }
 
       int status;
@@ -146,7 +147,7 @@ namespace simsh {
         throw error::SystemCallError( "waitpid" );
 
       if ( l_child_ != nullptr && l_child_->type() == StmtKind::trivial )
-        return WEXITSTATUS( status ) == val_decl::ExecSuccess;
+        return WEXITSTATUS( status ) == constants::ExecSuccess;
       else return WEXITSTATUS( status );
     }
 
@@ -160,8 +161,8 @@ namespace simsh {
        * which specifies the destination file descriptor. */
       assert( static_cast<ExprNode*>(siblings_[0].get())->kind() == ExprKind::value );
       assert( static_cast<ExprNode*>(siblings_[1].get())->kind() == ExprKind::value );
-      const auto l_fd = siblings_[0]->evaluate() == val_decl::InvalidValue ? STDERR_FILENO : siblings_[0]->evaluate();
-      const auto r_fd = siblings_[1]->evaluate() == val_decl::InvalidValue ? STDOUT_FILENO : siblings_[1]->evaluate();
+      const auto l_fd = siblings_[0]->evaluate() == constants::InvalidValue ? STDERR_FILENO : siblings_[0]->evaluate();
+      const auto r_fd = siblings_[1]->evaluate() == constants::InvalidValue ? STDOUT_FILENO : siblings_[1]->evaluate();
 
       int status;
       if ( pid_t process_id = fork();
@@ -176,7 +177,7 @@ namespace simsh {
         throw error::SystemCallError( "waitpid" );
 
       if ( l_child_->type() == StmtKind::trivial )
-        return WEXITSTATUS( status ) == val_decl::ExecSuccess;
+        return WEXITSTATUS( status ) == constants::ExecSuccess;
       else return WEXITSTATUS( status );
     }
 
@@ -189,17 +190,17 @@ namespace simsh {
         iout::logger << error::ArgumentError(
           "input redirection"sv, "argument number error"sv
         );
-        return !val_decl::EvalSuccess;
+        return !constants::EvalSuccess;
       }
 
       const auto& filename = static_cast<ExprNode*>(siblings_.front().get())->token();
       if ( access( filename.c_str(), F_OK ) < 0 ) {
         iout::logger.print( error::SystemCallError( filename ) );
-        return !val_decl::EvalSuccess;
+        return !constants::EvalSuccess;
       }
       else if ( access( filename.c_str(), R_OK ) < 0 ) {
         iout::logger.print( error::SystemCallError( filename ) );
-        return !val_decl::EvalSuccess;
+        return !constants::EvalSuccess;
       }
 
       int status;
@@ -217,7 +218,7 @@ namespace simsh {
       } else if ( waitpid( process_id, &status, 0 ) < 0 )
         throw error::SystemCallError( "waitpid" );
 
-      return WEXITSTATUS( status ) == val_decl::ExecSuccess;
+      return WEXITSTATUS( status ) == constants::ExecSuccess;
     }
 
     case StmtKind::trivial:
@@ -227,10 +228,10 @@ namespace simsh {
       break;
     }
 
-    return !val_decl::EvalSuccess;
+    return !constants::EvalSuccess;
   }
 
-  type_decl::EvalT ExprNode::external_exec() const
+  types::EvalT ExprNode::external_exec() const
   {
     utils::Pipe pipe;
     utils::close_blocking( pipe.reader().get() );
@@ -286,30 +287,30 @@ namespace simsh {
         throw error::TerminationSignal( EXIT_FAILURE );
       }
 
-      return WEXITSTATUS( status ) == val_decl::ExecSuccess;
+      return WEXITSTATUS( status ) == constants::ExecSuccess;
     }
   }
 
-  type_decl::EvalT ExprNode::internal_exec() const
+  types::EvalT ExprNode::internal_exec() const
   {
     switch ( token_.front() ) {
     case 'c': { // cd
-      auto exec_result = val_decl::EvalSuccess;
+      auto exec_result = constants::EvalSuccess;
 
-      type_decl::StringT target_dir;
       if ( siblings_.size() > 1 ) {
         iout::logger << error::ArgumentError(
           "cd"sv, "the number of arguments error"sv
         );
-        exec_result = !val_decl::EvalSuccess;
-      } else if ( siblings_.size() == 0 ) {
-        target_dir = "~";
-        utils::tilde_expansion( target_dir );
-      } else target_dir = static_cast<ExprNode*>(siblings_.front().get())->token();
+        exec_result = !constants::EvalSuccess;
+      }
+      types::StrViewT target_dir =
+        siblings_.size() == 0
+        ? utils::get_homedir()
+        : static_cast<ExprNode*>(siblings_.front().get())->token();
 
       if ( chdir( target_dir.data() ) < 0 ) {
         iout::logger.print( error::SystemCallError( format( "cd: {}", target_dir.data() ) ) );
-        exec_result = !val_decl::EvalSuccess;
+        exec_result = !constants::EvalSuccess;
       }
       return exec_result;
     } break;
@@ -318,7 +319,7 @@ namespace simsh {
         iout::logger << error::ArgumentError(
           "exit"sv, "the number of arguments error"sv
         );
-        return !val_decl::EvalSuccess;
+        return !constants::EvalSuccess;
       }
       throw error::TerminationSignal( EXIT_SUCCESS );
     }
@@ -327,7 +328,7 @@ namespace simsh {
         iout::logger << error::ArgumentError(
           "help"sv, "the number of arguments error"sv
         );
-        return !val_decl::EvalSuccess;
+        return !constants::EvalSuccess;
       }
       iout::prmptr << utils::help_doc;
     } break;
@@ -336,10 +337,10 @@ namespace simsh {
       break;
     }
 
-    return val_decl::EvalSuccess;
+    return constants::EvalSuccess;
   }
 
-  type_decl::EvalT ExprNode::evaluate()
+  types::EvalT ExprNode::evaluate()
   {
     assert( l_child_ == nullptr && r_child_ == nullptr );
     assert( category_ == StmtKind::trivial );
@@ -358,7 +359,7 @@ namespace simsh {
     }
 
     if ( !result_.has_value() ) {
-      if ( val_decl::internal_command.contains( token_ ) )
+      if ( constants::built_in_cmds.contains( token_ ) )
         result_ = internal_exec();
       else result_ = external_exec();
     }

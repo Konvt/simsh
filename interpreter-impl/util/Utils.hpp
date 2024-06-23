@@ -15,15 +15,17 @@
 
 namespace simsh {
   namespace utils {
-    type_decl::StringT format_char( type_decl::CharT character );
+    [[nodiscard]] types::StringT format_char( types::CharT character );
 
-    type_decl::StrViewT token_kind_map( TokenType tkn );
+    [[nodiscard]] types::StrViewT token_kind_map( TokenType tkn );
 
-    bool create_file( type_decl::StrViewT filename, mode_t mode = 0 );
+    [[nodiscard]] bool create_file( types::StrViewT filename, mode_t mode = 0 );
 
-    void tilde_expansion( type_decl::StringT& token );
+    types::StrViewT get_homedir();
 
-    std::pair<bool, std::smatch> match_string( const type_decl::StringT& str, type_decl::StrViewT reg_str );
+    void tilde_expansion( types::StringT& token );
+
+    [[nodiscard]] std::pair<bool, std::smatch> match_string( const types::StringT& str, types::StrViewT reg_str );
 
     /// @brief A wrapper that helps to convert any lambda to a C-style function interface,
     /// @brief which means function pointer.
@@ -43,14 +45,14 @@ namespace simsh {
 
       template<typename... Args, size_t = 0>
         requires std::is_invocable_v<F, Args...>
-      decltype(&invoking<Args...>) to_fnptr() noexcept {
+      [[nodiscard]] decltype(&invoking<Args...>) to_fnptr() noexcept {
         return &invoking<Args...>;
       }
     };
 
     template<size_t InstTag = 0, typename F>
       requires std::is_lvalue_reference_v<std::remove_cv_t<F>>
-    functor_wrapper<std::decay_t<F>, InstTag> make_fntor_wrapper( F&& f )
+    [[nodiscard]] functor_wrapper<std::decay_t<F>, InstTag> make_fntor_wrapper( F&& f )
     {
       functor_wrapper<std::decay_t<F>, InstTag>::ptr = std::addressof( f );
       return functor_wrapper<std::decay_t<F>, InstTag>();

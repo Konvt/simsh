@@ -5,7 +5,7 @@
 
 namespace simsh {
   namespace utils {
-    constexpr inline type_decl::StrViewT help_doc =
+    constexpr inline types::StrViewT help_doc =
       "Single statement:\n\tcommand\n\tcommand;\n"
       "Connect statement:\n\tcommand1 [&& | || | ;] command2\n"
       "Pipeline:\n\tcommand1 | command2\n"

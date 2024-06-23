@@ -1,12 +1,9 @@
 #ifndef __SIMSH_CONFIG__
 # define __SIMSH_CONFIG__
 
+#include <cstdint>
 #include <string>
 #include <string_view>
-#include <unordered_set>
-#include <limits>
-#include <cstdint>
-#include <cstdlib>
 
 #if defined(_MSC_VER) && defined(_MSVC_LANG) // for msvc
 # define __SIMSH_CPP_V__ _MSVC_LANG
@@ -19,7 +16,7 @@
 #endif
 
 namespace simsh {
-  namespace type_decl {
+  namespace types {
     using CharT = int;
     using StringT = std::string;
     using StrViewT = std::string_view;
@@ -28,20 +25,6 @@ namespace simsh {
     using FDType = int; // file descriptor
     using TokenT = StringT;
   }
-
-  namespace val_decl {
-    inline constexpr type_decl::EvalT ExecSuccess = EXIT_SUCCESS;
-    inline constexpr type_decl::EvalT EvalSuccess = static_cast<type_decl::EvalT>(true);
-    inline constexpr type_decl::EvalT InvalidValue = std::numeric_limits<type_decl::EvalT>::min();
-    inline const std::unordered_set<type_decl::StringT> internal_command {
-      "cd", "exit", "help"
-    };
-  }
-
-  namespace impl {
-    inline constexpr type_decl::StrViewT redirection_regex { R"(^(\d*)>{1,2}$)" };
-    inline constexpr type_decl::StrViewT combined_redir_regex { R"(^(\d*)>&(\d*)$)" };
-  };
 }
 
 #endif // __SIMSH_CONFIG__

@@ -50,27 +50,27 @@ namespace simsh {
     /// @brief Otherwise, the two sides of the child node are evaluated recursively according to the grammar rules
     /// @throw error::SystemCallError If a specific system call error occurs (i.e. `fork` and `waitpid`).
     /// @throw error::TerminationSignal If this process is a child process.
-    virtual type_decl::EvalT evaluate();
+    virtual types::EvalT evaluate();
   };
 
   class ExprNode : public StmtNode {
     ExprKind type_;
-    std::optional<type_decl::EvalT> result_;
+    std::optional<types::EvalT> result_;
 
-    type_decl::TokenT token_;
+    types::TokenT token_;
 
     /// @brief Execute the expression, and return 0 or 1 (a boolean), indicating whether the expression was successful.
     /// @brief The 'successful' means that the return value of child process was `EXIT_SUCCESS`.
-    [[nodiscard]] type_decl::EvalT external_exec() const;
+    [[nodiscard]] types::EvalT external_exec() const;
 
     /// @brief Internal instruction execution, not cross-process.
-    [[nodiscard]] type_decl::EvalT internal_exec() const;
+    [[nodiscard]] types::EvalT internal_exec() const;
 
   public:
     template<typename T>
       requires std::disjunction_v<
         std::is_arithmetic<std::decay_t<T>>,
-        std::is_same<std::decay_t<T>, type_decl::TokenT>
+        std::is_same<std::decay_t<T>, types::TokenT>
       >
     ExprNode( ExprKind expr_type, T&& data, SiblingNodes siblings = {} )
       : StmtNode( StmtKind::trivial, std::move( siblings ) )
@@ -82,12 +82,12 @@ namespace simsh {
     }
     virtual ~ExprNode() = default;
 
-    [[nodiscard]] type_decl::TokenT token() && noexcept { return std::move( token_ ); }
-    const type_decl::TokenT& token() const & noexcept { return token_; }
+    [[nodiscard]] types::TokenT token() && noexcept { return std::move( token_ ); }
+    const types::TokenT& token() const & noexcept { return token_; }
 
     [[nodiscard]] ExprKind kind() const noexcept { return type_; }
     /// @throw error::TerminationSignal If this process is a child process.
-    [[nodiscard]] virtual type_decl::EvalT evaluate() override;
+    [[nodiscard]] virtual types::EvalT evaluate() override;
   };
 }
 
