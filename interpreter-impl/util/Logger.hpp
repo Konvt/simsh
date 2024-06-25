@@ -21,7 +21,8 @@ namespace simsh {
 
       static Logger& inst() noexcept;
 
-      types::StrViewT prefix() const noexcept { return prefix_; }
+      [[nodiscard]] types::StrViewT prefix() const & noexcept { return prefix_; }
+      [[nodiscard]] types::StringT prefix() && noexcept { return std::move( prefix_ ); }
 
       /// @brief Set a string prefix that comes with each output, which defaults to empty.
       void set_prefix( types::StringT prefix );
@@ -49,7 +50,7 @@ namespace simsh {
 
       /// @brief Output anything that can be inserted to `std::cout`.
       template<typename T>
-        requires requires(T info) {
+        requires requires(std::decay_t<T> info) {
           { std::cout << info };
       } Prompter& operator<<( T&& info ) noexcept {
         std::cout << info << std::flush;

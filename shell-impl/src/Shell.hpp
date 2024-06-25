@@ -54,7 +54,7 @@ namespace simsh {
         detect_info();
       }
       virtual ~Shell() = default;
-      types::StrViewT prompt() const { return prompt_; }
+      [[nodiscard]] types::StrViewT prompt() const { return prompt_; }
 
       int run() override;
     };

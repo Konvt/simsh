@@ -43,13 +43,13 @@ namespace simsh {
       PipeReader& operator=( const PipeReader& ) = delete;
 
       void close();
-      types::FDType get() const;
+      [[nodiscard]] types::FDType get() const;
       template<typename T>
         requires std::conjunction_v<
           std::negation<std::is_void<std::remove_pointer_t<std::decay_t<T>>>>, // forbidden any void pointers
           std::is_trivially_copyable<T>
         >
-      T pop() const {
+      [[nodiscard]] T pop() const {
         T value {};
         if ( !reader_closed_ )
           read( pipefd_[reader_fd], &value, sizeof( value ) );
@@ -63,7 +63,7 @@ namespace simsh {
       PipeWriter& operator=( const PipeReader& ) = delete;
 
       void close();
-      types::FDType get() const;
+      [[nodiscard]] types::FDType get() const;
 
       void push( const char* const value ) const {
         if ( !writer_closed_ )

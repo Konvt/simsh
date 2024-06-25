@@ -8,8 +8,6 @@ cmake_policy(SET CMP0091 NEW)
 project(simsh LANGUAGES CXX)
 
 # target
-set(CMAKE_C_COMPILER "/usr/bin/gcc")
-set(CMAKE_CXX_COMPILER "/usr/bin/g++")
 add_executable(simsh "")
 set_target_properties(simsh PROPERTIES OUTPUT_NAME "simsh")
 set_target_properties(simsh PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/.")
@@ -47,12 +45,12 @@ target_link_options(simsh PRIVATE
     -m64
 )
 target_sources(simsh PRIVATE
-    interpreter-impl/src/TreeNode.cpp
-    interpreter-impl/src/Tokenizer.cpp
     interpreter-impl/src/Parser.cpp
-    interpreter-impl/util/Utils.cpp
+    interpreter-impl/src/Tokenizer.cpp
+    interpreter-impl/src/TreeNode.cpp
     interpreter-impl/util/Logger.cpp
     interpreter-impl/util/Pipe.cpp
+    interpreter-impl/util/Utils.cpp
     shell-impl/src/main.cpp
     shell-impl/src/Shell.cpp
 )

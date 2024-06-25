@@ -21,7 +21,7 @@ namespace simsh {
 
     [[nodiscard]] bool create_file( types::StrViewT filename, mode_t mode = 0 );
 
-    types::StrViewT get_homedir();
+    [[nodiscard]] types::StrViewT get_homedir();
 
     void tilde_expansion( types::StringT& token );
 

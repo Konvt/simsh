@@ -64,7 +64,7 @@ namespace simsh {
         info_updated = true;
       }
       if ( char* const cwd = getcwd( nullptr, 0 );
-        current_dir_ != cwd ) {
+           current_dir_ != cwd ) {
         current_dir_ = cwd;
         free( cwd );
         info_updated = true;
@@ -87,10 +87,11 @@ namespace simsh {
         iout::prmptr << prompt();
       };
 
+      using LambdaT = decltype(sigint_handler);
       static_assert(
-        is_same_v<utils::function_traits<decltype(sigint_handler)>::result_type,
+        is_same_v<utils::function_traits<LambdaT>::result_type,
           utils::function_traits<sighandler_t>::result_type> &&
-        is_same_v<utils::function_traits<decltype(sigint_handler)>::arguments,
+        is_same_v<utils::function_traits<LambdaT>::arguments,
           utils::function_traits<sighandler_t>::arguments>,
         "'sigint_handler' and 'sighandler_t' must have the same signature"
       );
