@@ -12,9 +12,8 @@ add_executable(simsh "")
 set_target_properties(simsh PROPERTIES OUTPUT_NAME "simsh")
 set_target_properties(simsh PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/.")
 target_include_directories(simsh PRIVATE
-    interpreter-impl/src
-    interpreter-impl/util
-    shell-impl/src
+    src
+    util
 )
 target_compile_options(simsh PRIVATE
     $<$<COMPILE_LANGUAGE:C>:-m64>
@@ -45,13 +44,13 @@ target_link_options(simsh PRIVATE
     -m64
 )
 target_sources(simsh PRIVATE
-    interpreter-impl/src/Parser.cpp
-    interpreter-impl/src/Tokenizer.cpp
-    interpreter-impl/src/TreeNode.cpp
-    interpreter-impl/util/Logger.cpp
-    interpreter-impl/util/Pipe.cpp
-    interpreter-impl/util/Utils.cpp
-    shell-impl/src/main.cpp
-    shell-impl/src/Shell.cpp
+    src/Parser.cpp
+    src/Tokenizer.cpp
+    src/TreeNode.cpp
+    src/main.cpp
+    src/Shell.cpp
+    util/Logger.cpp
+    util/Pipe.cpp
+    util/Utils.cpp
 )
 

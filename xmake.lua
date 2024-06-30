@@ -6,16 +6,8 @@ add_cxxflags("-Wall", "-Wpedantic", "-Wextra", "-Wshadow")
 
 target("simsh")
   set_kind("binary")
-  add_files(
-    "interpreter-impl/src/*.cpp",
-    "interpreter-impl/util/*.cpp",
-    "shell-impl/src/*.cpp"
-  )
-  add_includedirs(
-    "interpreter-impl/src/",
-    "interpreter-impl/util/",
-    "shell-impl/src/"
-  )
+  add_files("src/*.cpp", "util/*.cpp")
+  add_includedirs("src/", "util/")
   set_targetdir(os.curdir())
 
 --

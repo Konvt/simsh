@@ -38,28 +38,7 @@ namespace simsh {
     extern Logger& logger;
 
     /// @brief An information output class used to output info to stdout.
-    class Prompter {
-      Prompter() noexcept = default;
-
-    public:
-      Prompter( const Logger& ) = delete;
-      Prompter& operator=( const Logger& ) = delete;
-      ~Prompter() noexcept = default;
-
-      static Prompter& inst() noexcept;
-
-      /// @brief Output anything that can be inserted to `std::cout`.
-      template<typename T>
-        requires requires(std::decay_t<T> info) {
-          { std::cout << info };
-      } Prompter& operator<<( T&& info ) noexcept {
-        std::cout << info << std::flush;
-        return *this;
-      }
-    };
-
-    /// @brief An information output class used to output info to stdout.
-    extern Prompter& prmptr;
+    inline auto& prmptr = std::cout;
   }
 }
 

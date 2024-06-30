@@ -1,6 +1,10 @@
 #ifndef __SHIMSH_SHELL__
 # define __SHIMSH_SHELL__
 
+#include <atomic>
+#include <stdexcept>
+#include <csignal>
+
 #include "Config.hpp"
 #include "Parser.hpp"
 
@@ -8,18 +12,33 @@ namespace simsh {
   namespace shell {
     /// @brief The simplest implementation of the shell.
     class BaseShell {
+      static std::atomic<bool> already_exist_; // A process can have only one shell instance in a same scope.
+
+      struct sigaction old_action_;
+
     protected:
       Parser prsr_;
 
     public:
+      /// @throw std::runtime_error If more than one object instances are created in the same scope.
       BaseShell( Parser prsr )
-        : prsr_ { std::move( prsr ) } {}
-      BaseShell() = default;
-      virtual ~BaseShell() = default;
+        : prsr_ { std::move( prsr ) } {
+        if ( already_exist_ )
+          throw std::runtime_error( "Shell already exists" );
+        else already_exist_ = true;
+
+        sigaction( SIGINT, nullptr, &old_action_ ); // save the old signal action
+      }
+      BaseShell() : BaseShell( Parser() ) {}
+      virtual ~BaseShell() {
+        sigaction( SIGINT, &old_action_, nullptr );
+        already_exist_ = false;
+      };
 
       virtual int run();
     };
 
+    /// @brief A shell with prompt.
     class Shell : public BaseShell {
 #define CLEAR_LINE "\x1b[1K\r"
       static constexpr types::StrViewT default_fmt = CLEAR_LINE "\x1b[32;1m{}@{}\x1b[0m:\x1b[34;1m{}\x1b[0m$ ";
@@ -45,18 +64,20 @@ namespace simsh {
       types::StringT user_name_;
 
       void update_prompt();
+
+      /// @brief Check whether the information in the prompt has changed, and update the prompt if so.
       void detect_info();
 
     public:
       Shell( Parser prsr )
-        : BaseShell( std::move( prsr ) ) {}
-      Shell() : BaseShell() {
+        : BaseShell( std::move( prsr ) ) {
         detect_info();
       }
+      Shell() : Shell( Parser() ) {}
       virtual ~Shell() = default;
       [[nodiscard]] types::StrViewT prompt() const { return prompt_; }
 
-      int run() override;
+      virtual int run();
     };
   }
 }

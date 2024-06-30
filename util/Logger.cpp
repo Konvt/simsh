@@ -32,13 +32,5 @@ namespace simsh {
     }
 
     Logger& logger = Logger::inst();
-
-    Prompter& Prompter::inst() noexcept
-    {
-      static Prompter prompter_;
-      return prompter_;
-    }
-
-    Prompter& prmptr = Prompter::inst();
   }
 }

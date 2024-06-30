@@ -19,11 +19,13 @@ using namespace std;
 
 namespace simsh {
   namespace shell {
+    std::atomic<bool> BaseShell::already_exist_ = false;
+
     int BaseShell::run()
     {
       signal( SIGINT, +[]( int signum ) -> void {
         [[maybe_unused]] auto _ = signum;
-        iout::prmptr << "\n";
+        iout::prmptr << "\n" << std::flush;
       } );
 
       while ( !prsr_.empty() ) {
@@ -84,7 +86,7 @@ namespace simsh {
     {
       auto sigint_handler = [this]( int signum ) -> void {
         [[maybe_unused]] auto _ = signum;
-        iout::prmptr << prompt();
+        iout::prmptr << prompt() << std::flush;
       };
 
       using LambdaT = decltype(sigint_handler);
@@ -102,7 +104,7 @@ namespace simsh {
 
       while ( !prsr_.empty() ) {
         detect_info();
-        iout::prmptr << prompt_;
+        iout::prmptr << prompt_ << std::flush;
 
         try {
           prsr_.parse()->evaluate();
@@ -114,7 +116,7 @@ namespace simsh {
           iout::logger << e;
         }
       }
-      iout::prmptr << "\nexit";
+      iout::prmptr << "\nexit" << std::flush;
       return EXIT_SUCCESS;
     }
   }
