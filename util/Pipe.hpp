@@ -65,15 +65,10 @@ namespace simsh {
       void close();
       [[nodiscard]] types::FDType get() const;
 
-      void push( const char* const value ) const {
-        if ( !writer_closed_ )
-          write( pipefd_[writer_fd], value, sizeof( char ) * strlen( value ) );
-      }
-
+      /// @brief for any type that isn't a pointer
       template<typename T>
         requires std::conjunction_v<
-          std::negation<std::is_same<std::decay_t<T>, char*>>,
-          std::negation<std::is_void<std::remove_pointer_t<std::decay_t<T>>>>, // forbidden any void pointers
+          std::negation<std::is_pointer<std::decay_t<T>>>,
           std::is_trivially_copyable<std::decay_t<T>>
         >
       void push( const T& value ) const {
@@ -81,9 +76,41 @@ namespace simsh {
           write( pipefd_[writer_fd], std::addressof( value ), sizeof( value ) );
       }
 
-      template<template <typename> typename T, typename U>
-        requires std::is_trivially_copyable_v<U>
-      void push( const T<U>& value )const {
+      /// @brief for raw array
+      template<typename ArrT, size_t N>
+        requires std::is_trivially_copyable_v<ArrT>
+      void push( const ArrT (&value)[N] ) const {
+        if ( !writer_closed_ )
+          write( pipefd_[writer_fd], &value, sizeof( value ) );
+      }
+
+      /// @brief only for pointer types and dynamic arrays
+      template<typename T>
+        requires std::conjunction_v<
+          std::is_trivially_copyable<std::remove_reference_t<T>>,
+          std::negation<std::is_same<std::decay_t<T>, char*>>,
+          std::negation<std::is_void<std::remove_pointer_t<std::decay_t<T>>>> // forbidden any void pointers
+        >
+      void push( const T* const value, size_t length = 1 ) const {
+        if ( !writer_closed_ )
+          write( pipefd_[writer_fd], value, length * sizeof( T ) );
+      }
+
+      /// @brief for the randomly accessible container type that its element type is trivially copyable
+      template<template <typename, typename...> typename T, typename U, typename... Args>
+        requires requires(const T<U, Args...>& value) {
+          { value.data() } -> std::same_as<const U*>;
+          { value.size() } -> std::same_as<size_t>;
+          std::is_trivially_copyable_v<U>;
+      }
+      void push( const T<U, Args...>& value ) const {
+        if ( !writer_closed_ )
+          write( pipefd_[writer_fd], value.data(), sizeof( U ) * value.size() );
+      }
+
+      /// @brief for any container type that its underlying element type is trivially copyable
+      template<template <typename, typename...> typename T, typename U, typename... Args>
+      void push( const T<U, Args...>& value ) const {
         if ( !writer_closed_ )
           std::ranges::for_each( value,
             [this]( const auto& ele ) -> void {
@@ -91,8 +118,15 @@ namespace simsh {
             }
           );
       }
+
+      /// @brief for dynamic `c-style` string
+      void push( const char* const value ) const {
+        if ( !writer_closed_ )
+          write( pipefd_[writer_fd], value, sizeof( char ) * strlen( value ) );
+      }
     };
 
+    /// @brief Disable blocking behavior when reading from the specified file descriptor.
     bool close_blocking( types::FDType fd );
   }
 
