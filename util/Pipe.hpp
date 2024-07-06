@@ -4,6 +4,7 @@
 #include <type_traits>
 #include <concepts>
 #include <array>
+#include <vector>
 #include <ranges>
 #include <algorithm>
 #include <cstring>
@@ -12,6 +13,12 @@
 
 namespace simsh {
   namespace utils {
+    template<template <typename, typename...> typename T, typename U, typename... Args>
+    concept is_randomly_accessible = requires(const T<U, Args...>&value) {
+      { value.data() } -> std::same_as<const U*>;
+      { value.size() } -> std::same_as<size_t>;
+    };
+
     class PipeReader;
     class PipeWriter;
 
@@ -38,22 +45,36 @@ namespace simsh {
     };
 
     class PipeReader : public Pipe {
+      template<typename T>
+      static constexpr bool is_valid_type_v = std::conjunction_v<
+        std::negation<std::is_void<std::remove_pointer_t<std::decay_t<T>>>>, // forbidden any void pointers
+        std::is_trivially_copyable<T>,
+        std::is_default_constructible<std::decay_t<T>>
+      >;
+
     public:
       PipeReader( const PipeReader& ) = delete;
       PipeReader& operator=( const PipeReader& ) = delete;
 
       void close();
       [[nodiscard]] types::FDType get() const;
+
       template<typename T>
-        requires std::conjunction_v<
-          std::negation<std::is_void<std::remove_pointer_t<std::decay_t<T>>>>, // forbidden any void pointers
-          std::is_trivially_copyable<T>
-        >
+        requires is_valid_type_v<T>
       [[nodiscard]] T pop() const {
         T value {};
         if ( !reader_closed_ )
           read( pipefd_[reader_fd], &value, sizeof( value ) );
         return value;
+      }
+
+      template<typename T>
+        requires is_valid_type_v<T>
+      [[nodiscard]] std::vector<T> pop( size_t num ) const {
+        std::vector<T> values( num );
+        if ( !reader_closed_ )
+          read( pipefd_[reader_fd], values.data(), num * sizeof( T ) );
+        return values;
       }
     };
 
@@ -96,20 +117,23 @@ namespace simsh {
           write( pipefd_[writer_fd], value, length * sizeof( T ) );
       }
 
-      /// @brief for the randomly accessible container type that its element type is trivially copyable
+      /// @brief for the randomly accessible container type
       template<template <typename, typename...> typename T, typename U, typename... Args>
-        requires requires(const T<U, Args...>& value) {
-          { value.data() } -> std::same_as<const U*>;
-          { value.size() } -> std::same_as<size_t>;
-          std::is_trivially_copyable_v<U>;
-      }
+        requires std::conjunction_v<
+          std::bool_constant<is_randomly_accessible<T, U, Args...>>,
+          std::is_trivially_copyable<U>
+        >
       void push( const T<U, Args...>& value ) const {
         if ( !writer_closed_ )
           write( pipefd_[writer_fd], value.data(), sizeof( U ) * value.size() );
       }
 
-      /// @brief for any container type that its underlying element type is trivially copyable
+      /// @brief for the container type that is not randomly accessible
       template<template <typename, typename...> typename T, typename U, typename... Args>
+        requires std::conjunction_v<
+          std::negation<std::bool_constant<is_randomly_accessible<T, U, Args...>>>,
+          std::is_trivially_copyable<U>
+        >
       void push( const T<U, Args...>& value ) const {
         if ( !writer_closed_ )
           std::ranges::for_each( value,
