@@ -1,5 +1,6 @@
 #include <array>
 #include <format>
+#include <filesystem>
 #include <climits>
 
 #include "Parser.hpp"
@@ -65,10 +66,9 @@ namespace simsh {
         home_dir_ = pw->pw_dir;
         info_updated = true;
       }
-      if ( char* const cwd = getcwd( nullptr, 0 );
+      if ( auto cwd = filesystem::current_path().string();
            current_dir_ != cwd ) {
-        current_dir_ = cwd;
-        free( cwd );
+        swap( current_dir_, cwd );
         info_updated = true;
       }
       array<char, HOST_NAME_MAX + 1> hostname;

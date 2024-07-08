@@ -1,5 +1,6 @@
 #include <ranges>
 #include <algorithm>
+#include <filesystem>
 #include <format>
 #include <cstdlib>
 #include <cassert>
@@ -308,7 +309,9 @@ namespace simsh {
         ? utils::get_homedir()
         : static_cast<ExprNode*>(siblings_.front().get())->token();
 
-      if ( chdir( target_dir.data() ) < 0 ) {
+      try {
+        filesystem::current_path( target_dir );
+      } catch ( const filesystem::filesystem_error& e ) {
         iout::logger.print( error::SystemCallError( format( "cd: {}", target_dir.data() ) ) );
         exec_result = !constants::EvalSuccess;
       }

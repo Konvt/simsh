@@ -19,7 +19,7 @@ namespace simsh {
 
     [[nodiscard]] types::StrViewT token_kind_map( TokenType tkn );
 
-    [[nodiscard]] bool create_file( types::StrViewT filename, mode_t mode = 0 );
+    [[nodiscard]] bool create_file( types::StrViewT filename );
 
     [[nodiscard]] types::StrViewT get_homedir();
 

@@ -1,3 +1,4 @@
+#include <fstream>
 #include <format>
 #include <climits>
 #include <cassert>
@@ -61,8 +62,11 @@ namespace simsh {
       }
     }
 
-    bool create_file( types::StrViewT filename, mode_t mode )
+    bool create_file( types::StrViewT filename )
     {
+      fstream file { filename.data() };
+      return file.is_open();
+      /*
       if ( mode == 0 ) {
         umask( mode = umask( 0 ) );
         mode = ~mode;
@@ -73,6 +77,7 @@ namespace simsh {
         return false;
       else close( fd );
       return true;
+      */
     }
 
     types::StrViewT get_homedir()
