@@ -5,8 +5,6 @@
 
 #include <unistd.h>
 #include <pwd.h>
-#include <fcntl.h>
-#include <sys/stat.h>
 
 #include "Utils.hpp"
 using namespace std;
@@ -64,20 +62,7 @@ namespace simsh {
 
     bool create_file( types::StrViewT filename )
     {
-      fstream file { filename.data() };
-      return file.is_open();
-      /*
-      if ( mode == 0 ) {
-        umask( mode = umask( 0 ) );
-        mode = ~mode;
-      }
-
-      auto fd = creat( filename.data(), mode );
-      if ( fd < 0 )
-        return false;
-      else close( fd );
-      return true;
-      */
+      return fstream( filename.data() ).is_open();
     }
 
     types::StrViewT get_homedir()

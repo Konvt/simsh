@@ -7,12 +7,8 @@
 #include "Logger.hpp"
 #include "Exception.hpp"
 
-#include <signal.h>
 #include <unistd.h>
 #include <pwd.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 
 #include "Shell.hpp"
 #include "Utils.hpp"

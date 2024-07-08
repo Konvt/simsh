@@ -2,8 +2,6 @@
 #include <string>
 #include <fstream>
 
-#include <sys/types.h>
-#include <sys/wait.h>
 #include <unistd.h>
 
 #include "Pipe.hpp"

@@ -7,15 +7,13 @@
 
 #include <unistd.h>
 #include <fcntl.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <signal.h>
 
 #include "TreeNode.hpp"
 #include "Constants.hpp"
 #include "Exception.hpp"
 #include "Logger.hpp"
 #include "Pipe.hpp"
+#include "ForkGuard.hpp"
 #include "Utils.hpp"
 #include "HelpDocument.hpp"
 using namespace std;
@@ -65,10 +63,8 @@ namespace simsh {
       utils::close_blocking( pipe.reader().get() );
 
       for ( size_t i = 0; i < 2; ++i ) {
-        if ( pid_t process_id = fork(); process_id < 0 )
-          // At runtime, only critical system call errors cause exceptions to be thrown.
-          throw error::SystemCallError( "fork" );
-        else if ( process_id == 0 ) {
+        utils::ForkGuard pguard;
+        if ( pguard.is_child() ) {
           // child process
           if ( i == 0 ) {
             pipe.reader().close();
@@ -80,8 +76,8 @@ namespace simsh {
             r_child_->evaluate();
           }
           throw error::TerminationSignal( EXIT_FAILURE );
-        } else if ( waitpid( process_id, nullptr, 0 ) < 0 )
-          throw error::SystemCallError( "waitpid" );
+        }
+        pguard.wait();
       }
 
       return constants::EvalSuccess;
@@ -103,10 +99,11 @@ namespace simsh {
         ? static_cast<ExprNode*>(siblings_[1].get())->token()
         : static_cast<ExprNode*>(siblings_.front().get())->token();
       // Check whether the file descriptor can be obtained.
-      if ( access( filename.c_str(), F_OK ) < 0 && !utils::create_file( filename ) ) {
+      if ( !filesystem::exists( filename ) && !utils::create_file( filename ) ) {
         iout::logger.print( error::SystemCallError( filename ) );
         return !constants::EvalSuccess;
-      } else if ( access( filename.c_str(), W_OK ) < 0 ) {
+      } else if ( const auto perms = filesystem::status( filename ).permissions();
+                  (perms & filesystem::perms::owner_write) == filesystem::perms::none ) { // not writable
         iout::logger.print( error::SystemCallError( filename ) );
         return !constants::EvalSuccess;
       }
@@ -120,11 +117,8 @@ namespace simsh {
         file_d = siblings_.front()->evaluate() == constants::InvalidValue ? STDOUT_FILENO : siblings_.front()->evaluate();
       }
 
-      int status;
-      if ( pid_t process_id = fork();
-           process_id < 0 )
-        throw error::SystemCallError( "fork" );
-      else if ( process_id == 0 ) {
+      utils::ForkGuard pguard;
+      if ( pguard.is_child() ) {
         auto target_fd = open( filename.c_str(),
           O_WRONLY | (category_ == StmtKind::appnd_redrct ||category_ == StmtKind::merge_appnd ? O_APPEND : O_TRUNC) );
 
@@ -144,12 +138,12 @@ namespace simsh {
           close( target_fd );
           throw error::TerminationSignal( EXIT_SUCCESS );
         }
-      } else if ( waitpid( process_id, &status, 0 ) < 0 )
-        throw error::SystemCallError( "waitpid" );
+      }
+      pguard.wait();
 
       if ( l_child_ != nullptr && l_child_->type() == StmtKind::trivial )
-        return WEXITSTATUS( status ) == constants::ExecSuccess;
-      else return WEXITSTATUS( status );
+        return pguard.exit_code() == constants::ExecSuccess;
+      else return pguard.exit_code();
     }
 
     case StmtKind::merge_stream: {
@@ -165,21 +159,18 @@ namespace simsh {
       const auto l_fd = siblings_[0]->evaluate() == constants::InvalidValue ? STDERR_FILENO : siblings_[0]->evaluate();
       const auto r_fd = siblings_[1]->evaluate() == constants::InvalidValue ? STDOUT_FILENO : siblings_[1]->evaluate();
 
-      int status;
-      if ( pid_t process_id = fork();
-           process_id < 0 )
-        throw error::SystemCallError( "fork" );
-      else if ( process_id == 0 ) {
+      utils::ForkGuard pguard;
+      if ( pguard.is_child() ) {
         dup2( r_fd, l_fd );
 
         l_child_->evaluate();
         throw error::TerminationSignal( EXIT_FAILURE );
-      } else if ( waitpid( process_id, &status, 0 ) < 0 )
-        throw error::SystemCallError( "waitpid" );
+      }
+      pguard.wait();
 
       if ( l_child_->type() == StmtKind::trivial )
-        return WEXITSTATUS( status ) == constants::ExecSuccess;
-      else return WEXITSTATUS( status );
+        return pguard.exit_code() == constants::ExecSuccess;
+      else return pguard.exit_code();
     }
 
     case StmtKind::stdin_redrct: {
@@ -195,20 +186,17 @@ namespace simsh {
       }
 
       const auto& filename = static_cast<ExprNode*>(siblings_.front().get())->token();
-      if ( access( filename.c_str(), F_OK ) < 0 ) {
+      if ( !filesystem::exists( filename ) ) {
         iout::logger.print( error::SystemCallError( filename ) );
         return !constants::EvalSuccess;
-      }
-      else if ( access( filename.c_str(), R_OK ) < 0 ) {
+      } else if ( const auto perms = filesystem::status( filename ).permissions();
+                  (perms & filesystem::perms::owner_read) == filesystem::perms::none ) { // not readable
         iout::logger.print( error::SystemCallError( filename ) );
         return !constants::EvalSuccess;
       }
 
-      int status;
-      if ( pid_t process_id = fork();
-           process_id < 0 )
-        throw error::SystemCallError( "fork" );
-      else if ( process_id == 0 ) {
+      utils::ForkGuard pguard;
+      if ( pguard.is_child() ) {
         auto target_fd = open( filename.c_str(), O_RDONLY );
         dup2( target_fd, STDIN_FILENO );
 
@@ -216,10 +204,10 @@ namespace simsh {
 
         close( target_fd );
         throw error::TerminationSignal( EXIT_FAILURE );
-      } else if ( waitpid( process_id, &status, 0 ) < 0 )
-        throw error::SystemCallError( "waitpid" );
+      }
+      pguard.wait();
 
-      return WEXITSTATUS( status ) == constants::ExecSuccess;
+      return pguard.exit_code() == constants::ExecSuccess;
     }
 
     case StmtKind::trivial:
@@ -237,16 +225,8 @@ namespace simsh {
     utils::Pipe pipe;
     utils::close_blocking( pipe.reader().get() );
 
-    sigset_t new_set, old_set;
-    sigemptyset( &new_set );
-    sigaddset( &new_set, SIGINT );
-    // block the signal in parent process
-    if ( sigprocmask( SIG_BLOCK, &new_set, &old_set ) < 0 )
-      throw error::SystemCallError( "sigprocmask" );
-
-    if ( const pid_t process_id = fork(); process_id < 0 )
-      throw error::SystemCallError( "fork" );
-    else if ( process_id == 0 ) {
+    utils::ForkGuard pguard;
+    if ( pguard.is_child() ) {
       // child process
       pipe.reader().close();
 
@@ -260,11 +240,7 @@ namespace simsh {
       );
       exec_argv.push_back( nullptr );
 
-      // set the signal in child process to default
-      sigemptyset( &new_set );
-      sigprocmask( SIG_SETMASK, &new_set, nullptr );
-      signal( SIGINT, SIG_DFL );
-
+      pguard.reset_signals();
       execvp( exec_argv.front(), exec_argv.data() );
 
       pipe.writer().push( true );
@@ -272,9 +248,7 @@ namespace simsh {
       // In particular the object `utils::Pipe` above.
       throw error::TerminationSignal( EXIT_FAILURE );
     } else {
-      int status;
-      if ( waitpid( process_id, &status, 0 ) < 0 )
-        throw error::SystemCallError( "waitpid" );
+      pguard.wait();
 
       if ( pipe.reader().pop<bool>() )
         // output error, don't throw it.
@@ -282,13 +256,7 @@ namespace simsh {
           token_, "command error or not found"sv
         );
 
-      // resuming the signal processing in parent process 
-      if ( sigprocmask( SIG_SETMASK, &old_set, nullptr ) < 0 ) {
-        iout::logger << error::SystemCallError( "sigprocmask" );
-        throw error::TerminationSignal( EXIT_FAILURE );
-      }
-
-      return WEXITSTATUS( status ) == constants::ExecSuccess;
+      return pguard.exit_code() == constants::ExecSuccess;
     }
   }
 

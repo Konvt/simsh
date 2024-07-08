@@ -52,5 +52,6 @@ target_sources(simsh PRIVATE
     util/Logger.cpp
     util/Pipe.cpp
     util/Utils.cpp
+    util/ForkGuard.cpp
 )
 

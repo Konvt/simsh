@@ -7,9 +7,6 @@
 #include <regex>
 #include <functional>
 
-#include <sys/types.h>
-#include <signal.h>
-
 #include "Config.hpp"
 #include "EnumLabel.hpp"
 
