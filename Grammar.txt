@@ -40,7 +40,7 @@
 
 <output_redirection> ::= &>{1,2} <expression> (<output_redirection_extension>)?
                        | (\d*)>{1,2} <expression> (<output_redirection_extension>)?
-                       | (\d*)>&(\d*) (<combined_redirection_extension>)?
+                       | (\d*)>&(\d*) <combined_redirection_extension>
 
 <output_redirection_extension> ::= (\d*)>&(\d*)
 
