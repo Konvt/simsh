@@ -1,3 +1,7 @@
+# This file is licensed under the MIT License.
+# Please see the LICENSE file in the root of the repository for the full license text.
+# Copyright (c) 2024 Konvt
+
 SRC_DIR := src
 UTIL_DIR := util
 BUILD_DIR := build

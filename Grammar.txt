@@ -1,3 +1,7 @@
+# This file is licensed under the MIT License.
+# Please see the LICENSE file in the root of the repository for the full license text.
+# Copyright (c) 2024 Konvt
+
 <statement> ::= <nonempty_statement>
               | '\n'
               | EOF
@@ -18,10 +22,10 @@
                     | '(' <inner_statement> <inner_statement_extension>
 
 <inner_statement_extension> ::= <connector> <inner_statement>
-                 | <redirection> <inner_statement_extension>
-                 | ';' <inner_statement>
-                 | ';' ')'
-                 | ')'
+                              | <redirection> <inner_statement_extension>
+                              | ';' <inner_statement>
+                              | ';' ')'
+                              | ')'
 
 <logical_not> ::= <expression>
                 | '(' <inner_statement>
