@@ -11,8 +11,7 @@ namespace simsh {
     pipeline,
     ovrwrit_redrct, appnd_redrct, // >, >>
     merge_output, merge_appnd, merge_stream, // &>, &>>, >&
-    stdin_redrct,
-    here_doc, here_str
+    stdin_redrct
   };
 
   enum class ExprKind : uint8_t {

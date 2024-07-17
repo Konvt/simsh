@@ -30,7 +30,5 @@ namespace simsh {
       static Logger logger_;
       return logger_;
     }
-
-    Logger& logger = Logger::inst();
   }
 }

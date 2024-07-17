@@ -35,7 +35,7 @@ namespace simsh {
     };
 
     /// @brief Log output used to "consume" all exception types in the program, output to stderr.
-    extern Logger& logger;
+    inline Logger& logger = Logger::inst();
 
     /// @brief An information output class used to output info to stdout.
     inline auto& prmptr = std::cout;

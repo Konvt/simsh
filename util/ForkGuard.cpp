@@ -28,10 +28,8 @@ namespace simsh {
         wait();
 
         // resuming the signal processing in parent process
-        if ( sigprocmask( SIG_SETMASK, &old_set_, nullptr ) < 0 ) {
-          iout::logger << error::SystemCallError( "sigprocmask" );
-          throw error::TerminationSignal( EXIT_FAILURE );
-        }
+        if ( sigprocmask( SIG_SETMASK, &old_set_, nullptr ) < 0 )
+          throw error::SystemCallError( "sigprocmask" );
       }
     }
 

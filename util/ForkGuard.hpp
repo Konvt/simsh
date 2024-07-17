@@ -22,7 +22,7 @@ namespace simsh {
       ForkGuard();
 
       /// @brief Waits and recovers the signals in parent process ONLY.
-      /// @throw error::TerminationSignal Thrown only in parent process, if the recovery signal failed.
+      /// @throw error::SystemCallError Thrown only in parent process, if the recovery signal failed.
       ~ForkGuard() noexcept(false);
       [[nodiscard]] pid_t pid() const noexcept;
       [[nodiscard]] bool is_parent() const noexcept;
