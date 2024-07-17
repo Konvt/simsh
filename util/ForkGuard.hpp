@@ -2,6 +2,7 @@
 # define __SIMSH__FORKGUARD__
 
 #include <optional>
+#include <memory>
 #include <csignal>
 #include <sys/types.h>
 
@@ -14,19 +15,22 @@ namespace simsh {
       pid_t process_id_;
       std::optional<int> subprocess_exit_code_;
 
-      sigset_t new_set_, old_set_;
+      std::unique_ptr<sigset_t> old_set_;
+      sigset_t new_set_;
 
     public:
       /// @brief Fork and check for success.
-      /// @throw error::SystemCallError Fork failed or block the signals failed.
-      ForkGuard();
+      /// @throw error::SystemCallError When fork failed.
+      explicit ForkGuard( bool block_signal = true );
 
-      /// @brief Waits and recovers the signals in parent process ONLY.
-      /// @throw error::SystemCallError Thrown only in parent process, if the recovery signal failed.
-      ~ForkGuard() noexcept(false);
+      /// @brief Abandon the management child process, and deconstruct this object.
+      ~ForkGuard() noexcept;
       [[nodiscard]] pid_t pid() const noexcept;
       [[nodiscard]] bool is_parent() const noexcept;
       [[nodiscard]] bool is_child() const noexcept;
+
+      /// @brief Check the exit code of subprocess.
+      /// @return Return exit code if present, otherwise INT32_MIN.
       [[nodiscard]] int exit_code() const noexcept;
 
       /// @brief Wait for the subprocess to exit.

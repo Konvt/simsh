@@ -301,7 +301,7 @@ namespace simsh {
         );
         return !constants::EvalSuccess;
       }
-      iout::prmptr << utils::help_doc;
+      iout::prmptr << utils::help_doc();
     } break;
     default:
       assert( false );

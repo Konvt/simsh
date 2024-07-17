@@ -6,30 +6,30 @@ using namespace std;
 
 namespace simsh {
   namespace utils {
-    ForkGuard::ForkGuard()
+    ForkGuard::ForkGuard( bool block_signal )
       : process_id_ {}
       , subprocess_exit_code_ {}
+      , old_set_ { nullptr }
     {
-      sigemptyset( &new_set_ );
-      sigaddset( &new_set_, SIGINT );
-      // block the signal in parent process
-      if ( sigprocmask( SIG_BLOCK, &new_set_, &old_set_ ) < 0 )
-        throw error::SystemCallError( "sigprocmask" );
+      if ( block_signal ) {
+        old_set_ = make_unique<sigset_t>();
 
-      process_id_ = fork();
+        sigemptyset( &new_set_ );
+        sigaddset( &new_set_, SIGINT );
+        // block the signal in parent process
+        sigprocmask( SIG_BLOCK, &new_set_, old_set_.get() );
+      }
 
-      if ( process_id_ < 0 )
+      if ( (process_id_ = fork()) < 0 )
         throw error::SystemCallError( "fork" );
     }
 
-    ForkGuard::~ForkGuard() noexcept(false)
+    ForkGuard::~ForkGuard() noexcept
     {
-      if ( is_parent() ) {
-        wait();
-
+      if ( is_parent() && old_set_ != nullptr ) {
+        //wait();
         // resuming the signal processing in parent process
-        if ( sigprocmask( SIG_SETMASK, &old_set_, nullptr ) < 0 )
-          throw error::SystemCallError( "sigprocmask" );
+        sigprocmask( SIG_SETMASK, old_set_.get(), nullptr );
       }
     }
 
