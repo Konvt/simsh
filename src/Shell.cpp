@@ -24,6 +24,10 @@ namespace simsh {
         [[maybe_unused]] auto _ = signum;
         iout::prmptr << "\n" << std::flush;
       } );
+      signal( SIGTSTP, +[]( int signum ) -> void {
+        [[maybe_unused]] auto _ = signum;
+        iout::prmptr << "\n" << std::flush;
+      } );
 
       while ( !prsr_.empty() ) {
         try {
@@ -94,7 +98,10 @@ namespace simsh {
         "'sigint_handler' and 'sighandler_t' must have the same signature"
       );
 
-      signal( SIGINT, utils::make_fntor_wrapper( sigint_handler ).to_fnptr<int>() );
+      auto wrapper = utils::make_fntor_wrapper( sigint_handler );
+      signal( SIGINT, wrapper.to_fnptr<int>() );
+      signal( SIGTSTP, wrapper.to_fnptr<int>() );
+
       simsh::iout::logger.set_prefix( "simsh: " );
       simsh::iout::prmptr << welcome_mes;
 

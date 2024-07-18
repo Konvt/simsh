@@ -16,6 +16,7 @@ namespace simsh {
 
         sigemptyset( &new_set_ );
         sigaddset( &new_set_, SIGINT );
+        sigaddset( &new_set_, SIGTSTP );
         // block the signal in parent process
         sigprocmask( SIG_BLOCK, &new_set_, old_set_.get() );
       }
