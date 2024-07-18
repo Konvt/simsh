@@ -7,30 +7,33 @@
 
 #include "Config.hpp"
 #include "Parser.hpp"
+#include "Interpreter.hpp"
 
 namespace simsh {
-  namespace shell {
+  namespace cli {
     /// @brief The simplest implementation of the shell.
-    class BaseShell {
+    class BaseCLI {
       static std::atomic<bool> already_exist_; // A process can have only one shell instance in a same scope.
 
       struct sigaction old_action_;
 
     protected:
       Parser prsr_;
+      Interpreter interp_;
 
     public:
       /// @throw std::runtime_error If more than one object instances are created in the same scope.
-      BaseShell( Parser prsr )
-        : prsr_ { std::move( prsr ) } {
+      BaseCLI( Parser prsr )
+        : prsr_ { std::move( prsr ) }
+        , interp_ {} {
         if ( already_exist_ )
-          throw std::runtime_error( "Shell already exists" );
+          throw std::runtime_error( "CLI already exists" );
         else already_exist_ = true;
 
         sigaction( SIGINT, nullptr, &old_action_ ); // save the old signal action
       }
-      BaseShell() : BaseShell( Parser() ) {}
-      virtual ~BaseShell() {
+      BaseCLI() : BaseCLI( Parser() ) {}
+      virtual ~BaseCLI() {
         sigaction( SIGINT, &old_action_, nullptr );
         already_exist_ = false;
       };
@@ -39,7 +42,7 @@ namespace simsh {
     };
 
     /// @brief A shell with prompt.
-    class Shell : public BaseShell {
+    class CLI : public BaseCLI {
 #define CLEAR_LINE "\x1b[1K\r"
       static constexpr types::StrViewT default_fmt = CLEAR_LINE "\x1b[32;1m{}@{}\x1b[0m:\x1b[34;1m{}\x1b[0m$ ";
       static constexpr types::StrViewT root_fmt = CLEAR_LINE "{}@{}:{}# ";
@@ -69,12 +72,12 @@ namespace simsh {
       void detect_info();
 
     public:
-      Shell( Parser prsr )
-        : BaseShell( std::move( prsr ) ) {
+      CLI( Parser prsr )
+        : BaseCLI( std::move( prsr ) ) {
         detect_info();
       }
-      Shell() : Shell( Parser() ) {}
-      virtual ~Shell() = default;
+      CLI() : CLI( Parser() ) {}
+      virtual ~CLI() = default;
       [[nodiscard]] types::StrViewT prompt() const { return prompt_; }
 
       virtual int run();

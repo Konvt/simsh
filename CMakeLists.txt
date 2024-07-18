@@ -46,9 +46,9 @@ target_link_options(simsh PRIVATE
 target_sources(simsh PRIVATE
     src/Parser.cpp
     src/Tokenizer.cpp
-    src/TreeNode.cpp
     src/main.cpp
-    src/Shell.cpp
+    src/CLI.cpp
+    src/Interpreter.cpp
     util/Logger.cpp
     util/Pipe.cpp
     util/Utils.cpp

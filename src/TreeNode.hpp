@@ -4,6 +4,7 @@
 #include <vector>
 #include <memory>
 #include <optional>
+#include <variant>
 
 #include "Config.hpp"
 #include "EnumLabel.hpp"
@@ -44,27 +45,11 @@ namespace simsh {
     [[nodiscard]] ChildNode right() && noexcept { return std::move( r_child_ ); }
     const SiblingNodes& siblings() const & noexcept { return siblings_; }
     [[nodiscard]] SiblingNodes siblings() && noexcept { return std::move( siblings_ ); }
-
-    /// @brief Evaluates the statement. If it is an trivial statement (expression),
-    /// @brief returns the expression evaluation result.
-    /// @brief Otherwise, the two sides of the child node are evaluated recursively according to the grammar rules
-    /// @throw error::SystemCallError If a specific system call error occurs (i.e. `fork` and `waitpid`).
-    /// @throw error::TerminationSignal If this process is a child process.
-    virtual types::EvalT evaluate();
   };
 
   class ExprNode : public StmtNode {
     ExprKind type_;
-    std::optional<types::EvalT> result_;
-
-    types::TokenT token_;
-
-    /// @brief Execute the expression, and return 0 or 1 (a boolean), indicating whether the expression was successful.
-    /// @brief The 'successful' means that the return value of child process was `EXIT_SUCCESS`.
-    [[nodiscard]] types::EvalT external_exec() const;
-
-    /// @brief Internal instruction execution, not cross-process.
-    [[nodiscard]] types::EvalT internal_exec() const;
+    std::variant<types::EvalT, types::TokenT> expr_;
 
   public:
     template<typename T>
@@ -74,20 +59,20 @@ namespace simsh {
       >
     ExprNode( ExprKind expr_type, T&& data, SiblingNodes siblings = {} )
       : StmtNode( StmtKind::trivial, std::move( siblings ) )
-      , type_ { expr_type }, result_ { std::nullopt }, token_ {} {
-      using DecayT = std::decay_t<T>;
-      if constexpr ( std::is_arithmetic_v<DecayT> )
-        result_ = std::forward<T>( data );
-      else token_ = std::forward<T>( data );
+      , type_ { expr_type }, expr_ {} {
+      expr_ = std::forward<T>( data );
     }
     virtual ~ExprNode() = default;
 
-    [[nodiscard]] types::TokenT token() && noexcept { return std::move( token_ ); }
-    const types::TokenT& token() const & noexcept { return token_; }
+    [[nodiscard]] types::TokenT token() && { return std::move( std::get<types::TokenT>( expr_ ) ); }
+    const types::TokenT& token() const & { return std::get<types::TokenT>( expr_ ); }
+
+    /// @brief Expose the token object so that it can be changed externally.
+    types::TokenT& replace() { return std::get<types::TokenT>( expr_ ); }
+
+    [[nodiscard]] types::EvalT value() const { return std::get<types::EvalT>( expr_ ); }
 
     [[nodiscard]] ExprKind kind() const noexcept { return type_; }
-    /// @throw error::TerminationSignal If this process is a child process.
-    [[nodiscard]] virtual types::EvalT evaluate() override;
   };
 }
 

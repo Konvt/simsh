@@ -9,7 +9,7 @@
 #include "Logger.hpp"
 #include "Exception.hpp"
 
-#include "Shell.hpp"
+#include "CLI.hpp"
 using namespace std;
 
 int main( int argc, char **argv )
@@ -17,7 +17,7 @@ int main( int argc, char **argv )
   if ( argc == 0 )
     abort();
   else if ( argc == 1 )
-    return simsh::shell::Shell().run();
+    return simsh::cli::CLI().run();
 
   if ( "-c"sv == argv[1] || argc > 2 ) {
     if ( argc == 2 && "-c"sv == argv[1] ) {
@@ -37,7 +37,7 @@ int main( int argc, char **argv )
     }
     pipe.writer().push( '\n' );
     pipe.writer().close();
-    return simsh::shell::BaseShell().run();
+    return simsh::cli::BaseCLI().run();
   } else {
     ifstream ifs { argv[1] };
     if ( !ifs ) {
@@ -45,6 +45,6 @@ int main( int argc, char **argv )
         format("simsh: {}", argv[1] ) ) );
       return EXIT_FAILURE;
     }
-    return simsh::shell::BaseShell( simsh::Parser( ifs ) ).run();
+    return simsh::cli::BaseCLI( simsh::Parser( ifs ) ).run();
   }
 }

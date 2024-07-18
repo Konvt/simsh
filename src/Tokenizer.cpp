@@ -173,7 +173,7 @@ namespace simsh {
           default: {
             if ( ("':^%"sv).find( character ) != types::StrViewT::npos )
               throw error::TokenError(
-              line_buf_.line_pos(), "any valid command character"sv, character
+                line_buf_.line_pos(), "any valid command character"sv, character
               );
             else state = StateType::INCMD;
           } break;

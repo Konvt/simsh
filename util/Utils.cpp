@@ -62,7 +62,7 @@ namespace simsh {
 
     bool create_file( types::StrViewT filename )
     {
-      return fstream( filename.data() ).is_open();
+      return ofstream( filename.data() ).is_open();
     }
 
     types::StrViewT get_homedir()

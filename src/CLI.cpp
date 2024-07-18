@@ -10,15 +10,15 @@
 #include <unistd.h>
 #include <pwd.h>
 
-#include "Shell.hpp"
+#include "CLI.hpp"
 #include "Utils.hpp"
 using namespace std;
 
 namespace simsh {
-  namespace shell {
-    std::atomic<bool> BaseShell::already_exist_ = false;
+  namespace cli {
+    std::atomic<bool> BaseCLI::already_exist_ = false;
 
-    int BaseShell::run()
+    int BaseCLI::run()
     {
       signal( SIGINT, +[]( int signum ) -> void {
         [[maybe_unused]] auto _ = signum;
@@ -31,7 +31,7 @@ namespace simsh {
 
       while ( !prsr_.empty() ) {
         try {
-          prsr_.parse()->evaluate();
+          interp_( prsr_.parse().get() );
         } catch ( const error::SystemCallError& e ) {
           iout::logger.print( e );
         } catch ( const error::TerminationSignal& e ) {
@@ -43,7 +43,7 @@ namespace simsh {
       return EXIT_SUCCESS;
     }
 
-    void Shell::update_prompt()
+    void CLI::update_prompt()
     {
       if ( current_dir_.size() >= home_dir_.size() &&
            current_dir_.compare( 0, home_dir_.size(), home_dir_ ) == 0 )
@@ -53,7 +53,7 @@ namespace simsh {
       else prompt_ = format( default_fmt, user_name_, host_name_, current_dir_ );
     }
 
-    void Shell::detect_info()
+    void CLI::detect_info()
     {
       bool info_updated = false;
 
@@ -82,7 +82,7 @@ namespace simsh {
         update_prompt();
     }
 
-    int Shell::run()
+    int CLI::run()
     {
       auto sigint_handler = [this]( int signum ) -> void {
         [[maybe_unused]] auto _ = signum;
@@ -110,7 +110,7 @@ namespace simsh {
         iout::prmptr << prompt_ << std::flush;
 
         try {
-          prsr_.parse()->evaluate();
+          interp_( prsr_.parse().get() );
         } catch ( const error::SystemCallError& e ) {
           iout::logger.print( e );
         } catch ( const error::TerminationSignal& e ) {
