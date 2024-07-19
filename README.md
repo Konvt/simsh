@@ -74,7 +74,7 @@ Additionally, `simsh` will expand special symbols (i.e., `$$` and `~`) to the cu
 ./simsh -c "echo ~ && echo \$\$"
 ```
 
-If run as the `root` user, the default `simsh::Shell` object will change the command prompt to a colorless format ending with `#`.
+If run as the `root` user, the default `simsh::CLI` object will change the command prompt to a colorless format ending with `#`.
 
 - - -
 
@@ -135,4 +135,4 @@ cmake -S . -B build && cmake --build build
 ./simsh -c "echo ~ && echo \$\$"
 ```
 
-如果以 `root` 用户身份运行，默认的 `simsh::Shell` 对象会将命令提示符替换为没有颜色、且以 `#` 结尾的格式。
+如果以 `root` 用户身份运行，默认的 `simsh::CLI` 对象会将命令提示符替换为没有颜色、且以 `#` 结尾的格式。
