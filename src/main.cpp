@@ -38,6 +38,9 @@ int main( int argc, char **argv )
     pipe.writer().push( '\n' );
     pipe.writer().close();
     return simsh::cli::BaseCLI().run();
+  } else if ( "-v"sv == argv[1] || "--version"sv == argv[1] ) {
+    simsh::iout::prmptr << format( "simsh, version {}\n", SIMSH_VERSION );
+    return EXIT_SUCCESS;
   } else {
     ifstream ifs { argv[1] };
     if ( !ifs ) {

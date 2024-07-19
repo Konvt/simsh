@@ -245,7 +245,11 @@ namespace simsh {
     assert( expr->left() == nullptr && expr->right() == nullptr );
     assert( expr->type() == StmtKind::trivial );
 
-    expr->replace() = expr->token() == "$$" ? format( "{}", getpid() ) : expr->token();
+    if ( expr->token() == "$$"sv )
+      expr->replace() = format( "{}", getpid() );
+    else if ( expr->token() == "$SIMSH_VERSION"sv )
+      expr->replace() = SIMSH_VERSION;
+
     if ( expr->kind() == ExprKind::command )
       utils::tilde_expansion( expr->replace() );
     for ( auto& sblng : expr->siblings() ) {
@@ -253,8 +257,10 @@ namespace simsh {
 
       const auto node = static_cast<ExprNode*>(sblng.get());
       assert( node->kind() != ExprKind::value );
-      if ( node->token() == "$$" )
+      if ( node->token() == "$$"sv )
         node->replace() = format( "{}", getpid() );
+      else if ( node->token() == "$SIMSH_VERSION"sv )
+        node->replace() = SIMSH_VERSION;
       else if ( node->kind() == ExprKind::command )
         utils::tilde_expansion( node->replace() );
     }
