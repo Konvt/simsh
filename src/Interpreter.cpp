@@ -91,6 +91,7 @@ namespace simsh {
         throw error::TerminationSignal( EXIT_FAILURE );
       }
       pguard.wait();
+      pipe.writer().close();
     }
 
     return constants::EvalSuccess;
