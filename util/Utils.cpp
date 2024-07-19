@@ -5,6 +5,7 @@
 #include <climits>
 #include <algorithm>
 #include <cassert>
+#include <cstdlib>
 
 #include <unistd.h>
 #include <pwd.h>
@@ -90,7 +91,7 @@ namespace simsh {
       for ( const auto& env_path : path_set ) {
         try {
           if ( const auto filepath = filesystem::path( env_path ) / filename;
-               filesystem::exists( filepath ) )
+               filesystem::exists( filepath ) && filesystem::is_regular_file( filepath ) )
             return filepath.string();
         } catch ( const filesystem::filesystem_error& e ) {
           // just ignore it
