@@ -104,9 +104,13 @@ namespace simsh {
     assert( oup_redr->siblings().empty() == false );
     assert( oup_redr->siblings().front()->type() == StmtKind::trivial );
 
-    const auto& filename = static_cast<const ExprNode*>(
-      (oup_redr->type() == StmtKind::appnd_redrct || oup_redr->type() == StmtKind::ovrwrit_redrct
-        ? oup_redr->siblings()[1] : oup_redr->siblings().front()).get())->token();
+    assert( static_cast<const ExprNode*>(oup_redr->siblings()[
+        oup_redr->type() == StmtKind::appnd_redrct || oup_redr->type() == StmtKind::ovrwrit_redrct ? 1 : 0
+      ].get())->kind() != ExprKind::value );
+
+    const auto& filename = static_cast<const ExprNode*>(oup_redr->siblings()[
+        oup_redr->type() == StmtKind::appnd_redrct || oup_redr->type() == StmtKind::ovrwrit_redrct ? 1 : 0
+      ].get())->token();
 
     // Check whether the file descriptor can be obtained.
     if ( !filesystem::exists( filename ) && !utils::create_file( filename ) ) {
@@ -246,8 +250,9 @@ namespace simsh {
     for ( auto& sblng : expr->siblings() ) {
       assert( sblng->type() == StmtKind::trivial );
 
-      if ( const auto node = static_cast<ExprNode*>(sblng.get());
-           node->token() == "$$" )
+      const auto node = static_cast<ExprNode*>(sblng.get());
+      assert( node->kind() != ExprKind::value );
+      if ( node->token() == "$$" )
         node->replace() = format( "{}", getpid() );
       else if ( node->kind() == ExprKind::command )
         utils::tilde_expansion( node->replace() );
@@ -263,17 +268,19 @@ namespace simsh {
   types::EvalT Interpreter::builtin_exec( ExprNodeT expr ) const
   {
     assert( expr != nullptr );
+    assert( expr->kind() != ExprKind::value );
 
     switch ( expr->token().front() ) {
     case 'c': { // cd
-      auto exec_result = constants::EvalSuccess;
-
       if ( expr->siblings().size() > 1 ) {
         iout::logger << error::ArgumentError(
           "cd"sv, "the number of arguments error"sv
         );
-        exec_result = !constants::EvalSuccess;
+        return !constants::EvalSuccess;
       }
+
+      assert( static_cast<const ExprNode*>(expr->siblings().front().get())->kind() != ExprKind::value );
+
       types::StrViewT target_dir =
         expr->siblings().size() == 0
         ? utils::get_homedir()
@@ -283,9 +290,9 @@ namespace simsh {
         filesystem::current_path( target_dir );
       } catch ( const filesystem::filesystem_error& e ) {
         iout::logger.print( error::SystemCallError( format( "cd: {}", target_dir.data() ) ) );
-        exec_result = !constants::EvalSuccess;
+        return !constants::EvalSuccess;
       }
-      return exec_result;
+      return constants::EvalSuccess;
     } break;
     case 'e': { // exit
       if ( !expr->siblings().empty() ) {
@@ -309,10 +316,12 @@ namespace simsh {
       if ( expr->siblings().empty() )
         return !constants::EvalSuccess;
 
-      for ( const auto& sbln : expr->siblings() ) {
-        assert( sbln->type() == StmtKind::trivial );
+      for ( const auto& sblng : expr->siblings() ) {
+        assert( sblng->type() == StmtKind::trivial );
 
-        ExprNodeT arg_node = static_cast<ExprNode*>(sbln.get());
+        ExprNodeT arg_node = static_cast<ExprNode*>(sblng.get());
+        assert( arg_node->kind() != ExprKind::value );
+
         if ( built_in_cmds.contains( arg_node->token() ) )
           iout::prmptr << format( "{} is a builtin\n", arg_node->token() );
         else if ( const auto& filepath = utils::search_filepath( utils::get_envpath(), arg_node->token() );
@@ -350,7 +359,10 @@ namespace simsh {
       ranges::transform( expr->siblings(), back_inserter( exec_argv ),
         []( const auto& sblng ) -> char* {
           assert( sblng->type() == StmtKind::trivial );
-          return const_cast<char*>(static_cast<ExprNodeT>(sblng.get())->token().data());
+          ExprNodeT arg_node = static_cast<ExprNode*>(sblng.get());
+          assert( arg_node->kind() != ExprKind::value );
+
+          return const_cast<char*>(arg_node->token().data());
         }
       );
       exec_argv.push_back( nullptr );
