@@ -31,7 +31,7 @@ int main( int argc, char **argv )
     dup2( pipe.reader().get(), STDIN_FILENO );
     const auto args = "-c"sv == argv[1]
       ? span( argv + 2, argc - 2 ) : span( argv + 1, argc - 1 );
-    for ( auto e : args ) {
+    for ( const auto e : args ) {
       pipe.writer().push( e );
       pipe.writer().push( ' ' );
     }

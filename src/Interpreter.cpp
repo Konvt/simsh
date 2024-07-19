@@ -4,6 +4,7 @@
 #include <format>
 #include <cstdlib>
 #include <cassert>
+#include <cerrno>
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -246,7 +247,9 @@ namespace simsh {
     assert( expr->type() == StmtKind::trivial );
 
     const auto cmd_expand = []( ExprNodeT node ) -> void {
-      if ( node->token() == "$$"sv )
+      if ( node->kind() == ExprKind::value )
+        return;
+      else if ( node->token() == "$$"sv )
         node->replace() = format( "{}", getpid() );
       else if ( node->token() == "$SIMSH_VERSION"sv )
         node->replace() = SIMSH_VERSION;
@@ -332,11 +335,9 @@ namespace simsh {
         else if ( const auto& filepath = utils::search_filepath( utils::get_envpath(), arg_node->token() );
                   !filepath.empty() )
           iout::prmptr << format( "{} is {}\n", arg_node->token(), filepath );
-        else {
-          iout::logger << error::ArgumentError(
+        else iout::logger << error::ArgumentError(
             "type"sv, format( "Could not find '{}'", arg_node->token() )
           );
-        }
       }
     } break;
     default:
@@ -351,14 +352,9 @@ namespace simsh {
   {
     assert( expr != nullptr );
 
-    utils::Pipe pipe;
-    utils::close_blocking( pipe.reader().get() );
-
     utils::ForkGuard pguard;
     if ( pguard.is_child() ) {
       // child process
-      pipe.reader().close();
-
       vector<char*> exec_argv { const_cast<char*>(expr->token().data()) };
       exec_argv.reserve( expr->siblings().size() + 2 );
       ranges::transform( expr->siblings(), back_inserter( exec_argv ),
@@ -375,18 +371,11 @@ namespace simsh {
       pguard.reset_signals();
       execvp( exec_argv.front(), exec_argv.data() );
 
-      pipe.writer().push( true );
       // Ensure that all scoped objects are destructed normally.
       // In particular the object `utils::Pipe` above.
-      throw error::TerminationSignal( EXIT_FAILURE );
+      throw error::ExecFailure( expr->token(), -1 );
     } else {
       pguard.wait();
-
-      if ( pipe.reader().pop<bool>() )
-        // output error, don't throw it.
-        iout::logger << error::ArgumentError(
-          expr->token(), "command error or not found"sv
-        );
 
       return pguard.exit_code() == constants::ExecSuccess;
     }

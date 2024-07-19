@@ -62,6 +62,12 @@ namespace simsh {
       types::EvalT value() const noexcept { return exit_val_; }
     };
 
+    class ExecFailure : public TerminationSignal {
+    public:
+      ExecFailure( types::StrViewT where, types::EvalT exit_val )
+        : TerminationSignal( std::format( "{}: command not found", where ), exit_val ) {}
+    };
+
     class StreamClosed : public TerminationSignal {
     public:
       StreamClosed()

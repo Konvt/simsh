@@ -28,12 +28,16 @@ namespace simsh {
         [[maybe_unused]] auto _ = signum;
         iout::prmptr << "\n" << std::flush;
       } );
+      simsh::iout::logger.set_prefix( "simsh: " );
 
       while ( !prsr_.empty() ) {
         try {
           interp_( prsr_.parse().get() );
         } catch ( const error::SystemCallError& e ) {
           iout::logger.print( e );
+        } catch ( const error::ExecFailure& e ) {
+          iout::logger << e;
+          return e.value();
         } catch ( const error::TerminationSignal& e ) {
           return e.value();
         } catch ( const error::TraceBack& e ) {
@@ -113,6 +117,9 @@ namespace simsh {
           interp_( prsr_.parse().get() );
         } catch ( const error::SystemCallError& e ) {
           iout::logger.print( e );
+        } catch ( const error::ExecFailure& e ) {
+          iout::logger << e;
+          return e.value();
         } catch ( const error::TerminationSignal& e ) {
           return e.value();
         } catch ( const error::TraceBack& e ) {
