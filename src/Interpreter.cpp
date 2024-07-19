@@ -245,24 +245,22 @@ namespace simsh {
     assert( expr->left() == nullptr && expr->right() == nullptr );
     assert( expr->type() == StmtKind::trivial );
 
-    if ( expr->token() == "$$"sv )
-      expr->replace() = format( "{}", getpid() );
-    else if ( expr->token() == "$SIMSH_VERSION"sv )
-      expr->replace() = SIMSH_VERSION;
-
-    if ( expr->kind() == ExprKind::command )
-      utils::tilde_expansion( expr->replace() );
-    for ( auto& sblng : expr->siblings() ) {
-      assert( sblng->type() == StmtKind::trivial );
-
-      const auto node = static_cast<ExprNode*>(sblng.get());
-      assert( node->kind() != ExprKind::value );
+    const auto cmd_expand = []( ExprNodeT node ) -> void {
       if ( node->token() == "$$"sv )
         node->replace() = format( "{}", getpid() );
       else if ( node->token() == "$SIMSH_VERSION"sv )
         node->replace() = SIMSH_VERSION;
       else if ( node->kind() == ExprKind::command )
         utils::tilde_expansion( node->replace() );
+    };
+
+    cmd_expand( expr );
+    for ( auto& sblng : expr->siblings() ) {
+      assert( sblng->type() == StmtKind::trivial );
+
+      const auto node = static_cast<ExprNode*>(sblng.get());
+      assert( node->kind() != ExprKind::value );
+      cmd_expand( node );
     }
 
     if ( expr->kind() == ExprKind::value )
