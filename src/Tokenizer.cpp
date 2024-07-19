@@ -21,14 +21,6 @@ namespace simsh {
     return *this;
   }
 
-  types::StringT LineBuffer::context() const noexcept
-  {
-    assert( line_pos_ < line_input_.size() );
-    if ( line_pos_ > 20 )
-      return line_input_.substr( line_pos_ - 20, 20 );
-    return line_input_.substr( 0, line_pos_ + 1 );
-  }
-
   void LineBuffer::clear() noexcept
   {
     line_input_.clear();
@@ -103,7 +95,7 @@ namespace simsh {
       return discard_tokens;
     }
     throw error::SyntaxError(
-      line_buf_.context(), expect, current_token_->type_
+      line_buf_.line_pos(), line_buf_.context(), expect, current_token_->type_
     );
   }
 
@@ -181,7 +173,7 @@ namespace simsh {
           default: {
             if ( ("':^%"sv).find( character ) != types::StrViewT::npos )
               throw error::TokenError(
-                line_buf_.context(), "any valid command character"sv, character
+                line_buf_.line_pos(), line_buf_.context(), "any valid command character"sv, character
               );
             else state = StateType::INCMD;
           } break;
@@ -205,7 +197,7 @@ namespace simsh {
              ("&|!<>\"';:()^%#"sv).find( character ) != types::StrViewT::npos ) {
           if ( token_str.empty() ) {
             throw error::TokenError(
-              line_buf_.context(), "any valid command character"sv, character
+              line_buf_.line_pos(), line_buf_.context(), "any valid command character"sv, character
             );
           }
           token_type = TokenType::CMD;
@@ -230,7 +222,7 @@ namespace simsh {
           state = StateType::DONE;
         } else if ( ("\n"sv).find( character ) != types::StrViewT::npos || character == EOF )
           throw error::TokenError(
-            line_buf_.context(), '"', character
+            line_buf_.line_pos(), line_buf_.context(), '"', character
           );
       } break;
 
@@ -243,7 +235,7 @@ namespace simsh {
         else {
           token_type = TokenType::ERROR;
           throw error::TokenError(
-            line_buf_.context(), '&', character
+            line_buf_.line_pos(), line_buf_.context(), '&', character
           );
         }
       } break;

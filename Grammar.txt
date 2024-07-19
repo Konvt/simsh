@@ -29,6 +29,7 @@
 
 <logical_not> ::= <expression>
                 | '(' <inner_statement>
+                | '!' <logical_not>
 
 <connector> ::= '&&'
               | '||'

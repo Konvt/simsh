@@ -64,7 +64,7 @@ namespace simsh {
 
     default: {
       throw error::SyntaxError(
-        tknizr_.context(), TokenType::CMD, tknizr_.peek().type_
+        tknizr_.line_pos(), tknizr_.context(), TokenType::CMD, tknizr_.peek().type_
       );
     }
     }
@@ -123,7 +123,7 @@ namespace simsh {
 
     default:
       throw error::SyntaxError(
-        tknizr_.context(), TokenType::NEWLINE, tknizr_.peek().type_
+        tknizr_.line_pos(), tknizr_.context(), TokenType::NEWLINE, tknizr_.peek().type_
       );
     }
   }
@@ -161,7 +161,7 @@ namespace simsh {
 
     default: {
       throw error::SyntaxError(
-        tknizr_.context(), TokenType::CMD, tknizr_.peek().type_
+        tknizr_.line_pos(), tknizr_.context(), TokenType::CMD, tknizr_.peek().type_
       );
     }
     }
@@ -223,7 +223,7 @@ namespace simsh {
 
     default: {
       throw error::SyntaxError(
-        tknizr_.context(), TokenType::RPAREN, tknizr_.peek().type_
+        tknizr_.line_pos(), tknizr_.context(), TokenType::RPAREN, tknizr_.peek().type_
       );
     }
     }
@@ -250,13 +250,13 @@ namespace simsh {
     } break;
     default:
       throw error::SyntaxError(
-        tknizr_.context(), TokenType::OVR_REDIR, tknizr_.peek().type_
+        tknizr_.line_pos(), tknizr_.context(), TokenType::OVR_REDIR, tknizr_.peek().type_
       );
     }
 
     if ( tknizr_.peek().type_ != TokenType::CMD ) {
       throw error::SyntaxError(
-        tknizr_.context(), TokenType::CMD, tknizr_.peek().type_
+        tknizr_.line_pos(), tknizr_.context(), TokenType::CMD, tknizr_.peek().type_
       );
     }
 
@@ -320,7 +320,7 @@ namespace simsh {
     }
     default:
       throw error::SyntaxError(
-        tknizr_.context(), TokenType::OVR_REDIR, tknizr_.peek().type_
+        tknizr_.line_pos(), tknizr_.context(), TokenType::OVR_REDIR, tknizr_.peek().type_
       );
     }
 
@@ -424,26 +424,26 @@ namespace simsh {
   Parser::StmtNodePtr Parser::logical_not()
   {
     tknizr_.consume( TokenType::NOT );
-    StmtNodePtr node;
 
     if ( tknizr_.peek().is( TokenType::CMD ) || tknizr_.peek().is( TokenType::STR ) ) {
-      node = make_unique<StmtNode>( StmtKind::logical_not, expression() );
+      return make_unique<StmtNode>( StmtKind::logical_not, expression() );
     } else if ( tknizr_.peek().is( TokenType::LPAREN ) ) {
       tknizr_.consume( TokenType::LPAREN );
+      return make_unique<StmtNode>( StmtKind::logical_not, inner_statement() );
+    } else if ( tknizr_.peek().is( TokenType::NOT ) ) {
+      return make_unique<StmtNode>( StmtKind::logical_not, logical_not() );
+    }
 
-      node = make_unique<StmtNode>( StmtKind::logical_not, inner_statement() );
-    } else throw error::SyntaxError(
-      tknizr_.context(), TokenType::CMD, tknizr_.peek().type_
+    throw error::SyntaxError(
+      tknizr_.line_pos(), tknizr_.context(), TokenType::CMD, tknizr_.peek().type_
     );
-
-    return node;
   }
 
   Parser::ExprNodePtr Parser::expression()
   {
     if ( !tknizr_.peek().is( TokenType::CMD ) && !tknizr_.peek().is( TokenType::STR ) )
       throw error::SyntaxError(
-        tknizr_.context(), TokenType::CMD, tknizr_.peek().type_
+        tknizr_.line_pos(), tknizr_.context(), TokenType::CMD, tknizr_.peek().type_
       );
 
     ExprNode::SiblingNodes arguments;

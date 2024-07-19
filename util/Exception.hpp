@@ -21,40 +21,32 @@ namespace simsh {
     };
 
     class TokenError : public TraceBack {
-      TokenError( types::StrViewT context, types::StrViewT message )
+      TokenError( size_t line_pos, types::StrViewT context, types::StrViewT message )
         : TraceBack( "\n    " ) {
-        if ( context.back() == '\n' )
-          context.remove_suffix( 1 );
+        line_pos -= line_pos == context.size();
+        context.remove_suffix( 1 );
         message_.append( std::format( "{}\n    ", context ) )
-                .append( types::StringT( context.size() - 1, '~' ) )
+                .append( types::StringT( line_pos, '~' ) )
                 .append( std::format( "^\n  {}", message ) );
       }
 
     public:
-      TokenError( size_t line_pos, types::CharT expect, types::CharT received )
-        : TraceBack( std::format( "at position {}: expect {}, but received {}",
-          line_pos, utils::format_char( expect ), utils::format_char( received ) ) ) {}
-      TokenError( size_t line_pos, types::StrViewT expecting, types::CharT received )
-        : TraceBack( std::format( "at position {}: expect {}, but received {}",
-          line_pos, expecting, utils::format_char( received ) ) ) {}
-
-      TokenError( types::StrViewT context, types::CharT expect, types::CharT received )
-        : TokenError( std::move( context ), std::format( "except {}, but found {}", utils::format_char( expect ), utils::format_char( received ) ) ) {}
-      TokenError( types::StrViewT context, types::StrViewT expecting, types::CharT received )
-        : TokenError( std::move( context ), std::format( "except {}, but found {}", expecting, utils::format_char( received ) ) ) {}
+      TokenError( size_t line_pos, types::StrViewT context, types::CharT expect, types::CharT received )
+        : TokenError( line_pos, std::move( context ), std::format( "expect {}, but received {}",
+            utils::format_char( expect ), utils::format_char( received ) ) ) {}
+      TokenError( size_t line_pos, types::StrViewT context, types::StrViewT expecting, types::CharT received )
+        : TokenError( line_pos, std::move( context ), std::format( "expect {}, but received {}",
+            expecting, utils::format_char( received ) ) ) {}
     };
 
     class SyntaxError : public TraceBack {
     public:
-      SyntaxError( size_t line_pos, TokenType expect, TokenType found )
-        : TraceBack( std::format( "at position {}: expect {}, but found {}",
-          line_pos, utils::token_kind_map( expect ), utils::token_kind_map( found ) ) ) {}
-      SyntaxError( types::StrViewT context, TokenType expect, TokenType found )
+      SyntaxError( size_t line_pos, types::StrViewT context, TokenType expect, TokenType found )
         : TraceBack( "\n    " ) {
-        if ( context.back() == '\n' )
-          context.remove_suffix( 1 );
+        line_pos -= line_pos == context.size();
+        context.remove_suffix( 1 );
         message_.append( format( "{}\n    ", context ) )
-                .append( types::StringT( context.size() - 1, '~' ) )
+                .append( types::StringT( line_pos, '~' ) )
                 .append( format("^\n  except {}, but found {}", utils::token_kind_map( expect ), utils::token_kind_map( found ) ) );
       }
     };

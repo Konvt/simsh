@@ -59,12 +59,6 @@ namespace simsh {
     /// @return Syntax root node.
     [[nodiscard]] StmtNodePtr parse();
     [[nodiscard]] bool empty() const { return tknizr_.empty(); }
-
-    /// @brief Reset and get input from a new input stream.
-    [[nodiscard]] friend StmtNodePtr operator>>( std::istream& is, Parser& prsr ) {
-      prsr.reset( is );
-      return prsr.parse();
-    }
   };
 }
 

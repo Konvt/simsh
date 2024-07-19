@@ -36,8 +36,8 @@ namespace simsh {
     [[nodiscard]] bool eof() const { return input_stream_->eof(); }
     [[nodiscard]] size_t line_pos() const noexcept { return line_pos_; }
 
-    /// @brief Returns the current scanned position, the view length is not more than 20 characters
-    [[nodiscard]] types::StringT context() const noexcept;
+    /// @brief Returns the current scanned string.
+    [[nodiscard]] types::StringT context() const noexcept { return line_input_; }
 
     /// @brief Clear the line buffer.
     void clear() noexcept;
@@ -79,7 +79,7 @@ namespace simsh {
     [[nodiscard]] bool empty() const noexcept { return line_buf_.eof(); }
     [[nodiscard]] size_t line_pos() const noexcept { return line_buf_.line_pos(); }
 
-    /// @brief Returns the current scanned position, the view length is not more than 20 characters
+    /// @brief Returns the current scanned string.
     [[nodiscard]] types::StringT context() const noexcept { return line_buf_.context(); }
 
     /// @brief Clear all unprocessed characters.
