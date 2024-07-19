@@ -1,6 +1,5 @@
 #include <ranges>
 #include <format>
-#include <filesystem>
 #include <fstream>
 #include <climits>
 #include <algorithm>
@@ -84,20 +83,6 @@ namespace simsh {
         []( auto&& path ) { return types::StringT( ranges::begin( path ), ranges::end( path ) ); }
       );
       return ret;
-    }
-
-    types::StringT search_filepath( const vector<types::StringT>& path_set, types::StrViewT filename )
-    {
-      for ( const auto& env_path : path_set ) {
-        try {
-          if ( const auto filepath = filesystem::path( env_path ) / filename;
-               filesystem::exists( filepath ) && filesystem::is_regular_file( filepath ) )
-            return filepath.string();
-        } catch ( const filesystem::filesystem_error& e ) {
-          // just ignore it
-        }
-      }
-      return {};
     }
 
     void tilde_expansion( types::StringT& token )

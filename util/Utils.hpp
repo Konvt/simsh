@@ -2,11 +2,12 @@
 # define __SIMSH_UTILS__
 
 #include <concepts>
-#include <type_traits>
-#include <utility>
-#include <vector>
+#include <span>
+#include <filesystem>
 #include <regex>
 #include <functional>
+#include <type_traits>
+#include <utility>
 
 #include "Config.hpp"
 #include "EnumLabel.hpp"
@@ -23,12 +24,27 @@ namespace simsh {
 
     [[nodiscard]] std::vector<types::StringT> get_envpath();
 
-    /// @brief Finds the path to the given file in the path set.
-    [[nodiscard]] types::StringT search_filepath( const std::vector<types::StringT>& path_set, types::StrViewT filename );
-
     void tilde_expansion( types::StringT& token );
 
     [[nodiscard]] std::pair<bool, std::smatch> match_string( const types::StringT& str, types::StrViewT reg_str );
+
+    /// @brief Finds the path to the given file in the path set.
+    template<typename T>
+      requires requires(std::decay_t<T> t) {
+        { std::filesystem::path( t ) } -> std::same_as<std::filesystem::path>;
+    } [[nodiscard]] types::StringT search_filepath( std::span<const T> path_set, types::StrViewT filename )
+    {
+      for ( const auto& env_path : path_set ) {
+        try {
+          if ( const auto filepath = std::filesystem::path( env_path ) / filename;
+               std::filesystem::exists( filepath ) && std::filesystem::is_regular_file( filepath ) )
+            return filepath.string();
+        } catch ( const std::filesystem::filesystem_error& e ) {
+          // just ignore it
+        }
+      }
+      return {};
+    }
 
     /// @brief A wrapper that helps to convert any lambda to a C-style function interface,
     /// @brief which means function pointer.

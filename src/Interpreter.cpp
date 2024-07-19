@@ -332,12 +332,12 @@ namespace simsh {
 
         if ( built_in_cmds.contains( arg_node->token() ) )
           iout::prmptr << format( "{} is a builtin\n", arg_node->token() );
-        else if ( const auto& filepath = utils::search_filepath( utils::get_envpath(), arg_node->token() );
-                  !filepath.empty() )
-          iout::prmptr << format( "{} is {}\n", arg_node->token(), filepath );
-        else iout::logger << error::ArgumentError(
-            "type"sv, format( "Could not find '{}'", arg_node->token() )
+        else if ( const auto filepath = utils::search_filepath<types::StringT>( utils::get_envpath(), arg_node->token() );
+                  filepath.empty()  )
+          iout::logger << error::ArgumentError(
+            "type"sv, format( "could not find '{}'", arg_node->token() )
           );
+        else iout::prmptr << format( "{} is {}\n", arg_node->token(), filepath );
       }
     } break;
     default:
