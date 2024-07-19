@@ -352,6 +352,9 @@ namespace simsh {
   {
     assert( expr != nullptr );
 
+    utils::Pipe pipe;
+    utils::close_blocking( pipe.reader().get() );
+
     utils::ForkGuard pguard;
     if ( pguard.is_child() ) {
       // child process
@@ -371,11 +374,16 @@ namespace simsh {
       pguard.reset_signals();
       execvp( exec_argv.front(), exec_argv.data() );
 
+      pipe.writer().push( true );
       // Ensure that all scoped objects are destructed normally.
       // In particular the object `utils::Pipe` above.
-      throw error::ExecFailure( expr->token(), -1 );
+      throw error::TerminationSignal( constants::ExecFailure );
     } else {
       pguard.wait();
+      if ( pipe.reader().pop<bool>() )
+        iout::logger << error::ArgumentError(
+          expr->token(), "command not found"
+        );
 
       return pguard.exit_code() == constants::ExecSuccess;
     }

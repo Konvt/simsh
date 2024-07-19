@@ -64,7 +64,7 @@ namespace simsh {
 
     default: {
       throw error::SyntaxError(
-        tknizr_.line_pos(), TokenType::CMD, tknizr_.peek().type_
+        tknizr_.context(), TokenType::CMD, tknizr_.peek().type_
       );
     }
     }
@@ -123,7 +123,7 @@ namespace simsh {
 
     default:
       throw error::SyntaxError(
-        tknizr_.line_pos(), TokenType::NEWLINE, tknizr_.peek().type_
+        tknizr_.context(), TokenType::NEWLINE, tknizr_.peek().type_
       );
     }
   }
@@ -161,7 +161,7 @@ namespace simsh {
 
     default: {
       throw error::SyntaxError(
-        tknizr_.line_pos(), TokenType::CMD, tknizr_.peek().type_
+        tknizr_.context(), TokenType::CMD, tknizr_.peek().type_
       );
     }
     }
@@ -223,7 +223,7 @@ namespace simsh {
 
     default: {
       throw error::SyntaxError(
-        tknizr_.line_pos(), TokenType::RPAREN, tknizr_.peek().type_
+        tknizr_.context(), TokenType::RPAREN, tknizr_.peek().type_
       );
     }
     }
@@ -250,13 +250,13 @@ namespace simsh {
     } break;
     default:
       throw error::SyntaxError(
-        tknizr_.line_pos(), TokenType::OVR_REDIR, tknizr_.peek().type_
+        tknizr_.context(), TokenType::OVR_REDIR, tknizr_.peek().type_
       );
     }
 
     if ( tknizr_.peek().type_ != TokenType::CMD ) {
       throw error::SyntaxError(
-        tknizr_.line_pos(), TokenType::CMD, tknizr_.peek().type_
+        tknizr_.context(), TokenType::CMD, tknizr_.peek().type_
       );
     }
 
@@ -320,7 +320,7 @@ namespace simsh {
     }
     default:
       throw error::SyntaxError(
-        tknizr_.line_pos(), TokenType::OVR_REDIR, tknizr_.peek().type_
+        tknizr_.context(), TokenType::OVR_REDIR, tknizr_.peek().type_
       );
     }
 
@@ -433,7 +433,7 @@ namespace simsh {
 
       node = make_unique<StmtNode>( StmtKind::logical_not, inner_statement() );
     } else throw error::SyntaxError(
-      tknizr_.line_pos(), TokenType::CMD, tknizr_.peek().type_
+      tknizr_.context(), TokenType::CMD, tknizr_.peek().type_
     );
 
     return node;
@@ -443,7 +443,7 @@ namespace simsh {
   {
     if ( !tknizr_.peek().is( TokenType::CMD ) && !tknizr_.peek().is( TokenType::STR ) )
       throw error::SyntaxError(
-        tknizr_.line_pos(), TokenType::CMD, tknizr_.peek().type_
+        tknizr_.context(), TokenType::CMD, tknizr_.peek().type_
       );
 
     ExprNode::SiblingNodes arguments;

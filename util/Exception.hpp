@@ -21,6 +21,15 @@ namespace simsh {
     };
 
     class TokenError : public TraceBack {
+      TokenError( types::StrViewT context, types::StrViewT message )
+        : TraceBack( "\n    " ) {
+        if ( context.back() == '\n' )
+          context.remove_suffix( 1 );
+        message_.append( std::format( "{}\n    ", context ) )
+                .append( types::StringT( context.size() - 1, '~' ) )
+                .append( std::format( "^\n  {}", message ) );
+      }
+
     public:
       TokenError( size_t line_pos, types::CharT expect, types::CharT received )
         : TraceBack( std::format( "at position {}: expect {}, but received {}",
@@ -28,6 +37,11 @@ namespace simsh {
       TokenError( size_t line_pos, types::StrViewT expecting, types::CharT received )
         : TraceBack( std::format( "at position {}: expect {}, but received {}",
           line_pos, expecting, utils::format_char( received ) ) ) {}
+
+      TokenError( types::StrViewT context, types::CharT expect, types::CharT received )
+        : TokenError( std::move( context ), std::format( "except {}, but found {}", utils::format_char( expect ), utils::format_char( received ) ) ) {}
+      TokenError( types::StrViewT context, types::StrViewT expecting, types::CharT received )
+        : TokenError( std::move( context ), std::format( "except {}, but found {}", expecting, utils::format_char( received ) ) ) {}
     };
 
     class SyntaxError : public TraceBack {
@@ -35,6 +49,14 @@ namespace simsh {
       SyntaxError( size_t line_pos, TokenType expect, TokenType found )
         : TraceBack( std::format( "at position {}: expect {}, but found {}",
           line_pos, utils::token_kind_map( expect ), utils::token_kind_map( found ) ) ) {}
+      SyntaxError( types::StrViewT context, TokenType expect, TokenType found )
+        : TraceBack( "\n    " ) {
+        if ( context.back() == '\n' )
+          context.remove_suffix( 1 );
+        message_.append( format( "{}\n    ", context ) )
+                .append( types::StringT( context.size() - 1, '~' ) )
+                .append( format("^\n  except {}, but found {}", utils::token_kind_map( expect ), utils::token_kind_map( found ) ) );
+      }
     };
 
     class ArgumentError : public TraceBack {
@@ -60,12 +82,6 @@ namespace simsh {
       TerminationSignal( types::EvalT exit_val )
         : TerminationSignal( "current process must be killed", exit_val ) {}
       types::EvalT value() const noexcept { return exit_val_; }
-    };
-
-    class ExecFailure : public TerminationSignal {
-    public:
-      ExecFailure( types::StrViewT where, types::EvalT exit_val )
-        : TerminationSignal( std::format( "{}: command not found", where ), exit_val ) {}
     };
 
     class StreamClosed : public TerminationSignal {

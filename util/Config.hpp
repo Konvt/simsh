@@ -15,7 +15,7 @@
 # error "The C++ standard version must be at least C++20."
 #endif
 
-#define SIMSH_VERSION "0.1.0"
+#define SIMSH_VERSION "0.1.1-pre"
 
 namespace simsh {
   namespace types {
