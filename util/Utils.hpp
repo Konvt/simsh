@@ -4,6 +4,7 @@
 #include <concepts>
 #include <type_traits>
 #include <utility>
+#include <vector>
 #include <regex>
 #include <functional>
 
@@ -19,6 +20,11 @@ namespace simsh {
     [[nodiscard]] bool create_file( types::StrViewT filename );
 
     [[nodiscard]] types::StrViewT get_homedir();
+
+    [[nodiscard]] std::vector<types::StringT> get_envpath();
+
+    /// @brief Finds the path to the given file in the path set.
+    [[nodiscard]] types::StringT search_filepath( const std::vector<types::StringT>& path_set, types::StrViewT filename );
 
     void tilde_expansion( types::StringT& token );
 

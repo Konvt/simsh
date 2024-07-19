@@ -1,6 +1,8 @@
 #ifndef __SIMSH_INTERPRETER__
 # define __SIMSH_INTERPRETER__
 
+#include <unordered_set>
+
 #include "Config.hpp"
 #include "TreeNode.hpp"
 
@@ -9,6 +11,7 @@ namespace simsh {
   class Interpreter {
     using StmtNodeT = StmtNode* const;
     using ExprNodeT = ExprNode* const;
+    static const std::unordered_set<types::StringT> built_in_cmds;
 
     [[nodiscard]] types::EvalT sequential_stmt( StmtNodeT seq_stmt ) const;
     [[nodiscard]] types::EvalT logical_and( StmtNodeT and_stmt ) const;

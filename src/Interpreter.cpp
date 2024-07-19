@@ -20,6 +20,10 @@
 using namespace std;
 
 namespace simsh {
+  const std::unordered_set<types::StringT> Interpreter::built_in_cmds = {
+    "cd", "exit", "help", "type"
+  };
+
   types::EvalT Interpreter::sequential_stmt( StmtNodeT seq_stmt ) const
   {
     assert( seq_stmt != nullptr );
@@ -251,7 +255,7 @@ namespace simsh {
 
     if ( expr->kind() == ExprKind::value )
       return expr->value();
-    else if ( constants::built_in_cmds.contains( expr->token() ) )
+    else if ( built_in_cmds.contains( expr->token() ) )
       return builtin_exec( expr );
     else return external_exec( expr );
   }
@@ -300,6 +304,26 @@ namespace simsh {
         return !constants::EvalSuccess;
       }
       iout::prmptr << utils::help_doc();
+    } break;
+    case 't': { // type
+      if ( expr->siblings().empty() )
+        return !constants::EvalSuccess;
+
+      for ( const auto& sbln : expr->siblings() ) {
+        assert( sbln->type() == StmtKind::trivial );
+
+        ExprNodeT arg_node = static_cast<ExprNode*>(sbln.get());
+        if ( built_in_cmds.contains( arg_node->token() ) )
+          iout::prmptr << format( "{} is a builtin\n", arg_node->token() );
+        else if ( const auto& filepath = utils::search_filepath( utils::get_envpath(), arg_node->token() );
+                  !filepath.empty() )
+          iout::prmptr << format( "{} is {}\n", arg_node->token(), filepath );
+        else {
+          iout::logger << error::ArgumentError(
+            "type"sv, format( "Could not find '{}'", arg_node->token() )
+          );
+        }
+      }
     } break;
     default:
       assert( false );

@@ -1,6 +1,9 @@
-#include <fstream>
+#include <ranges>
 #include <format>
+#include <filesystem>
+#include <fstream>
 #include <climits>
+#include <algorithm>
 #include <cassert>
 
 #include <unistd.h>
@@ -68,6 +71,32 @@ namespace simsh {
     types::StrViewT get_homedir()
     {
       return getpwuid( getuid() )->pw_dir;
+    }
+
+    vector<types::StringT> get_envpath()
+    {
+      types::StrViewT envpath = getenv( "PATH" );
+
+      vector<types::StringT> ret;
+      ranges::transform( envpath | views::split( ':' ),
+        back_inserter( ret ),
+        []( auto&& path ) { return types::StringT( ranges::begin( path ), ranges::end( path ) ); }
+      );
+      return ret;
+    }
+
+    types::StringT search_filepath( const vector<types::StringT>& path_set, types::StrViewT filename )
+    {
+      for ( const auto& env_path : path_set ) {
+        try {
+          if ( const auto filepath = filesystem::path( env_path ) / filename;
+               filesystem::exists( filepath ) )
+            return filepath.string();
+        } catch ( const filesystem::filesystem_error& e ) {
+          // just ignore it
+        }
+      }
+      return {};
     }
 
     void tilde_expansion( types::StringT& token )
