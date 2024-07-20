@@ -10,7 +10,7 @@
 namespace simsh {
   namespace constants {
     inline constexpr types::EvalT ExecSuccess = EXIT_SUCCESS;
-    inline constexpr types::EvalT ExecFailure = 114;
+    inline constexpr types::EvalT ExecFailureExit = 114;
     inline constexpr types::EvalT EvalSuccess = static_cast<types::EvalT>(true);
     inline constexpr types::EvalT InvalidValue = std::numeric_limits<types::EvalT>::min();
   }

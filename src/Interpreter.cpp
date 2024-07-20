@@ -22,7 +22,7 @@ using namespace std;
 
 namespace simsh {
   const std::unordered_set<types::StringT> Interpreter::built_in_cmds = {
-    "cd", "exit", "help", "type"
+    "cd", "exit", "help", "type", "exec"
   };
 
   types::EvalT Interpreter::sequential_stmt( StmtNodeT seq_stmt ) const
@@ -302,15 +302,38 @@ namespace simsh {
       }
       return constants::EvalSuccess;
     } break;
-    case 'e': { // exit
-      if ( !expr->siblings().empty() ) {
-        iout::logger << error::ArgumentError(
-          "exit"sv, "the number of arguments error"sv
+    case 'e': { // exit or exec
+      if ( expr->token() == "exit" ) {
+        if ( !expr->siblings().empty() ) {
+          iout::logger << error::ArgumentError(
+            "exit"sv, "the number of arguments error"sv
+          );
+          return !constants::EvalSuccess;
+        }
+        throw error::TerminationSignal( EXIT_SUCCESS );
+      } else if ( !expr->siblings().empty() ) {
+        vector<char*> exec_argv;
+        exec_argv.reserve( expr->siblings().size() + 2 );
+        ranges::transform( expr->siblings(), back_inserter( exec_argv ),
+          []( const auto& sblng ) -> char* {
+            assert( sblng->type() == types::StmtKind::trivial );
+            ExprNodeT arg_node = static_cast<ExprNode*>(sblng.get());
+            assert( arg_node->kind() != types::ExprKind::value );
+
+            return const_cast<char*>(arg_node->token().data());
+          }
         );
-        return !constants::EvalSuccess;
+        exec_argv.push_back( nullptr );
+
+        execvp( exec_argv.front(), exec_argv.data() );
+
+        const auto error_info = static_cast<ExprNode*>(expr->siblings().front().get());
+        iout::logger << error::ArgumentError(
+          "exec", format( "{}: command not found", error_info->token() )
+        );
+        return !constants::ExecSuccess;
       }
-      throw error::TerminationSignal( EXIT_SUCCESS );
-    }
+    } break;
     case 'h': { // help
       if ( !expr->siblings().empty() ) {
         iout::logger << error::ArgumentError(
@@ -377,7 +400,7 @@ namespace simsh {
       pipe.writer().push( true );
       // Ensure that all scoped objects are destructed normally.
       // In particular the object `utils::Pipe` above.
-      throw error::TerminationSignal( constants::ExecFailure );
+      throw error::TerminationSignal( constants::ExecFailureExit );
     } else {
       pguard.wait();
       if ( pipe.reader().pop<bool>() )

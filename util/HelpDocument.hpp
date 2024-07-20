@@ -14,7 +14,7 @@ namespace simsh {
         "Logical not:\n\t!command\n"
         "Nested statement:\n\t(command1 && (command2 || command3))\n"
         "Comment:\n\tcommand # Here is a comment.\n"
-        "Built-in commands:\n\texit\n\thelp\n\tcd path\n\ttype command-name\n"
+        "Built-in commands:\n\texit\n\thelp\n\tcd path\n\ttype command-name\n\texec command-name\n"
       };
     }
   }
