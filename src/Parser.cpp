@@ -447,7 +447,7 @@ namespace simsh {
         tknizr_.line_pos(), tknizr_.context(), types::TokenType::CMD, tknizr_.peek().type_
       );
 
-    ExprNode::SiblingNodes arguments;
+    StmtNode::SiblingNodes arguments;
 
     const auto token_type = tknizr_.peek().type_;
     auto token = tknizr_.peek().is( types::TokenType::CMD )

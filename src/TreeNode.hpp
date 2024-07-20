@@ -18,8 +18,7 @@ namespace simsh {
   protected:
     types::StmtKind category_;
     ChildNode l_child_, r_child_;
-    /* Each node stores only a string of token.
-     * Therefore, any additional arguments must be stored in siblings node.
+    /* Any additional arguments are stored in siblings node.
      * Currently the arguments can only be saved as an unique_ptr pointing to `ExprNode`. */
     SiblingNodes siblings_;
 
@@ -65,9 +64,8 @@ namespace simsh {
       >
     ExprNode( types::ExprKind expr_type, T&& data, SiblingNodes siblings = {} )
       : StmtNode( types::StmtKind::trivial, std::move( siblings ) )
-      , type_ { expr_type }, expr_ {} {
-      expr_ = std::forward<T>( data );
-    }
+      , type_ { expr_type }
+      , expr_ { std::forward<T>( data ) } {}
     ExprNode( ExprNode&& rhs )
       : StmtNode( std::move( rhs ) )
       , type_ { rhs.type_ }
