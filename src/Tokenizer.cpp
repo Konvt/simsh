@@ -86,7 +86,7 @@ namespace simsh {
     return *current_token_;
   }
 
-  types::TokenT Tokenizer::consume( TokenType expect )
+  types::TokenT Tokenizer::consume( types::TokenType expect )
   {
     assert( current_token_.has_value() );
     if ( current_token_->is( expect ) ) {
@@ -131,15 +131,15 @@ namespace simsh {
           switch ( character ) {
           case EOF: {
             save_char = false;
-            token_type = TokenType::ENDFILE;
+            token_type = types::TokenType::ENDFILE;
           } break;
           case '\0':
             [[fallthrough]];
           case '\n': {
-            token_type = TokenType::NEWLINE;
+            token_type = types::TokenType::NEWLINE;
           } break;
           case ';': {
-            token_type = TokenType::SEMI;
+            token_type = types::TokenType::SEMI;
           } break;
           case '"': {
             save_char = false;
@@ -156,19 +156,19 @@ namespace simsh {
             state = StateType::INPIPE_LIKE;
           } break;
           case '<': {
-            token_type = TokenType::STDIN_REDIR;
+            token_type = types::TokenType::STDIN_REDIR;
           } break;
           case '!': {
-            token_type = TokenType::NOT;
+            token_type = types::TokenType::NOT;
           } break;
           case '>': {
             state = StateType::INRARR;
           } break;
           case '(': {
-            token_type = TokenType::LPAREN;
+            token_type = types::TokenType::LPAREN;
           } break;
           case ')': {
-            token_type = TokenType::RPAREN;
+            token_type = types::TokenType::RPAREN;
           } break;
           default: {
             if ( ("':^%"sv).find( character ) != types::StrViewT::npos )
@@ -184,10 +184,10 @@ namespace simsh {
       case StateType::INCOMMENT: {
         save_char = false;
         if ( character == '\n' ) {
-          token_type = TokenType::NEWLINE;
+          token_type = types::TokenType::NEWLINE;
           state = StateType::DONE;
         } else if ( character == EOF ) {
-          token_type = TokenType::ENDFILE;
+          token_type = types::TokenType::ENDFILE;
           state = StateType::DONE;
         }
       } break;
@@ -200,7 +200,7 @@ namespace simsh {
               line_buf_.line_pos(), line_buf_.context(), "any valid command character"sv, character
             );
           }
-          token_type = TokenType::CMD;
+          token_type = types::TokenType::CMD;
           save_char = (discard_char = false);
           state = StateType::DONE;
         }
@@ -218,7 +218,7 @@ namespace simsh {
       case StateType::INSTR: {
         if ( character == '"' ) {
           save_char = false;
-          token_type = TokenType::STR;
+          token_type = types::TokenType::STR;
           state = StateType::DONE;
         } else if ( ("\n"sv).find( character ) != types::StrViewT::npos || character == EOF )
           throw error::TokenError(
@@ -229,11 +229,11 @@ namespace simsh {
       case StateType::INAND: {
         if ( character == '&' ) { // get &&, done
           state = StateType::DONE;
-          token_type = TokenType::AND;
+          token_type = types::TokenType::AND;
         } else if ( character == '>' )
           state = StateType::INMEG_OUTPUT; // get &>, still expecting '>' or nothing
         else {
-          token_type = TokenType::ERROR;
+          token_type = types::TokenType::ERROR;
           throw error::TokenError(
             line_buf_.line_pos(), line_buf_.context(), '&', character
           );
@@ -242,10 +242,10 @@ namespace simsh {
 
       case StateType::INMEG_OUTPUT: {
         if ( character == '>' )
-          token_type = TokenType::MERG_APPND; // get &>>
+          token_type = types::TokenType::MERG_APPND; // get &>>
         else {
           save_char = (discard_char = false);
-          token_type = TokenType::MERG_OUTPUT; // get &>
+          token_type = types::TokenType::MERG_OUTPUT; // get &>
         }
         state = StateType::DONE;
       } break;
@@ -253,7 +253,7 @@ namespace simsh {
       case StateType::INMEG_STREAM: { // get (\d*)>&, expecting (\d*) or nothing
         if ( !isdigit( character ) ) {
           save_char = (discard_char = false);
-          token_type = TokenType::MERG_STREAM;
+          token_type = types::TokenType::MERG_STREAM;
           state = StateType::DONE;
         }
       } break;
@@ -261,8 +261,8 @@ namespace simsh {
       case StateType::INPIPE_LIKE: {
         if ( character != '|' ) {
           save_char = (discard_char = false);
-          token_type = TokenType::PIPE;
-        } else token_type = TokenType::OR;
+          token_type = types::TokenType::PIPE;
+        } else token_type = types::TokenType::OR;
         state = StateType::DONE;
       } break;
 
@@ -271,10 +271,10 @@ namespace simsh {
         if ( character == '&' ) // get (\d*)>&, expecting (\d*) or nothing
           state = StateType::INMEG_STREAM;
         else if ( character == '>' ) // get >>, done
-          token_type = TokenType::APND_REDIR;
+          token_type = types::TokenType::APND_REDIR;
         else { // get >, done
           save_char = (discard_char = false);
-          token_type = TokenType::OVR_REDIR;
+          token_type = types::TokenType::OVR_REDIR;
         }
       } break;
 
@@ -282,7 +282,7 @@ namespace simsh {
         [[fallthrough]];
       default: {
         state = StateType::DONE;
-        token_type = TokenType::ERROR;
+        token_type = types::TokenType::ERROR;
         throw error::ArgumentError(
           "tokenizer"sv, "the state machine status is incorrect"sv
         );

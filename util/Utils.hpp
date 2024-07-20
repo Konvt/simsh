@@ -16,7 +16,7 @@ namespace simsh {
   namespace utils {
     [[nodiscard]] types::StringT format_char( types::CharT character );
 
-    [[nodiscard]] types::StrViewT token_kind_map( TokenType tkn );
+    [[nodiscard]] types::StrViewT token_kind_map( types::TokenType tkn );
 
     [[nodiscard]] bool create_file( types::StrViewT filename );
 

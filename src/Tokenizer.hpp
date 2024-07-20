@@ -56,14 +56,14 @@ namespace simsh {
   class Tokenizer {
   public:
     struct Token {
-      TokenType type_;
+      types::TokenType type_;
       types::TokenT value_;
 
-      Token( TokenType tp, types::TokenT val )
+      Token( types::TokenType tp, types::TokenT val )
         : type_ { std::move( tp ) }, value_ { std::move( val ) } {}
-      Token() : Token( TokenType::ERROR, {} ) {}
-      [[nodiscard]] bool is( TokenType tp ) const noexcept { return type_ == tp; }
-      [[nodiscard]] bool is_not( TokenType tp ) const noexcept { return !is( tp ); }
+      Token() : Token( types::TokenType::ERROR, {} ) {}
+      [[nodiscard]] bool is( types::TokenType tp ) const noexcept { return type_ == tp; }
+      [[nodiscard]] bool is_not( types::TokenType tp ) const noexcept { return !is( tp ); }
     };
 
     Tokenizer( LineBuffer line_buf )
@@ -89,7 +89,7 @@ namespace simsh {
 
     /// @brief Discard the current token and return it.
     /// @throw error::SyntaxError If `expect` isn't matched with current token.
-    types::TokenT consume( TokenType expect );
+    types::TokenT consume( types::TokenType expect );
 
     /// @brief Reset the current line buffer with the new one.
     void reset( LineBuffer line_buf );

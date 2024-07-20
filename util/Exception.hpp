@@ -41,7 +41,7 @@ namespace simsh {
 
     class SyntaxError : public TraceBack {
     public:
-      SyntaxError( size_t line_pos, types::StrViewT context, TokenType expect, TokenType found )
+      SyntaxError( size_t line_pos, types::StrViewT context, types::TokenType expect, types::TokenType found )
         : TraceBack( "\n    " ) {
         line_pos -= line_pos == context.size();
         context.remove_suffix( 1 );

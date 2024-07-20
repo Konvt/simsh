@@ -16,7 +16,7 @@ namespace simsh {
     using SiblingNodes = std::vector<ChildNode>;
 
   protected:
-    StmtKind category_;
+    types::StmtKind category_;
     ChildNode l_child_, r_child_;
     /* Each node stores only a string of token.
      * Therefore, any additional arguments must be stored in siblings node.
@@ -24,20 +24,25 @@ namespace simsh {
     SiblingNodes siblings_;
 
   public:
-    StmtNode( StmtKind stmt_type,
-              ChildNode left_stmt = nullptr, ChildNode right_stmt = nullptr,
-              SiblingNodes siblings = {} )
+    StmtNode( types::StmtKind stmt_type,
+      ChildNode left_stmt = nullptr, ChildNode right_stmt = nullptr,
+      SiblingNodes siblings = {} )
       : category_ { stmt_type }
       , l_child_ { std::move( left_stmt ) }
       , r_child_ { std::move( right_stmt ) }
       , siblings_ { std::move( siblings ) } {}
-    StmtNode( StmtKind stmt_type, SiblingNodes siblings )
+    StmtNode( types::StmtKind stmt_type, SiblingNodes siblings )
       : StmtNode( stmt_type ) {
       siblings_ = std::move( siblings );
     }
+    StmtNode( StmtNode&& rhs )
+      : category_ { rhs.category_ }
+      , l_child_ { std::move( rhs.l_child_ ) }
+      , r_child_ { std::move( rhs.r_child_ ) }
+      , siblings_ { std::move( rhs.siblings_ ) } {}
     virtual ~StmtNode() = default;
 
-    [[nodiscard]] StmtKind type() const noexcept { return category_; }
+    [[nodiscard]] types::StmtKind type() const noexcept { return category_; }
 
     StmtNode* left() const & noexcept { return l_child_.get(); }
     StmtNode* right() const & noexcept { return r_child_.get(); }
@@ -48,20 +53,25 @@ namespace simsh {
   };
 
   class ExprNode : public StmtNode {
-    ExprKind type_;
+    types::ExprKind type_;
     std::variant<types::EvalT, types::TokenT> expr_;
 
   public:
+    /// @brief If the type of `data` does not match the value of `expr_type`, it's a UB.
     template<typename T>
       requires std::disjunction_v<
         std::is_arithmetic<std::decay_t<T>>,
-        std::is_same<std::decay_t<T>, types::TokenT>
+          std::is_same<std::decay_t<T>, types::TokenT>
       >
-    ExprNode( ExprKind expr_type, T&& data, SiblingNodes siblings = {} )
-      : StmtNode( StmtKind::trivial, std::move( siblings ) )
+    ExprNode( types::ExprKind expr_type, T&& data, SiblingNodes siblings = {} )
+      : StmtNode( types::StmtKind::trivial, std::move( siblings ) )
       , type_ { expr_type }, expr_ {} {
       expr_ = std::forward<T>( data );
     }
+    ExprNode( ExprNode&& rhs )
+      : StmtNode( std::move( rhs ) )
+      , type_ { rhs.type_ }
+      , expr_ { std::move( rhs.expr_ ) } {}
     virtual ~ExprNode() = default;
 
     [[nodiscard]] types::TokenT token() && { return std::move( std::get<types::TokenT>( expr_ ) ); }
@@ -72,8 +82,20 @@ namespace simsh {
 
     [[nodiscard]] types::EvalT value() const { return std::get<types::EvalT>( expr_ ); }
 
-    [[nodiscard]] ExprKind kind() const noexcept { return type_; }
+    [[nodiscard]] types::ExprKind kind() const noexcept { return type_; }
   };
+
+  /// @brief A type-safe factory function.
+  template<types::ExprKind expr_type, typename T>
+  [[nodiscard]] ExprNode make_ExprNode( T&& data, StmtNode::SiblingNodes siblings = {} ) {
+    static_assert(
+      (std::is_arithmetic_v<std::decay_t<T>> && expr_type == types::ExprKind::value) ||
+      ((!std::is_arithmetic_v<std::decay_t<T>>) && expr_type != types::ExprKind::value),
+      "The type parameter and label do not match"
+    );
+
+    return ExprNode( expr_type, std::forward<T>( data ), std::move( siblings ) );
+  }
 }
 
 #endif // __SIMSH_TREENODE__

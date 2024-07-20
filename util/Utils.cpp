@@ -33,30 +33,30 @@ namespace simsh {
       }
     }
 
-    types::StrViewT token_kind_map( TokenType tkn )
+    types::StrViewT token_kind_map( types::TokenType tkn )
     {
       switch ( tkn ) {
-      case TokenType::STR:         return "string"sv;
-      case TokenType::CMD:         return "command"sv;
-      case TokenType::AND:         return "logical AND"sv;
-      case TokenType::OR:          return "logical OR"sv;
-      case TokenType::NOT:         return "logical NOT"sv;
-      case TokenType::PIPE:        return "pipeline"sv;
-      case TokenType::OVR_REDIR:
+      case types::TokenType::STR:         return "string"sv;
+      case types::TokenType::CMD:         return "command"sv;
+      case types::TokenType::AND:         return "logical AND"sv;
+      case types::TokenType::OR:          return "logical OR"sv;
+      case types::TokenType::NOT:         return "logical NOT"sv;
+      case types::TokenType::PIPE:        return "pipeline"sv;
+      case types::TokenType::OVR_REDIR:
         [[fallthrough]];
-      case TokenType::APND_REDIR:  return "output redirection"sv;
-      case TokenType::MERG_OUTPUT:
+      case types::TokenType::APND_REDIR:  return "output redirection"sv;
+      case types::TokenType::MERG_OUTPUT:
         [[fallthrough]];
-      case TokenType::MERG_APPND:
+      case types::TokenType::MERG_APPND:
         [[fallthrough]];
-      case TokenType::MERG_STREAM: return "combined redirection"sv;
-      case TokenType::STDIN_REDIR: return "input redirection"sv;
-      case TokenType::LPAREN:      return "left paren"sv;
-      case TokenType::RPAREN:      return "right paren"sv;
-      case TokenType::NEWLINE:     return "newline"sv;
-      case TokenType::SEMI:        return "semicolon"sv;
-      case TokenType::ENDFILE:     return "end of file"sv;
-      case TokenType::ERROR:
+      case types::TokenType::MERG_STREAM: return "combined redirection"sv;
+      case types::TokenType::STDIN_REDIR: return "input redirection"sv;
+      case types::TokenType::LPAREN:      return "left paren"sv;
+      case types::TokenType::RPAREN:      return "right paren"sv;
+      case types::TokenType::NEWLINE:     return "newline"sv;
+      case types::TokenType::SEMI:        return "semicolon"sv;
+      case types::TokenType::ENDFILE:     return "end of file"sv;
+      case types::TokenType::ERROR:
         [[fallthrough]];
       default:
         return "error"sv;
