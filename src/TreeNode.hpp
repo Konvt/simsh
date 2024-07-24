@@ -69,10 +69,10 @@ namespace simsh {
       , expr_ { std::forward<T>( data ) } {
       if constexpr ( constexpr auto error_mes = "ExprNode: The parameter `data` does not match the type annotation `expr_type`";
                      std::is_arithmetic_v<std::decay_t<T>> ) {
-        if ( expr_type != types::ExprKind::value )
+        [[unlikely]] if ( expr_type != types::ExprKind::value )
           throw error::RuntimeError( error_mes );
       } else {
-        if ( expr_type == types::ExprKind::value )
+        [[unlikely]] if ( expr_type == types::ExprKind::value )
           throw error::RuntimeError( error_mes );
       }
     }

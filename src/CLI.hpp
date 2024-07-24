@@ -26,7 +26,7 @@ namespace simsh {
       BaseCLI( Parser prsr )
         : prsr_ { std::move( prsr ) }
         , interp_ {} {
-        if ( already_exist_ )
+        [[unlikely]] if ( already_exist_ )
           throw error::RuntimeError( "BaseCLI: CLI already exists" );
         else already_exist_ = true;
 
