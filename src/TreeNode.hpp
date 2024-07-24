@@ -7,6 +7,7 @@
 #include <variant>
 
 #include "Config.hpp"
+#include "Exception.hpp"
 #include "EnumLabel.hpp"
 
 namespace simsh {
@@ -56,7 +57,7 @@ namespace simsh {
     std::variant<types::EvalT, types::TokenT> expr_;
 
   public:
-    /// @brief If the type of `data` does not match the value of `expr_type`, it's a UB.
+    /// @throw error::RuntimeError If the type of `data` does not match the value of `expr_type`.
     template<typename T>
       requires std::disjunction_v<
         std::is_arithmetic<std::decay_t<T>>,
@@ -65,7 +66,16 @@ namespace simsh {
     ExprNode( types::ExprKind expr_type, T&& data, SiblingNodes siblings = {} )
       : StmtNode( types::StmtKind::trivial, std::move( siblings ) )
       , type_ { expr_type }
-      , expr_ { std::forward<T>( data ) } {}
+      , expr_ { std::forward<T>( data ) } {
+      if constexpr ( constexpr auto error_mes = "ExprNode: The parameter `data` does not match the type annotation `expr_type`";
+                     std::is_arithmetic_v<std::decay_t<T>> ) {
+        if ( expr_type != types::ExprKind::value )
+          throw error::RuntimeError( error_mes );
+      } else {
+        if ( expr_type == types::ExprKind::value )
+          throw error::RuntimeError( error_mes );
+      }
+    }
     ExprNode( ExprNode&& rhs )
       : StmtNode( std::move( rhs ) )
       , type_ { rhs.type_ }
@@ -82,18 +92,6 @@ namespace simsh {
 
     [[nodiscard]] types::ExprKind kind() const noexcept { return type_; }
   };
-
-  /// @brief A type-safe factory function.
-  template<types::ExprKind expr_type, typename T>
-  [[nodiscard]] ExprNode make_ExprNode( T&& data, StmtNode::SiblingNodes siblings = {} ) {
-    static_assert(
-      (std::is_arithmetic_v<std::decay_t<T>> && expr_type == types::ExprKind::value) ||
-      ((!std::is_arithmetic_v<std::decay_t<T>>) && expr_type != types::ExprKind::value),
-      "The type parameter and label do not match"
-    );
-
-    return ExprNode( expr_type, std::forward<T>( data ), std::move( siblings ) );
-  }
 }
 
 #endif // __SIMSH_TREENODE__

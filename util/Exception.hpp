@@ -20,6 +20,13 @@ namespace simsh {
       virtual const char* what() const noexcept { return message_.c_str(); }
     };
 
+    /// @brief This exception indicates errors in some cpp code.
+    class RuntimeError : public TraceBack {
+    public:
+      RuntimeError( types::StringT message )
+        : TraceBack( std::move( message ) ) {}
+    };
+
     class TokenError : public TraceBack {
       TokenError( size_t line_pos, types::StrViewT context, types::StrViewT message )
         : TraceBack( "\n    " ) {

@@ -27,7 +27,7 @@ namespace simsh {
         : prsr_ { std::move( prsr ) }
         , interp_ {} {
         if ( already_exist_ )
-          throw std::runtime_error( "CLI already exists" );
+          throw error::RuntimeError( "BaseCLI: CLI already exists" );
         else already_exist_ = true;
 
         sigaction( SIGINT, nullptr, &old_action_ ); // save the old signal action

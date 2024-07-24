@@ -24,7 +24,7 @@ namespace simsh {
       [[fallthrough]];
     case types::TokenType::NEWLINE: {
       tknizr_.consume( tkn_tp );
-      return make_unique<ExprNode>( make_ExprNode<types::ExprKind::value>( constants::EvalSuccess ) );
+      return make_unique<ExprNode>( types::ExprKind::value, constants::EvalSuccess );
     }
 
     default: {
@@ -264,7 +264,7 @@ namespace simsh {
     // The structure of syntax tree node
     // requires that redirected file name argument be stored in sibling nodes.
     StmtNode::SiblingNodes arguments;
-    arguments.push_back( expression() );
+    arguments.emplace_back( expression() );
 
     return make_unique<StmtNode>( stmt_kind,
       move( left_stmt ), nullptr, move( arguments ) );
@@ -286,14 +286,14 @@ namespace simsh {
         for ( size_t i = 1; i <= 2; ++i ) {
           if ( auto match_str = matches[i].str();
                match_str.empty() )
-            args.push_back( make_unique<ExprNode>( make_ExprNode<types::ExprKind::value>( constants::InvalidValue ) ) );
-          else args.push_back( make_unique<ExprNode>( make_ExprNode<types::ExprKind::value>( stoi( match_str ) ) ) );
+            args.emplace_back( make_unique<ExprNode>( types::ExprKind::value, constants::InvalidValue ) );
+          else args.emplace_back( make_unique<ExprNode>( types::ExprKind::value, stoi( match_str ) ) );
         }
       } else {
         if ( auto match_str = matches[1].str();
-          match_str.empty() )
-          args.push_back( make_unique<ExprNode>( make_ExprNode<types::ExprKind::value>( constants::InvalidValue ) ) );
-        else args.push_back( make_unique<ExprNode>( make_ExprNode<types::ExprKind::value>( stoi( match_str ) ) ) );
+             match_str.empty() )
+          args.emplace_back( make_unique<ExprNode>( types::ExprKind::value, constants::InvalidValue ) );
+        else args.emplace_back( make_unique<ExprNode>( types::ExprKind::value, stoi( match_str ) ) );
       }
     };
 
@@ -325,7 +325,7 @@ namespace simsh {
       );
     }
 
-    arguments.push_back( expression() );
+    arguments.emplace_back( expression() );
 
     // The left operator takes precedence, which means `MERG_STREAM` will be the child node.
     if ( tknizr_.peek().is( types::TokenType::MERG_STREAM ) ) { // output_redirecti
@@ -360,14 +360,14 @@ namespace simsh {
         for ( size_t i = 1; i <= 2; ++i ) {
           if ( auto match_str = matches[i].str();
                match_str.empty() )
-            args.push_back( make_unique<ExprNode>( make_ExprNode<types::ExprKind::value>( constants::InvalidValue ) ) );
-          else args.push_back( make_unique<ExprNode>( make_ExprNode<types::ExprKind::value>( stoi( match_str ) ) ) );
+            args.emplace_back( make_unique<ExprNode>( types::ExprKind::value, constants::InvalidValue ) );
+          else args.emplace_back( make_unique<ExprNode>( types::ExprKind::value, stoi( match_str ) ) );
         }
       } else {
         if ( auto match_str = matches[1].str();
              match_str.empty() )
-          args.push_back( make_unique<ExprNode>( make_ExprNode<types::ExprKind::value>( constants::InvalidValue ) ) );
-        else args.push_back( make_unique<ExprNode>( make_ExprNode<types::ExprKind::value>( stoi( match_str ) ) ) );
+          args.emplace_back( make_unique<ExprNode>( types::ExprKind::value, constants::InvalidValue ) );
+        else args.emplace_back( make_unique<ExprNode>( types::ExprKind::value, stoi( match_str ) ) );
       }
     };
 
@@ -380,7 +380,7 @@ namespace simsh {
       StmtNode::SiblingNodes subargs;
       extract_params( subargs, redirection_regex, types::TokenType::OVR_REDIR );
       assert( subargs.size() == 1 );
-      subargs.push_back( expression() );
+      subargs.emplace_back( expression() );
 
       // The left operator takes precedence, which means `MERG_STREAM` will be the parent node.
       node = make_unique<StmtNode>( types::StmtKind::ovrwrit_redrct,
@@ -391,7 +391,7 @@ namespace simsh {
       StmtNode::SiblingNodes subargs;
       extract_params( subargs, redirection_regex, types::TokenType::APND_REDIR );
       assert( subargs.size() == 1 );
-      subargs.push_back( expression() );
+      subargs.emplace_back( expression() );
 
       node = make_unique<StmtNode>( types::StmtKind::appnd_redrct,
         move( left_stmt ), nullptr, move( subargs ) );
@@ -400,7 +400,7 @@ namespace simsh {
     case types::TokenType::MERG_OUTPUT: { // &>
       tknizr_.consume( types::TokenType::MERG_OUTPUT );
       StmtNode::SiblingNodes subargs;
-      subargs.push_back( expression() );
+      subargs.emplace_back( expression() );
 
       node = make_unique<StmtNode>( types::StmtKind::merge_output,
         move( left_stmt ), nullptr, move( subargs ) );
@@ -409,7 +409,7 @@ namespace simsh {
     case types::TokenType::MERG_APPND: { // &>>
       tknizr_.consume( types::TokenType::MERG_APPND );
       StmtNode::SiblingNodes subargs;
-      subargs.push_back( expression() );
+      subargs.emplace_back( expression() );
 
       node = make_unique<StmtNode>( types::StmtKind::merge_appnd,
         move( left_stmt ), nullptr, move( subargs ) );
@@ -450,9 +450,10 @@ namespace simsh {
     StmtNode::SiblingNodes arguments;
 
     const auto token_type = tknizr_.peek().type_;
-    auto token = tknizr_.peek().is( types::TokenType::CMD )
-      ? tknizr_.consume( types::TokenType::CMD )
-      : tknizr_.consume( types::TokenType::STR );
+    const auto token_str = tknizr_.consume(
+      token_type == types::TokenType::CMD
+        ? types::TokenType::CMD : types::TokenType::STR
+    );
 
     /* Multiple CMD tokens or STR tokens are treated as a single command,
      * so we need to combine them together and store into sibling nodes.
@@ -462,13 +463,20 @@ namespace simsh {
     while ( tknizr_.peek().is( types::TokenType::CMD ) || tknizr_.peek().is( types::TokenType::STR ) ) {
       assert( tknizr_.peek().value_.empty() == false );
 
-      if ( tknizr_.peek().type_ == types::TokenType::CMD )
-        arguments.push_back( make_unique<ExprNode>( make_ExprNode<types::ExprKind::command>( tknizr_.consume( tknizr_.peek().type_ ) ) ) );
-      else arguments.push_back( make_unique<ExprNode>(  make_ExprNode<types::ExprKind::string>( tknizr_.consume( tknizr_.peek().type_ ) ) ) );
+      const auto tkn_tp = tknizr_.peek().type_;
+      arguments.emplace_back(
+        make_unique<ExprNode>(
+          tkn_tp == types::TokenType::CMD
+            ? types::ExprKind::command : types::ExprKind::string,
+          tknizr_.consume( tknizr_.peek().type_ )
+        )
+      );
     }
 
-    if ( arguments.empty() && token_type == types::TokenType::STR )
-      return make_unique<ExprNode>( make_ExprNode<types::ExprKind::string>( move( token ), move( arguments ) ) );
-    return make_unique<ExprNode>( make_ExprNode<types::ExprKind::command>( move( token ), move( arguments ) ) );
+    return make_unique<ExprNode>(
+      arguments.empty() && token_type == types::TokenType::STR
+        ? types::ExprKind::string : types::ExprKind::command,
+      move( token_str ), move( arguments )
+    );
   }
 }
