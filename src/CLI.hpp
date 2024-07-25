@@ -22,7 +22,7 @@ namespace simsh {
       Interpreter interp_;
 
     public:
-      /// @throw std::runtime_error If more than one object instances are created in the same scope.
+      /// @throw error::RuntimeError If more than one object instances are created in the same scope.
       BaseCLI( Parser prsr )
         : prsr_ { std::move( prsr ) }
         , interp_ {} {
