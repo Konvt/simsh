@@ -11,6 +11,7 @@
 
 namespace simsh {
   namespace utils {
+    /// @brief 
     class ForkGuard {
       pid_t process_id_;
       std::optional<int> subprocess_exit_code_;
@@ -19,9 +20,15 @@ namespace simsh {
       sigset_t new_set_;
 
     public:
+      ForkGuard( const ForkGuard& ) = delete;
+      ForkGuard& operator=( const ForkGuard& ) = delete;
+      // Due to the class already has the process signal set, it cannot be reassigned after construction.
+      ForkGuard& operator=( ForkGuard&& ) = delete;
+
       /// @brief Fork and check for success.
       /// @throw error::SystemCallError When fork failed.
       explicit ForkGuard( bool block_signal = true );
+      ForkGuard( ForkGuard&& rhs );
 
       /// @brief Abandon the management child process, and deconstruct this object.
       ~ForkGuard() noexcept;

@@ -1,4 +1,5 @@
 #include <sys/wait.h>
+#include <cstring>
 
 #include "ForkGuard.hpp"
 #include "Logger.hpp"
@@ -23,6 +24,16 @@ namespace simsh {
 
       if ( (process_id_ = fork()) < 0 )
         throw error::SystemCallError( "fork" );
+    }
+
+    ForkGuard::ForkGuard( ForkGuard&& rhs )
+      : process_id_ { rhs.process_id_ }
+      , subprocess_exit_code_ { move( rhs.subprocess_exit_code_ ) }
+      , old_set_ { move( rhs.old_set_ ) }
+    {
+      sigemptyset( &new_set_ );
+      memcpy( new_set_.__val, rhs.new_set_.__val, sizeof( sigset_t::__val ) );
+      sigemptyset( &rhs.new_set_ );
     }
 
     ForkGuard::~ForkGuard() noexcept
