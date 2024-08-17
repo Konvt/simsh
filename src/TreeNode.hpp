@@ -85,8 +85,8 @@ namespace simsh {
     [[nodiscard]] types::TokenT token() && { return std::move( std::get<types::TokenT>( expr_ ) ); }
     const types::TokenT& token() const & { return std::get<types::TokenT>( expr_ ); }
 
-    /// @brief Expose the token object so that it can be changed externally.
-    types::TokenT& replace() { return std::get<types::TokenT>( expr_ ); }
+    /// @brief Replace the current token with the new token.
+    void replace_with( types::TokenT token ) { std::get<types::TokenT>( expr_ ) = std::move( token ); }
 
     [[nodiscard]] types::EvalT value() const { return std::get<types::EvalT>( expr_ ); }
 

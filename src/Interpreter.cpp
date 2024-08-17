@@ -250,11 +250,14 @@ namespace simsh {
       if ( node->kind() == types::ExprKind::value )
         return;
       else if ( node->token() == "$$"sv )
-        node->replace() = format( "{}", getpid() );
+        node->replace_with( format( "{}", getpid() ) );
       else if ( node->token() == "$SIMSH_VERSION"sv )
-        node->replace() = SIMSH_VERSION;
-      else if ( node->kind() == types::ExprKind::command )
-        utils::tilde_expansion( node->replace() );
+        node->replace_with( SIMSH_VERSION );
+      else if ( node->kind() == types::ExprKind::command ) {
+        if ( auto new_token = utils::tilde_expansion( node->token() );
+             !new_token.empty() )
+          node->replace_with( move( new_token ) );
+      }
     };
 
     cmd_expand( expr );

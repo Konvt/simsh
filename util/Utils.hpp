@@ -24,7 +24,7 @@ namespace simsh {
 
     [[nodiscard]] std::vector<types::StringT> get_envpath();
 
-    void tilde_expansion( types::StringT& token );
+    types::StringT tilde_expansion( const types::StringT& token );
 
     [[nodiscard]] std::pair<bool, std::smatch> match_string( const types::StringT& str, types::StrViewT reg_str );
 

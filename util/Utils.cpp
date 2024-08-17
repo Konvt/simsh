@@ -85,10 +85,11 @@ namespace simsh {
       return ret;
     }
 
-    void tilde_expansion( types::StringT& token )
+    types::StringT tilde_expansion( const types::StringT& token )
     {
       if ( regex_search( token, regex( "^~(/.*)?$" ) ) )
-        token = format( "{}{}", get_homedir(), types::StrViewT( token.begin() + 1, token.end() ) );
+        return format( "{}{}", get_homedir(), types::StrViewT( token.begin() + 1, token.end() ) );
+      return {};
     }
 
     pair<bool, smatch> match_string( const types::StringT& str, types::StrViewT reg_str )
