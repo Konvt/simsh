@@ -40,8 +40,7 @@ namespace simsh {
         else received_eof_ = true;
 
         line_input_.push_back( EOF );
-      }
-      else {
+      } else {
         received_eof_ = false;
         // `getline` always discards the line break
         // but line break is a syntactic token, thus we need push a new one.

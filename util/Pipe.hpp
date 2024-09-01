@@ -110,7 +110,7 @@ namespace simsh {
       /// @brief only for pointer types and dynamic arrays
       template<typename T>
         requires std::conjunction_v<
-          std::is_trivially_copyable<std::remove_reference_t<T>>,
+          std::is_trivially_copyable<std::remove_cvref_t<T>>,
           std::negation<std::is_same<std::decay_t<T>, char*>>,
           std::negation<std::is_void<std::remove_pointer_t<std::decay_t<T>>>> // forbidden any void pointers
         >
@@ -155,7 +155,6 @@ namespace simsh {
     /// @brief Disable blocking behavior when reading from the specified file descriptor.
     bool close_blocking( types::FDType fd );
   }
-
 }
 
 #endif // __SIMSH_PIPES__

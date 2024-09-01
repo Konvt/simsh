@@ -305,6 +305,7 @@ namespace simsh {
       }
       return constants::EvalSuccess;
     } break;
+
     case 'e': { // exit or exec
       if ( expr->token() == "exit" ) {
         if ( !expr->siblings().empty() ) {
@@ -315,6 +316,8 @@ namespace simsh {
         }
         throw error::TerminationSignal( EXIT_SUCCESS );
       } else if ( !expr->siblings().empty() ) {
+        /* Using `exec` with empty arguments dose nothing in bash
+         * so there is not `else` branch to handle that case */
         vector<char*> exec_argv;
         exec_argv.reserve( expr->siblings().size() + 2 );
         ranges::transform( expr->siblings(), back_inserter( exec_argv ),
@@ -337,6 +340,7 @@ namespace simsh {
         return !constants::ExecSuccess;
       }
     } break;
+
     case 'h': { // help
       if ( !expr->siblings().empty() ) {
         iout::logger << error::ArgumentError(
@@ -346,6 +350,7 @@ namespace simsh {
       }
       iout::prmptr << utils::help_doc();
     } break;
+
     case 't': { // type
       if ( expr->siblings().empty() )
         return !constants::EvalSuccess;
