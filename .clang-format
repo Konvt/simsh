@@ -1,21 +1,54 @@
+---
 Language: Cpp
 BasedOnStyle: Mozilla
-ColumnLimit: 80
-SpacesInParentheses: true
+ColumnLimit: 100
+Standard: Latest
+AlignConsecutiveAssignments:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: true
+AlignConsecutiveBitFields:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: true
+AlignConsecutiveMacros:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: true
+AlignConsecutiveShortCaseStatements:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: true
+  AlignCaseColons: false
+AlignEscapedNewlines: Left
+AlignOperands: AlignAfterOperator
+AllowShortBlocksOnASingleLine: Always
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
+# deprecated option in clang-format 19
 AlwaysBreakAfterReturnType: None
 AlwaysBreakAfterDefinitionReturnType: None
-SpaceBeforeCpp11BracedList: true
-BreakBeforeBinaryOperators: All
-Cpp11BracedListStyle: true
-AllowShortBlocksOnASingleLine: Always
+
+BreakBeforeBinaryOperators: NonAssignment
 BreakBeforeBraces: Custom
 BraceWrapping:
   AfterClass: false
-  AfterControlStatement: Never
+  AfterControlStatement: MultiLine
   AfterFunction: true
   AfterStruct: false
   AfterEnum: false
   SplitEmptyFunction: false
   SplitEmptyRecord: false
   SplitEmptyNamespace: false
+FixNamespaceComments: true
+IndentCaseLabels: false
+IndentPPDirectives: AfterHash
+IndentWrappedFunctionNames: true
+InsertNewlineAtEOF: true
+NamespaceIndentation: All
 PackConstructorInitializers: NextLine
+PPIndentWidth: 1
+ShortNamespaceLines: 5
+SpacesInParentheses: true
+SpaceBeforeCpp11BracedList: true
+...
