@@ -27,7 +27,7 @@ rebuild: clean all
 debug:
 	$(MAKE) -s rebuild OPT_LEVEL=g && gdb -q -tui $(TARGET)
 format:
-	find . -name '*.cpp' -o -name '*.hpp' | xargs clang-format -i
+	clang-format -i $(SRC_DIR)/*.*pp $(UTIL_DIR)/*.*pp
 -include $(DEP)
 
 $(TARGET): $(SRC_OBJ) $(UTIL_OBJ)

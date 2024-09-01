@@ -5,7 +5,10 @@
 # project
 cmake_minimum_required(VERSION 3.15.0)
 cmake_policy(SET CMP0091 NEW)
-project(simsh LANGUAGES CXX)
+project(format LANGUAGES CXX)
+
+# target
+add_custom_target(format)
 
 # target
 add_executable(simsh "")
@@ -28,7 +31,7 @@ target_compile_options(simsh PRIVATE
 set_target_properties(simsh PROPERTIES CXX_EXTENSIONS OFF)
 target_compile_features(simsh PRIVATE cxx_std_20)
 if(MSVC)
-    target_compile_options(simsh PRIVATE $<$<CONFIG:Release>:-Ox -fp:fast>)
+    target_compile_options(simsh PRIVATE $<$<CONFIG:Release>:-O2>)
 else()
     target_compile_options(simsh PRIVATE -O3)
 endif()
@@ -44,14 +47,14 @@ target_link_options(simsh PRIVATE
     -m64
 )
 target_sources(simsh PRIVATE
-    src/Parser.cpp
-    src/Tokenizer.cpp
-    src/main.cpp
     src/CLI.cpp
     src/Interpreter.cpp
-    util/Logger.cpp
+    src/main.cpp
+    src/Parser.cpp
+    src/Tokenizer.cpp
+    util/ForkGuard.cpp
     util/Pipe.cpp
     util/Utils.cpp
-    util/ForkGuard.cpp
+    util/Logger.cpp
 )
 
