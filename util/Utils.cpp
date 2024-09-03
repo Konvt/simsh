@@ -1,9 +1,9 @@
 #include <algorithm>
 #include <cassert>
-#include <climits>
 #include <cstdlib>
 #include <format>
 #include <fstream>
+#include <limits>
 #include <ranges>
 
 #include <pwd.h>
@@ -26,9 +26,11 @@ namespace simsh {
       case '\f': return "'\\f'";
       case '\r': return "'\\r'";
       default:   {
-        if ( character <= CHAR_MAX && character >= CHAR_MIN && isprint( character ) )
+        if ( character <= numeric_limits<char>::max() && character >= numeric_limits<char>::min()
+             && isprint( character ) )
           return format( "'{}'", static_cast<char>( character ) );
-        else return format( "\\x{:X}", character );
+        else
+          return format( "\\x{:X}", character );
       }
       }
     }

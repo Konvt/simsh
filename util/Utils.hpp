@@ -24,7 +24,7 @@ namespace simsh {
 
     [[nodiscard]] std::vector<types::StringT> get_envpath();
 
-    types::StringT tilde_expansion( const types::StringT& token );
+    [[nodiscard]] types::StringT tilde_expansion( const types::StringT& token );
 
     [[nodiscard]] std::pair<bool, std::smatch> match_string( const types::StringT& str,
                                                              types::StrViewT reg_str );
@@ -32,9 +32,7 @@ namespace simsh {
     /// @brief Finds the path to the given file in the path set.
     template<typename T>
       requires requires( std::decay_t<T> t ) {
-        {
-          std::filesystem::path( t )
-        } -> std::same_as<std::filesystem::path>;
+        { std::filesystem::path( t ) } -> std::same_as<std::filesystem::path>;
       }
     [[nodiscard]] types::StringT search_filepath( std::span<const T> path_set,
                                                   types::StrViewT filename )
@@ -97,22 +95,22 @@ namespace simsh {
     };
 
     // specialized for member function
-    template<typename Class, typename R, typename... Args>
+    template<class Class, typename R, typename... Args>
     struct function_traits<R ( Class::* )( Args... )> {
       using result_type = R;
       using arguments   = std::tuple<Args...>;
     };
-    template<typename Class, typename R, typename... Args>
+    template<class Class, typename R, typename... Args>
     struct function_traits<R ( Class::* )( Args... ) const> {
       using result_type = R;
       using arguments   = std::tuple<Args...>;
     };
-    template<typename Class, typename R, typename... Args>
+    template<class Class, typename R, typename... Args>
     struct function_traits<R ( Class::* )( Args... ) volatile> {
       using result_type = R;
       using arguments   = std::tuple<Args...>;
     };
-    template<typename Class, typename R, typename... Args>
+    template<class Class, typename R, typename... Args>
     struct function_traits<R ( Class::* )( Args... ) const volatile> {
       using result_type = R;
       using arguments   = std::tuple<Args...>;

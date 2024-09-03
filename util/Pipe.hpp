@@ -14,13 +14,9 @@
 namespace simsh {
   namespace details {
     template<template<typename, typename...> typename T, typename U, typename... Args>
-    concept is_randomly_accessible = requires( const T<U, Args...>& value ) {
-      {
-        value.data()
-      } -> std::same_as<const U*>;
-      {
-        value.size()
-      } -> std::same_as<size_t>;
+    concept RandomAccess = requires( const T<U, Args...>& value ) {
+      { value.data() } -> std::same_as<const U*>;
+      { value.size() } -> std::same_as<size_t>;
     };
   } // namespace details
 
@@ -124,10 +120,9 @@ namespace simsh {
       }
 
       /// @brief for the randomly accessible container type
-      template<template<typename, typename...> typename T, typename U, typename... Args>
-        requires std::conjunction_v<
-          std::bool_constant<details::is_randomly_accessible<T, U, Args...>>,
-          std::is_trivially_copyable<U>>
+      template<template<typename, typename...> class T, typename U, typename... Args>
+        requires std::conjunction_v<std::bool_constant<details::RandomAccess<T, U, Args...>>,
+                                    std::is_trivially_copyable<U>>
       void push( const T<U, Args...>& value ) const
       {
         if ( !writer_closed_ )
@@ -135,9 +130,9 @@ namespace simsh {
       }
 
       /// @brief for the container type that is not randomly accessible
-      template<template<typename, typename...> typename T, typename U, typename... Args>
+      template<template<typename, typename...> class T, typename U, typename... Args>
         requires std::conjunction_v<
-          std::negation<std::bool_constant<details::is_randomly_accessible<T, U, Args...>>>,
+          std::negation<std::bool_constant<details::RandomAccess<T, U, Args...>>>,
           std::is_trivially_copyable<U>>
       void push( const T<U, Args...>& value ) const
       {

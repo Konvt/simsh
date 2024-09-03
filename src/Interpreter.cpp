@@ -33,7 +33,8 @@ namespace simsh {
     assert( seq_stmt->left() != nullptr );
     assert( seq_stmt->siblings().empty() == true );
 
-    if ( seq_stmt->right() == nullptr ) return interpret( seq_stmt->left() );
+    if ( seq_stmt->right() == nullptr )
+      return interpret( seq_stmt->left() );
     else {
       interpret( seq_stmt->left() );
       return interpret( seq_stmt->right() );
@@ -132,8 +133,8 @@ namespace simsh {
       iout::logger.print( error::SystemCallError( filename ) );
       return !constants::EvalSuccess;
     } else if ( const auto perms = filesystem::status( filename ).permissions();
-                ( perms & filesystem::perms::owner_write ) == filesystem::perms::none )
-    { // not writable
+                ( perms & filesystem::perms::owner_write )
+                == filesystem::perms::none ) { // not writable
       iout::logger.print( error::SystemCallError( filename ) );
       return !constants::EvalSuccess;
     }
@@ -145,8 +146,7 @@ namespace simsh {
      */
     types::FDType file_d = STDOUT_FILENO;
     if ( oup_redr->type() == types::StmtKind::appnd_redrct
-         || oup_redr->type() == types::StmtKind::ovrwrit_redrct )
-    {
+         || oup_redr->type() == types::StmtKind::ovrwrit_redrct ) {
       ExprNodeT arg_node = static_cast<ExprNode*>( oup_redr->siblings().front().get() );
 
       assert( arg_node->kind() == types::ExprKind::value );
@@ -165,8 +165,7 @@ namespace simsh {
 
       dup2( target_fd, file_d );
       if ( oup_redr->type() == types::StmtKind::merge_output
-           || oup_redr->type() == types::StmtKind::merge_appnd )
-      {
+           || oup_redr->type() == types::StmtKind::merge_appnd ) {
         if ( file_d != STDOUT_FILENO ) dup2( target_fd, STDOUT_FILENO );
         if ( file_d != STDERR_FILENO ) dup2( target_fd, STDERR_FILENO );
       }
@@ -182,9 +181,12 @@ namespace simsh {
     }
     pguard.wait();
 
+    assert( pguard.exit_code().has_value() );
+
     if ( oup_redr->left() != nullptr && oup_redr->left()->type() == types::StmtKind::trivial )
       return pguard.exit_code() == constants::ExecSuccess;
-    else return pguard.exit_code();
+    else
+      return pguard.exit_code().value();
   }
 
   types::EvalT Interpreter::merge_stream( StmtNodeT merg_redr ) const
@@ -198,8 +200,7 @@ namespace simsh {
 
     /* For `types::StmtKind::merge_stream` node,
      * the first and second elements of `merg_redr->siblings()` is `ExprNode` of
-     * type `types::ExprKind::value`, which specifies the destination file
-     * descriptor. */
+     * type `types::ExprKind::value`, which specifies the destination file descriptor. */
     ExprNodeT arg_node1 = static_cast<ExprNode*>( merg_redr->siblings()[0].get() );
     ExprNodeT arg_node2 = static_cast<ExprNode*>( merg_redr->siblings()[1].get() );
 
@@ -220,9 +221,12 @@ namespace simsh {
     }
     pguard.wait();
 
+    assert( pguard.exit_code().has_value() );
+
     if ( merg_redr->left()->type() == types::StmtKind::trivial )
       return pguard.exit_code() == constants::ExecSuccess;
-    else return pguard.exit_code();
+    else
+      return pguard.exit_code().value();
   }
 
   types::EvalT Interpreter::input_redirection( StmtNodeT inp_redr ) const
@@ -243,8 +247,8 @@ namespace simsh {
       iout::logger.print( error::SystemCallError( filename ) );
       return !constants::EvalSuccess;
     } else if ( const auto perms = filesystem::status( filename ).permissions();
-                ( perms & filesystem::perms::owner_read ) == filesystem::perms::none )
-    { // not readable
+                ( perms & filesystem::perms::owner_read )
+                == filesystem::perms::none ) { // not readable
       iout::logger.print( error::SystemCallError( filename ) );
       return !constants::EvalSuccess;
     }
@@ -272,9 +276,12 @@ namespace simsh {
     assert( expr->type() == types::StmtKind::trivial );
 
     const auto cmd_expand = []( ExprNodeT node ) -> void {
-      if ( node->kind() == types::ExprKind::value ) return;
-      else if ( node->token() == "$$"sv ) node->replace_with( format( "{}", getpid() ) );
-      else if ( node->token() == "$SIMSH_VERSION"sv ) node->replace_with( SIMSH_VERSION );
+      if ( node->kind() == types::ExprKind::value )
+        return;
+      else if ( node->token() == "$$"sv )
+        node->replace_with( format( "{}", getpid() ) );
+      else if ( node->token() == "$SIMSH_VERSION"sv )
+        node->replace_with( SIMSH_VERSION );
       else if ( node->kind() == types::ExprKind::command ) {
         if ( auto new_token = utils::tilde_expansion( node->token() ); !new_token.empty() )
           node->replace_with( move( new_token ) );
@@ -290,9 +297,12 @@ namespace simsh {
       cmd_expand( node );
     }
 
-    if ( expr->kind() == types::ExprKind::value ) return expr->value();
-    else if ( built_in_cmds.contains( expr->token() ) ) return builtin_exec( expr );
-    else return external_exec( expr );
+    if ( expr->kind() == types::ExprKind::value )
+      return expr->value();
+    else if ( built_in_cmds.contains( expr->token() ) )
+      return builtin_exec( expr );
+    else
+      return external_exec( expr );
   }
 
   types::EvalT Interpreter::builtin_exec( ExprNodeT expr ) const
@@ -332,25 +342,27 @@ namespace simsh {
         }
         throw error::TerminationSignal( EXIT_SUCCESS );
       } else if ( !expr->siblings().empty() ) {
-        /* Using `exec` with empty arguments dose nothing in bash
+        /* Using `exec` with empty arguments does nothing in bash.
          * so there is not `else` branch to handle that case */
         vector<char*> exec_argv;
         exec_argv.reserve( expr->siblings().size() + 2 );
-        ranges::transform(
-          expr->siblings(), back_inserter( exec_argv ), []( const auto& sblng ) -> char* {
-            assert( sblng->type() == types::StmtKind::trivial );
-            ExprNodeT arg_node = static_cast<ExprNode*>( sblng.get() );
-            assert( arg_node->kind() != types::ExprKind::value );
+        ranges::transform( expr->siblings(),
+                           back_inserter( exec_argv ),
+                           []( const auto& sblng ) -> char* {
+                             assert( sblng->type() == types::StmtKind::trivial );
+                             ExprNodeT arg_node = static_cast<ExprNode*>( sblng.get() );
+                             assert( arg_node->kind() != types::ExprKind::value );
 
-            return const_cast<char*>( arg_node->token().data() );
-          } );
+                             return const_cast<char*>( arg_node->token().data() );
+                           } );
         exec_argv.push_back( nullptr );
 
         execvp( exec_argv.front(), exec_argv.data() );
 
         const auto error_info = static_cast<ExprNode*>( expr->siblings().front().get() );
         iout::logger << error::ArgumentError(
-          "exec", format( "{}: command not found", error_info->token() ) );
+          "exec",
+          format( "{}: command not found", error_info->token() ) );
         return !constants::ExecSuccess;
       }
     } break;
@@ -374,12 +386,15 @@ namespace simsh {
 
         if ( built_in_cmds.contains( arg_node->token() ) )
           iout::prmptr << format( "{} is a builtin\n", arg_node->token() );
-        else if ( const auto filepath = utils::search_filepath<types::StringT>(
-                    utils::get_envpath(), arg_node->token() );
+        else if ( const auto filepath =
+                    utils::search_filepath<types::StringT>( utils::get_envpath(),
+                                                            arg_node->token() );
                   filepath.empty() )
           iout::logger << error::ArgumentError(
-            "type"sv, format( "could not find '{}'", arg_node->token() ) );
-        else iout::prmptr << format( "{} is {}\n", arg_node->token(), filepath );
+            "type"sv,
+            format( "could not find '{}'", arg_node->token() ) );
+        else
+          iout::prmptr << format( "{} is {}\n", arg_node->token(), filepath );
       }
     } break;
     default: assert( false ); break;
@@ -400,14 +415,15 @@ namespace simsh {
       // child process
       vector<char*> exec_argv { const_cast<char*>( expr->token().data() ) };
       exec_argv.reserve( expr->siblings().size() + 2 );
-      ranges::transform(
-        expr->siblings(), back_inserter( exec_argv ), []( const auto& sblng ) -> char* {
-          assert( sblng->type() == types::StmtKind::trivial );
-          ExprNodeT arg_node = static_cast<ExprNode*>( sblng.get() );
-          assert( arg_node->kind() != types::ExprKind::value );
+      ranges::transform( expr->siblings(),
+                         back_inserter( exec_argv ),
+                         []( const auto& sblng ) -> char* {
+                           assert( sblng->type() == types::StmtKind::trivial );
+                           ExprNodeT arg_node = static_cast<ExprNode*>( sblng.get() );
+                           assert( arg_node->kind() != types::ExprKind::value );
 
-          return const_cast<char*>( arg_node->token().data() );
-        } );
+                           return const_cast<char*>( arg_node->token().data() );
+                         } );
       exec_argv.push_back( nullptr );
 
       pguard.reset_signals();

@@ -34,7 +34,7 @@ namespace simsh {
 
     LineBuffer& operator=( LineBuffer&& rhs ) noexcept;
 
-    [[nodiscard]] bool eof() const { return input_stream_->eof(); }
+    [[nodiscard]] bool eof() const { return received_eof_; }
     [[nodiscard]] size_t line_pos() const noexcept { return line_pos_; }
 
     /// @brief Returns the current scanned string.

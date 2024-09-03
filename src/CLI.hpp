@@ -29,7 +29,8 @@ namespace simsh {
       {
         [[unlikely]] if ( already_exist_ )
           throw error::RuntimeError( "BaseCLI: CLI already exists" );
-        else already_exist_ = true;
+        else
+          already_exist_ = true;
 
         sigaction( SIGINT, nullptr, &old_action_ ); // save the old signal action
       }

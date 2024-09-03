@@ -27,21 +27,19 @@ namespace simsh {
     /// @brief Internal instruction execution, not cross-process.
     [[nodiscard]] types::EvalT builtin_exec( ExprNodeT expr ) const;
 
-    /// @brief Execute the expression, and return 0 or 1 (a boolean), indicating
-    /// whether the expression was successful.
-    /// @brief The 'successful' means that the return value of child process was
-    /// `EXIT_SUCCESS`.
+    /// @brief Execute the expression, and return 0 or 1 (a boolean),
+    /// indicating whether the expression was successful.
+    /// @brief The 'successful' means that the return value of child process was `EXIT_SUCCESS`.
     [[nodiscard]] types::EvalT external_exec( ExprNodeT expr ) const;
 
   public:
     Interpreter()  = default;
     ~Interpreter() = default;
 
-    /// @brief Evaluates the statement. If it is an trivial statement
-    /// (expression),
+    /// @brief Evaluates the statement. If it is an trivial statement (expression),
     /// @brief returns the expression evaluation result.
-    /// @brief Otherwise, the two sides of the child node are evaluated
-    /// recursively according to the grammar rules
+    /// @brief Otherwise, the two sides of the child node are evaluated recursively according to the
+    /// grammar rules
     /// @throw error::SystemCallError If a specific system call error occurs
     /// (i.e. `fork` or `waitpid`).
     /// @throw error::TerminationSignal If this process is a child process.

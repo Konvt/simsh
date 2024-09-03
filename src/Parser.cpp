@@ -58,8 +58,10 @@ namespace simsh {
     } break;
 
     default: {
-      throw error::SyntaxError(
-        tknizr_.line_pos(), tknizr_.context(), types::TokenType::CMD, tknizr_.peek().type_ );
+      throw error::SyntaxError( tknizr_.line_pos(),
+                                tknizr_.context(),
+                                types::TokenType::CMD,
+                                tknizr_.peek().type_ );
     }
     }
 
@@ -71,26 +73,30 @@ namespace simsh {
     switch ( const auto tkn_tp = tknizr_.peek().type_; tkn_tp ) {
     case types::TokenType::AND: { // connector
       tknizr_.consume( types::TokenType::AND );
-      return make_unique<StmtNode>(
-        types::StmtKind::logical_and, move( left_stmt ), nonempty_statement() );
+      return make_unique<StmtNode>( types::StmtKind::logical_and,
+                                    move( left_stmt ),
+                                    nonempty_statement() );
     }
 
     case types::TokenType::OR: {
       tknizr_.consume( types::TokenType::OR );
-      return make_unique<StmtNode>(
-        types::StmtKind::logical_or, move( left_stmt ), nonempty_statement() );
+      return make_unique<StmtNode>( types::StmtKind::logical_or,
+                                    move( left_stmt ),
+                                    nonempty_statement() );
     }
 
     case types::TokenType::PIPE: {
       tknizr_.consume( types::TokenType::PIPE );
-      return make_unique<StmtNode>(
-        types::StmtKind::pipeline, move( left_stmt ), nonempty_statement() );
+      return make_unique<StmtNode>( types::StmtKind::pipeline,
+                                    move( left_stmt ),
+                                    nonempty_statement() );
     }
 
     case types::TokenType::SEMI: {
       tknizr_.consume( types::TokenType::SEMI );
-      return make_unique<StmtNode>(
-        types::StmtKind::sequential, move( left_stmt ), nonempty_statement() );
+      return make_unique<StmtNode>( types::StmtKind::sequential,
+                                    move( left_stmt ),
+                                    nonempty_statement() );
     }
 
     case types::TokenType::OVR_REDIR: // redirection
@@ -110,8 +116,10 @@ namespace simsh {
     }
 
     default:
-      throw error::SyntaxError(
-        tknizr_.line_pos(), tknizr_.context(), types::TokenType::NEWLINE, tknizr_.peek().type_ );
+      throw error::SyntaxError( tknizr_.line_pos(),
+                                tknizr_.context(),
+                                types::TokenType::NEWLINE,
+                                tknizr_.peek().type_ );
     }
   }
 
@@ -142,8 +150,10 @@ namespace simsh {
     } break;
 
     default: {
-      throw error::SyntaxError(
-        tknizr_.line_pos(), tknizr_.context(), types::TokenType::CMD, tknizr_.peek().type_ );
+      throw error::SyntaxError( tknizr_.line_pos(),
+                                tknizr_.context(),
+                                types::TokenType::CMD,
+                                tknizr_.peek().type_ );
     }
     }
 
@@ -155,20 +165,23 @@ namespace simsh {
     switch ( tknizr_.peek().type_ ) {
     case types::TokenType::AND: { // connector
       tknizr_.consume( types::TokenType::AND );
-      return make_unique<StmtNode>(
-        types::StmtKind::logical_and, move( left_stmt ), inner_statement() );
+      return make_unique<StmtNode>( types::StmtKind::logical_and,
+                                    move( left_stmt ),
+                                    inner_statement() );
     }
 
     case types::TokenType::OR: {
       tknizr_.consume( types::TokenType::OR );
-      return make_unique<StmtNode>(
-        types::StmtKind::logical_or, move( left_stmt ), inner_statement() );
+      return make_unique<StmtNode>( types::StmtKind::logical_or,
+                                    move( left_stmt ),
+                                    inner_statement() );
     }
 
     case types::TokenType::PIPE: {
       tknizr_.consume( types::TokenType::PIPE );
-      return make_unique<StmtNode>(
-        types::StmtKind::pipeline, move( left_stmt ), inner_statement() );
+      return make_unique<StmtNode>( types::StmtKind::pipeline,
+                                    move( left_stmt ),
+                                    inner_statement() );
     }
 
     case types::TokenType::SEMI: {
@@ -177,10 +190,12 @@ namespace simsh {
       StmtNodePtr right_stmt;
       if ( tknizr_.peek().is( types::TokenType::RPAREN ) )
         tknizr_.consume( types::TokenType::RPAREN );
-      else right_stmt = inner_statement();
+      else
+        right_stmt = inner_statement();
 
-      return make_unique<StmtNode>(
-        types::StmtKind::sequential, move( left_stmt ), move( right_stmt ) );
+      return make_unique<StmtNode>( types::StmtKind::sequential,
+                                    move( left_stmt ),
+                                    move( right_stmt ) );
     }
 
     case types::TokenType::OVR_REDIR: // redirection
@@ -199,8 +214,10 @@ namespace simsh {
     }
 
     default: {
-      throw error::SyntaxError(
-        tknizr_.line_pos(), tknizr_.context(), types::TokenType::RPAREN, tknizr_.peek().type_ );
+      throw error::SyntaxError( tknizr_.line_pos(),
+                                tknizr_.context(),
+                                types::TokenType::RPAREN,
+                                tknizr_.peek().type_ );
     }
     }
   }
@@ -221,13 +238,17 @@ namespace simsh {
       tknizr_.consume( types::TokenType::STDIN_REDIR );
     } break;
     default:
-      throw error::SyntaxError(
-        tknizr_.line_pos(), tknizr_.context(), types::TokenType::OVR_REDIR, tknizr_.peek().type_ );
+      throw error::SyntaxError( tknizr_.line_pos(),
+                                tknizr_.context(),
+                                types::TokenType::OVR_REDIR,
+                                tknizr_.peek().type_ );
     }
 
     if ( tknizr_.peek().type_ != types::TokenType::CMD ) {
-      throw error::SyntaxError(
-        tknizr_.line_pos(), tknizr_.context(), types::TokenType::CMD, tknizr_.peek().type_ );
+      throw error::SyntaxError( tknizr_.line_pos(),
+                                tknizr_.context(),
+                                types::TokenType::CMD,
+                                tknizr_.peek().type_ );
     }
 
     // The structure of syntax tree node
@@ -289,8 +310,10 @@ namespace simsh {
       return combined_redirection_extension( move( left_stmt ) );
     }
     default:
-      throw error::SyntaxError(
-        tknizr_.line_pos(), tknizr_.context(), types::TokenType::OVR_REDIR, tknizr_.peek().type_ );
+      throw error::SyntaxError( tknizr_.line_pos(),
+                                tknizr_.context(),
+                                types::TokenType::OVR_REDIR,
+                                tknizr_.peek().type_ );
     }
 
     arguments.emplace_back( expression() );
@@ -302,12 +325,13 @@ namespace simsh {
       extract_params( subargs, combined_redir_regex, types::TokenType::MERG_STREAM );
       assert( subargs.size() == 2 );
 
-      return make_unique<StmtNode>(
-        stmt_kind,
-        make_unique<StmtNode>(
-          types::StmtKind::merge_stream, move( left_stmt ), nullptr, move( subargs ) ),
-        nullptr,
-        move( arguments ) );
+      return make_unique<StmtNode>( stmt_kind,
+                                    make_unique<StmtNode>( types::StmtKind::merge_stream,
+                                                           move( left_stmt ),
+                                                           nullptr,
+                                                           move( subargs ) ),
+                                    nullptr,
+                                    move( arguments ) );
     }
     return make_unique<StmtNode>( stmt_kind, move( left_stmt ), nullptr, move( arguments ) );
   }
@@ -353,8 +377,10 @@ namespace simsh {
 
       // The left operator takes precedence, which means `MERG_STREAM` will be
       // the parent node.
-      node = make_unique<StmtNode>(
-        types::StmtKind::ovrwrit_redrct, move( left_stmt ), nullptr, move( subargs ) );
+      node = make_unique<StmtNode>( types::StmtKind::ovrwrit_redrct,
+                                    move( left_stmt ),
+                                    nullptr,
+                                    move( subargs ) );
     } break;
 
     case types::TokenType::APND_REDIR: { // >>
@@ -363,8 +389,10 @@ namespace simsh {
       assert( subargs.size() == 1 );
       subargs.emplace_back( expression() );
 
-      node = make_unique<StmtNode>(
-        types::StmtKind::appnd_redrct, move( left_stmt ), nullptr, move( subargs ) );
+      node = make_unique<StmtNode>( types::StmtKind::appnd_redrct,
+                                    move( left_stmt ),
+                                    nullptr,
+                                    move( subargs ) );
     } break;
 
     case types::TokenType::MERG_OUTPUT: { // &>
@@ -372,8 +400,10 @@ namespace simsh {
       StmtNode::SiblingNodes subargs;
       subargs.emplace_back( expression() );
 
-      node = make_unique<StmtNode>(
-        types::StmtKind::merge_output, move( left_stmt ), nullptr, move( subargs ) );
+      node = make_unique<StmtNode>( types::StmtKind::merge_output,
+                                    move( left_stmt ),
+                                    nullptr,
+                                    move( subargs ) );
     } break;
 
     case types::TokenType::MERG_APPND: { // &>>
@@ -381,8 +411,10 @@ namespace simsh {
       StmtNode::SiblingNodes subargs;
       subargs.emplace_back( expression() );
 
-      node = make_unique<StmtNode>(
-        types::StmtKind::merge_appnd, move( left_stmt ), nullptr, move( subargs ) );
+      node = make_unique<StmtNode>( types::StmtKind::merge_appnd,
+                                    move( left_stmt ),
+                                    nullptr,
+                                    move( subargs ) );
     } break;
 
     default: break;
@@ -397,8 +429,8 @@ namespace simsh {
   {
     tknizr_.consume( types::TokenType::NOT );
 
-    if ( tknizr_.peek().is( types::TokenType::CMD ) || tknizr_.peek().is( types::TokenType::STR ) )
-    {
+    if ( tknizr_.peek().is( types::TokenType::CMD )
+         || tknizr_.peek().is( types::TokenType::STR ) ) {
       return make_unique<StmtNode>( types::StmtKind::logical_not, expression() );
     } else if ( tknizr_.peek().is( types::TokenType::LPAREN ) ) {
       tknizr_.consume( types::TokenType::LPAREN );
@@ -407,16 +439,20 @@ namespace simsh {
       return make_unique<StmtNode>( types::StmtKind::logical_not, logical_not() );
     }
 
-    throw error::SyntaxError(
-      tknizr_.line_pos(), tknizr_.context(), types::TokenType::CMD, tknizr_.peek().type_ );
+    throw error::SyntaxError( tknizr_.line_pos(),
+                              tknizr_.context(),
+                              types::TokenType::CMD,
+                              tknizr_.peek().type_ );
   }
 
   Parser::ExprNodePtr Parser::expression()
   {
     if ( !tknizr_.peek().is( types::TokenType::CMD )
          && !tknizr_.peek().is( types::TokenType::STR ) )
-      throw error::SyntaxError(
-        tknizr_.line_pos(), tknizr_.context(), types::TokenType::CMD, tknizr_.peek().type_ );
+      throw error::SyntaxError( tknizr_.line_pos(),
+                                tknizr_.context(),
+                                types::TokenType::CMD,
+                                tknizr_.peek().type_ );
 
     StmtNode::SiblingNodes arguments;
 
@@ -431,8 +467,7 @@ namespace simsh {
      * all subsequent tokens of the command string are parameters of the first
      token. */
     while ( tknizr_.peek().is( types::TokenType::CMD )
-            || tknizr_.peek().is( types::TokenType::STR ) )
-    {
+            || tknizr_.peek().is( types::TokenType::STR ) ) {
       assert( tknizr_.peek().value_.empty() == false );
 
       const auto tkn_tp = tknizr_.peek().type_;

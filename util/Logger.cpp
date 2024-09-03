@@ -6,8 +6,10 @@ namespace simsh {
   namespace iout {
     Logger& Logger::operator<<( const error::TraceBack& e )
     {
-      if ( prefix_.empty() ) cerr << e.what() << endl;
-      else cerr << format( "{}{}\n", prefix_, e.what() );
+      if ( prefix_.empty() )
+        cerr << e.what() << endl;
+      else
+        cerr << format( "{}{}\n", prefix_, e.what() );
       return *this;
     }
 

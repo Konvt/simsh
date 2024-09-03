@@ -35,8 +35,10 @@ namespace simsh {
 
       getline( *input_stream_, line_input_ );
       if ( input_stream_->eof() ) {
-        if ( received_eof_ ) throw error::StreamClosed();
-        else received_eof_ = true;
+        if ( received_eof_ )
+          throw error::StreamClosed();
+        else
+          received_eof_ = true;
 
         line_input_.push_back( EOF );
       } else {
@@ -91,8 +93,10 @@ namespace simsh {
       current_token_.reset();
       return discard_tokens;
     }
-    throw error::SyntaxError(
-      line_buf_.line_pos(), line_buf_.context(), expect, current_token_->type_ );
+    throw error::SyntaxError( line_buf_.line_pos(),
+                              line_buf_.context(),
+                              expect,
+                              current_token_->type_ );
   }
 
   Tokenizer::Token Tokenizer::next()
@@ -120,8 +124,10 @@ namespace simsh {
 
       switch ( state ) {
       case StateType::START: {
-        if ( character != '\n' && isspace( character ) ) save_char = false;
-        else if ( isdigit( character ) ) state = StateType::INDIGIT;
+        if ( character != '\n' && isspace( character ) )
+          save_char = false;
+        else if ( isdigit( character ) )
+          state = StateType::INDIGIT;
         else {
           state = StateType::DONE;
           switch ( character ) {
@@ -171,7 +177,8 @@ namespace simsh {
                                        line_buf_.context(),
                                        "any valid command character"sv,
                                        character );
-            else state = StateType::INCMD;
+            else
+              state = StateType::INCMD;
           } break;
           }
         }
@@ -190,8 +197,7 @@ namespace simsh {
 
       case StateType::INCMD: {
         if ( isspace( character )
-             || ( "&|!<>\"';:()^%#"sv ).find( character ) != types::StrViewT::npos )
-        {
+             || ( "&|!<>\"';:()^%#"sv ).find( character ) != types::StrViewT::npos ) {
           if ( token_str.empty() ) {
             throw error::TokenError( line_buf_.line_pos(),
                                      line_buf_.context(),
@@ -237,7 +243,8 @@ namespace simsh {
       } break;
 
       case StateType::INMEG_OUTPUT: {
-        if ( character == '>' ) token_type = types::TokenType::MERG_APPND; // get &>>
+        if ( character == '>' )
+          token_type = types::TokenType::MERG_APPND; // get &>>
         else {
           save_char  = ( discard_char = false );
           token_type = types::TokenType::MERG_OUTPUT; // get &>
@@ -258,7 +265,8 @@ namespace simsh {
         if ( character != '|' ) {
           save_char  = ( discard_char = false );
           token_type = types::TokenType::PIPE;
-        } else token_type = types::TokenType::OR;
+        } else
+          token_type = types::TokenType::OR;
         state = StateType::DONE;
       } break;
 

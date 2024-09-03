@@ -1,20 +1,28 @@
 ---
 Language: Cpp
 BasedOnStyle: Mozilla
-ColumnLimit: 100
-Standard: Latest
+AlignArrayOfStructures: Left
 AlignConsecutiveAssignments:
   Enabled: true
   AcrossEmptyLines: false
   AcrossComments: true
+  AlignCompound: false
+  AlignFunctionPointers: false
+  PadOperators: false
 AlignConsecutiveBitFields:
   Enabled: true
   AcrossEmptyLines: false
   AcrossComments: true
+  AlignCompound: false
+  AlignFunctionPointers: false
+  PadOperators: false
 AlignConsecutiveMacros:
   Enabled: true
   AcrossEmptyLines: false
   AcrossComments: true
+  AlignCompound:   false
+  AlignFunctionPointers: false
+  PadOperators:    false
 AlignConsecutiveShortCaseStatements:
   Enabled: true
   AcrossEmptyLines: false
@@ -22,26 +30,40 @@ AlignConsecutiveShortCaseStatements:
   AlignCaseColons: false
 AlignEscapedNewlines: Left
 AlignOperands: AlignAfterOperator
+AllowAllArgumentsOnNextLine: false
+AllowBreakBeforeNoexceptSpecifier: OnlyWithParen
 AllowShortBlocksOnASingleLine: Always
 AllowShortCaseLabelsOnASingleLine: true
-AllowShortIfStatementsOnASingleLine: AllIfsAndElse
-# deprecated option in clang-format 19
-AlwaysBreakAfterReturnType: None
+AllowShortIfStatementsOnASingleLine: WithoutElse
+# deprecated in clang-format 19
 AlwaysBreakAfterDefinitionReturnType: None
-
-BreakBeforeBinaryOperators: NonAssignment
-BreakBeforeBraces: Custom
+AlwaysBreakAfterReturnType: None #ExceptShortType
 BraceWrapping:
-  AfterClass: false
-  AfterControlStatement: MultiLine
-  AfterFunction: true
-  AfterStruct: false
-  AfterEnum: false
+  AfterCaseLabel:  false
+  AfterClass:      false
+  AfterControlStatement: Never
+  AfterEnum:       false
+  AfterExternBlock: false
+  AfterFunction:   true
+  AfterNamespace:  false
+  AfterObjCDeclaration: false
+  AfterStruct:     false
+  AfterUnion:      false
+  BeforeCatch:     false
+  BeforeElse:      false
+  BeforeLambdaBody: false
+  BeforeWhile:     false
+  IndentBraces:    false
   SplitEmptyFunction: false
   SplitEmptyRecord: false
   SplitEmptyNamespace: false
+BreakBeforeBraces: Custom
+BreakBeforeBinaryOperators: NonAssignment
+ColumnLimit: 100
 FixNamespaceComments: true
 IndentCaseLabels: false
+IndentExternBlock: Indent
+IndentGotoLabels: false
 IndentPPDirectives: AfterHash
 IndentWrappedFunctionNames: true
 InsertNewlineAtEOF: true
@@ -49,6 +71,13 @@ NamespaceIndentation: All
 PackConstructorInitializers: NextLine
 PPIndentWidth: 1
 ShortNamespaceLines: 5
-SpacesInParentheses: true
 SpaceBeforeCpp11BracedList: true
+SpacesInParens: Custom
+SpacesInParensOptions:
+  #ExceptDoubleParentheses: false
+  InConditionalStatements: true
+  InCStyleCasts: false
+  InEmptyParentheses: false
+  Other: true
+Standard: Latest
 ...

@@ -54,7 +54,7 @@ namespace simsh {
     Tokenizer& tokenizer() noexcept { return tknizr_; }
     const Tokenizer& tokenizer() const noexcept { return tknizr_; }
 
-    /// @return Syntax root node.
+    /// @return The root node of a syntax tree.
     [[nodiscard]] StmtNodePtr parse();
     [[nodiscard]] bool empty() const { return tknizr_.empty(); }
   };

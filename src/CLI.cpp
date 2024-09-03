@@ -21,12 +21,14 @@ namespace simsh {
     int BaseCLI::run()
     {
       signal(
-        SIGINT, +[]( int signum ) -> void {
+        SIGINT,
+        +[]( int signum ) -> void {
           [[maybe_unused]] auto _ = signum;
           iout::prmptr << "\n" << std::flush;
         } );
       signal(
-        SIGTSTP, +[]( int signum ) -> void {
+        SIGTSTP,
+        +[]( int signum ) -> void {
           [[maybe_unused]] auto _ = signum;
           iout::prmptr << "\n" << std::flush;
         } );
@@ -53,7 +55,8 @@ namespace simsh {
         current_dir_.replace( 0, home_dir_.size(), "~" );
       if ( user_name_ == "root" )
         prompt_ = format( root_fmt, user_name_, host_name_, current_dir_ );
-      else prompt_ = format( default_fmt, user_name_, host_name_, current_dir_ );
+      else
+        prompt_ = format( default_fmt, user_name_, host_name_, current_dir_ );
     }
 
     void CLI::detect_info()

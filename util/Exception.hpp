@@ -4,6 +4,7 @@
 #include <exception>
 #include <format>
 #include <optional>
+#include <ranges>
 
 #include "Config.hpp"
 #include "Utils.hpp"
@@ -29,10 +30,15 @@ namespace simsh {
       TokenError( size_t line_pos, types::StrViewT context, types::StrViewT message )
         : TraceBack( "\n    " )
       {
-        line_pos -= line_pos == context.size();
-        context.remove_suffix( 1 );
+        // Trim trailing whitespace from the string_view
+        context.remove_suffix(
+          std::distance( context.rbegin(),
+                         std::ranges::find_if_not( context | std::views::reverse,
+                                                   []( char c ) { return std::isspace( c ); } ) ) );
+        line_pos = line_pos >= context.size() ? context.size() - 1 : line_pos;
+
         message_.append( std::format( "{}\n    ", context ) )
-          .append( types::StringT( line_pos, '~' ) )
+          .append( line_pos, '~' )
           .append( std::format( "^\n  {}", message ) );
       }
 
@@ -66,10 +72,15 @@ namespace simsh {
                    types::TokenType found )
         : TraceBack( "\n    " )
       {
-        line_pos -= line_pos == context.size();
-        context.remove_suffix( 1 );
+        // Trim trailing whitespace from the string_view
+        context.remove_suffix(
+          std::distance( context.rbegin(),
+                         std::ranges::find_if_not( context | std::views::reverse,
+                                                   []( char c ) { return std::isspace( c ); } ) ) );
+        line_pos = line_pos >= context.size() ? context.size() - 1 : line_pos;
+
         message_.append( format( "{}\n    ", context ) )
-          .append( types::StringT( line_pos, '~' ) )
+          .append( line_pos, '~' )
           .append( format( "^\n  except {}, but found {}",
                            utils::token_kind_map( expect ),
                            utils::token_kind_map( found ) ) );

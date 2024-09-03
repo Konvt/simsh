@@ -74,8 +74,7 @@ namespace simsh {
       if constexpr ( constexpr auto error_mes =
                        "ExprNode: The parameter `data` does not match the type "
                        "annotation `expr_type`";
-                     std::is_arithmetic_v<std::decay_t<T>> )
-      {
+                     std::is_arithmetic_v<std::decay_t<T>> ) {
         [[unlikely]] if ( expr_type != types::ExprKind::value )
           throw error::RuntimeError( error_mes );
       } else {

@@ -14,8 +14,10 @@ using namespace std;
 
 int main( int argc, char** argv )
 {
-  if ( argc == 0 ) abort();
-  else if ( argc == 1 ) return simsh::cli::CLI().run();
+  if ( argc == 0 )
+    abort();
+  else if ( argc == 1 )
+    return simsh::cli::CLI().run();
 
   if ( "-c"sv == argv[1] || argc > 2 ) {
     if ( argc == 2 && "-c"sv == argv[1] ) {
