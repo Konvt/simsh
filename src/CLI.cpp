@@ -83,26 +83,18 @@ namespace simsh {
         info_updated = true;
       }
 
-      if ( info_updated ) update_prompt();
+      if ( info_updated )
+        update_prompt();
     }
 
     int CLI::run()
     {
-      auto sigint_handler = [this]( int signum ) -> void {
+      auto wrapper = utils::make_fnptr<std::tuple<int>>( [this]( int signum ) -> void {
         [[maybe_unused]] auto _ = signum;
         iout::prmptr << prompt() << std::flush;
-      };
-
-      using LambdaT = decltype( sigint_handler );
-      static_assert( is_same_v<utils::function_traits<LambdaT>::result_type,
-                               utils::function_traits<sighandler_t>::result_type>
-                       && is_same_v<utils::function_traits<LambdaT>::arguments,
-                                    utils::function_traits<sighandler_t>::arguments>,
-                     "'sigint_handler' and 'sighandler_t' must have the same signature" );
-
-      auto wrapper = utils::make_fntor_wrapper( sigint_handler );
-      signal( SIGINT, wrapper.to_fnptr<int>() );
-      signal( SIGTSTP, wrapper.to_fnptr<int>() );
+      } );
+      signal( SIGINT, wrapper );
+      signal( SIGTSTP, wrapper );
 
       simsh::iout::logger.set_prefix( "simsh: " );
       simsh::iout::prmptr << welcome_mes;

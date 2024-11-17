@@ -66,7 +66,8 @@ namespace simsh {
       [[nodiscard]] T pop() const
       {
         T value {};
-        if ( !reader_closed_ ) read( pipefd_[reader_fd], &value, sizeof( value ) );
+        if ( !reader_closed_ )
+          read( pipefd_[reader_fd], &value, sizeof( value ) );
         return value;
       }
 
@@ -75,7 +76,8 @@ namespace simsh {
       [[nodiscard]] std::vector<T> pop( size_t num ) const
       {
         std::vector<T> values( num );
-        if ( !reader_closed_ ) read( pipefd_[reader_fd], values.data(), num * sizeof( T ) );
+        if ( !reader_closed_ )
+          read( pipefd_[reader_fd], values.data(), num * sizeof( T ) );
         return values;
       }
     };
@@ -103,7 +105,8 @@ namespace simsh {
         requires std::is_trivially_copyable_v<ArrT>
       void push( const ArrT ( &value )[N] ) const
       {
-        if ( !writer_closed_ ) write( pipefd_[writer_fd], &value, sizeof( value ) );
+        if ( !writer_closed_ )
+          write( pipefd_[writer_fd], &value, sizeof( value ) );
       }
 
       /// @brief only for pointer types and dynamic arrays
@@ -116,7 +119,8 @@ namespace simsh {
           >
       void push( const T* const value, size_t length = 1 ) const
       {
-        if ( !writer_closed_ ) write( pipefd_[writer_fd], value, length * sizeof( T ) );
+        if ( !writer_closed_ )
+          write( pipefd_[writer_fd], value, length * sizeof( T ) );
       }
 
       /// @brief for the randomly accessible container type
@@ -143,7 +147,8 @@ namespace simsh {
       /// @brief for dynamic `c-style` string
       void push( const char* const value ) const
       {
-        if ( !writer_closed_ ) write( pipefd_[writer_fd], value, sizeof( char ) * strlen( value ) );
+        if ( !writer_closed_ )
+          write( pipefd_[writer_fd], value, sizeof( char ) * strlen( value ) );
       }
     };
 

@@ -166,8 +166,10 @@ namespace simsh {
       dup2( target_fd, file_d );
       if ( oup_redr->type() == types::StmtKind::merge_output
            || oup_redr->type() == types::StmtKind::merge_appnd ) {
-        if ( file_d != STDOUT_FILENO ) dup2( target_fd, STDOUT_FILENO );
-        if ( file_d != STDERR_FILENO ) dup2( target_fd, STDERR_FILENO );
+        if ( file_d != STDOUT_FILENO )
+          dup2( target_fd, STDOUT_FILENO );
+        if ( file_d != STDERR_FILENO )
+          dup2( target_fd, STDERR_FILENO );
       }
 
       if ( oup_redr->left() != nullptr ) {
@@ -376,7 +378,8 @@ namespace simsh {
     } break;
 
     case 't': { // type
-      if ( expr->siblings().empty() ) return !constants::EvalSuccess;
+      if ( expr->siblings().empty() )
+        return !constants::EvalSuccess;
 
       for ( const auto& sblng : expr->siblings() ) {
         assert( sblng->type() == types::StmtKind::trivial );

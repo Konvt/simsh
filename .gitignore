@@ -4,6 +4,7 @@
 
 build/
 release/
+misc/
 
 *.exe
 simsh

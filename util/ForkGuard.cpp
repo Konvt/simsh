@@ -20,7 +20,8 @@ namespace simsh {
         sigprocmask( SIG_BLOCK, &new_set_, old_set_.get() );
       }
 
-      if ( ( process_id_ = fork() ) < 0 ) throw error::SystemCallError( "fork" );
+      if ( ( process_id_ = fork() ) < 0 )
+        throw error::SystemCallError( "fork" );
     }
 
     ForkGuard::ForkGuard( ForkGuard&& rhs )
@@ -61,7 +62,8 @@ namespace simsh {
     {
       if ( is_parent() && !subprocess_exit_code_.has_value() ) {
         ExitCodeT status {};
-        if ( waitpid( process_id_, &status, 0 ) < 0 ) throw error::SystemCallError( "waitpid" );
+        if ( waitpid( process_id_, &status, 0 ) < 0 )
+          throw error::SystemCallError( "waitpid" );
         subprocess_exit_code_ = status;
       }
     }

@@ -49,75 +49,52 @@ namespace simsh {
       return {};
     }
 
-    /// @brief A wrapper that helps to convert any lambda to a C-style function
-    /// interface,
+    /// @brief A wrapper that helps to convert lambda to a C-style function interface,
     /// @brief which means function pointer.
     /// @tparam F The type of the lambda.
-    /// @tparam InstTag A tag to distinguish different lambda instances.
-    /// @author Ayano_Aishi
+    /// @tparam Tag A tag to distinguish different lambda instances.
+    /// @author The origianl version was written by bilibili user Ayano_Aishi
     /// @source https://www.bilibili.com/video/BV1Hm421j7qc
-    template<typename F, size_t InstTag = 0>
-    struct functor_wrapper {
-      static inline const F* ptr = nullptr;
+    template<typename, typename, std::size_t Tag>
+    class LambdaWrapper;
+    template<typename Fn, template<typename...> class List, typename... Args, std::size_t Tag>
+    class LambdaWrapper<Fn, List<Args...>, Tag> {
+      static_assert( std::is_class_v<Fn>, "Only available to lambda" );
+      static_assert( !std::is_empty_v<Fn>, "Only available to lambda with capture" );
+      static_assert( std::is_same_v<List<Args...>, std::tuple<Args...>>,
+                     "Only accepts std::tuple types" );
 
-      template<typename... Args>
-        requires std::is_invocable_v<F, Args...>
-      static std::invoke_result_t<F, Args...> invoking( Args... args )
+      static const Fn* fntor;
+
+      static std::invoke_result_t<Fn, Args...> invoking( Args... args )
       {
-        return std::invoke( *ptr, args... );
+        return ( *fntor )( std::forward<Args>( args )... );
       }
 
-      template<typename... Args, size_t = 0>
-        requires std::is_invocable_v<F, Args...>
-      [[nodiscard]] decltype( &invoking<Args...> ) to_fnptr() noexcept
-      {
-        return &invoking<Args...>;
-      }
+      template<typename ParamList, std::size_t InstTag, typename FnTp>
+        requires std::conjunction_v<std::is_class<std::remove_reference_t<FnTp>>,
+                                    std::negation<std::is_empty<std::remove_reference_t<FnTp>>>>
+      friend decltype( &LambdaWrapper<std::remove_reference_t<FnTp>, ParamList, InstTag>::invoking )
+        make_fnptr( FnTp&& fn ) noexcept;
     };
+    template<typename Fn, template<typename...> class List, typename... Args, std::size_t Tag>
+    const Fn* LambdaWrapper<Fn, List<Args...>, Tag>::fntor = nullptr;
 
-    template<size_t InstTag = 0, typename F>
-      requires std::is_lvalue_reference_v<std::remove_cv_t<F>>
-    [[nodiscard]] functor_wrapper<std::decay_t<F>, InstTag> make_fntor_wrapper( F&& f )
+    template<typename ParamList = std::tuple<>, std::size_t InstTag = 0, typename FnTp>
+      requires std::conjunction_v<std::is_class<std::remove_reference_t<FnTp>>,
+                                  std::negation<std::is_empty<std::remove_reference_t<FnTp>>>>
+    [[nodiscard]] decltype( &LambdaWrapper<std::remove_reference_t<FnTp>, ParamList, InstTag>::
+                              invoking )
+      make_fnptr( FnTp&& fn ) noexcept
     {
-      functor_wrapper<std::decay_t<F>, InstTag>::ptr = std::addressof( f );
-      return functor_wrapper<std::decay_t<F>, InstTag>();
+      using LambdaType  = std::remove_reference_t<FnTp>;
+      using WrapperType = LambdaWrapper<LambdaType, ParamList, InstTag>;
+
+      static LambdaType fntor = std::forward<FnTp>( fn );
+      if ( WrapperType::fntor == nullptr )
+        WrapperType::fntor = std::addressof( fntor );
+      return &WrapperType::invoking;
     }
-
-    // declare function_traits struct
-    template<typename Func>
-    struct function_traits;
-
-    // specialized for function pointer
-    template<typename R, typename... Args>
-    struct function_traits<R ( * )( Args... )> {
-      using result_type = R;
-      using arguments   = std::tuple<Args...>;
-    };
-
-    // specialized for member function
-    template<class Class, typename R, typename... Args>
-    struct function_traits<R ( Class::* )( Args... )> {
-      using result_type = R;
-      using arguments   = std::tuple<Args...>;
-    };
-    template<class Class, typename R, typename... Args>
-    struct function_traits<R ( Class::* )( Args... ) const> {
-      using result_type = R;
-      using arguments   = std::tuple<Args...>;
-    };
-    template<class Class, typename R, typename... Args>
-    struct function_traits<R ( Class::* )( Args... ) volatile> {
-      using result_type = R;
-      using arguments   = std::tuple<Args...>;
-    };
-    template<class Class, typename R, typename... Args>
-    struct function_traits<R ( Class::* )( Args... ) const volatile> {
-      using result_type = R;
-      using arguments   = std::tuple<Args...>;
-    };
-
-    template<typename Func> // for functor object
-    struct function_traits : public function_traits<decltype( &Func::operator() )> {};
   } // namespace utils
 } // namespace simsh
 

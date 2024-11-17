@@ -34,7 +34,7 @@ AllowAllArgumentsOnNextLine: false
 AllowBreakBeforeNoexceptSpecifier: OnlyWithParen
 AllowShortBlocksOnASingleLine: Always
 AllowShortCaseLabelsOnASingleLine: true
-AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortIfStatementsOnASingleLine: Never
 # deprecated in clang-format 19
 AlwaysBreakAfterDefinitionReturnType: None
 AlwaysBreakAfterReturnType: None #ExceptShortType

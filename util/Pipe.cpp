@@ -11,7 +11,8 @@ namespace simsh {
   namespace utils {
     Pipe::Pipe() : pipefd_ {}, reader_closed_ { false }, writer_closed_ { false }
     {
-      if ( pipe( pipefd_.data() ) < 0 ) throw error::SystemCallError( "pipe" );
+      if ( pipe( pipefd_.data() ) < 0 )
+        throw error::SystemCallError( "pipe" );
     }
 
     Pipe::Pipe( Pipe&& rhs ) noexcept
@@ -34,8 +35,10 @@ namespace simsh {
 
     Pipe::~Pipe() noexcept
     {
-      if ( !reader_closed_ ) ::close( pipefd_[reader_fd] );
-      if ( !writer_closed_ ) ::close( pipefd_[writer_fd] );
+      if ( !reader_closed_ )
+        ::close( pipefd_[reader_fd] );
+      if ( !writer_closed_ )
+        ::close( pipefd_[writer_fd] );
     }
 
     PipeReader& Pipe::reader()

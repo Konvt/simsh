@@ -15,7 +15,8 @@ namespace simsh {
 
     Logger& Logger::print( const error::TraceBack& e )
     {
-      if ( !prefix_.empty() ) cerr << prefix_;
+      if ( !prefix_.empty() )
+        cerr << prefix_;
       perror( e.what() );
       return *this;
     }

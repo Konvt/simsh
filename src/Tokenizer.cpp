@@ -80,7 +80,8 @@ namespace simsh {
 
   Tokenizer::Token& Tokenizer::peek()
   {
-    if ( !current_token_.has_value() ) current_token_ = next();
+    if ( !current_token_.has_value() )
+      current_token_ = next();
 
     return *current_token_;
   }
@@ -290,8 +291,10 @@ namespace simsh {
       } break;
       }
 
-      if ( save_char ) token_str.push_back( character );
-      if ( discard_char ) line_buf_.consume();
+      if ( save_char )
+        token_str.push_back( character );
+      if ( discard_char )
+        line_buf_.consume();
     }
 
     return new_token;
