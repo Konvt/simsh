@@ -89,10 +89,11 @@ namespace simsh {
 
     int CLI::run()
     {
-      auto wrapper = utils::make_fnptr<std::tuple<int>>( [this]( int signum ) -> void {
-        [[maybe_unused]] auto _ = signum;
-        iout::prmptr << prompt() << std::flush;
-      } );
+      auto wrapper =
+        utils::make_fnptr<std::remove_pointer_t<sighandler_t>>( [this]( int signum ) noexcept {
+          [[maybe_unused]] auto _ = signum;
+          iout::prmptr << prompt() << std::flush;
+        } );
       signal( SIGINT, wrapper );
       signal( SIGTSTP, wrapper );
 
