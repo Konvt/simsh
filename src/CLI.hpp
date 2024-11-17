@@ -80,7 +80,7 @@ namespace simsh {
       CLI( Parser prsr ) : BaseCLI( std::move( prsr ) ) { detect_info(); }
       CLI() : CLI( Parser() ) {}
       virtual ~CLI() = default;
-      [[nodiscard]] types::StrViewT prompt() const { return prompt_; }
+      [[nodiscard]] types::StrViewT prompt() const noexcept { return prompt_; }
 
       virtual int run();
     };

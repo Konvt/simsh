@@ -49,52 +49,52 @@ namespace simsh {
       return {};
     }
 
-    /// @brief A wrapper that helps to convert lambda to a C-style function interface,
-    /// @brief which means function pointer.
-    /// @tparam F The type of the lambda.
-    /// @tparam Tag A tag to distinguish different lambda instances.
-    /// @author The origianl version was written by bilibili user Ayano_Aishi
-    /// @source https://www.bilibili.com/video/BV1Hm421j7qc
-    template<typename, typename, std::size_t Tag>
-    class LambdaWrapper;
-    template<typename Fn, template<typename...> class List, typename... Args, std::size_t Tag>
-    class LambdaWrapper<Fn, List<Args...>, Tag> {
-      static_assert( std::is_class_v<Fn>, "Only available to lambda" );
-      static_assert( !std::is_empty_v<Fn>, "Only available to lambda with capture" );
-      static_assert( std::is_same_v<List<Args...>, std::tuple<Args...>>,
-                     "Only accepts std::tuple types" );
-
-      static const Fn* fntor;
-
-      static std::invoke_result_t<Fn, Args...> invoking( Args... args )
-      {
-        return ( *fntor )( std::forward<Args>( args )... );
-      }
-
-      template<typename ParamList, std::size_t InstTag, typename FnTp>
-        requires std::conjunction_v<std::is_class<std::remove_reference_t<FnTp>>,
-                                    std::negation<std::is_empty<std::remove_reference_t<FnTp>>>>
-      friend decltype( &LambdaWrapper<std::remove_reference_t<FnTp>, ParamList, InstTag>::invoking )
-        make_fnptr( FnTp&& fn ) noexcept;
+    template<typename Functor>
+    concept EmptyLambda = requires( Functor fn ) {
+      std::is_class_v<Functor>;
+      std::is_empty_v<Functor>;
+      { +fn };
     };
-    template<typename Fn, template<typename...> class List, typename... Args, std::size_t Tag>
-    const Fn* LambdaWrapper<Fn, List<Args...>, Tag>::fntor = nullptr;
 
-    template<typename ParamList = std::tuple<>, std::size_t InstTag = 0, typename FnTp>
-      requires std::conjunction_v<std::is_class<std::remove_reference_t<FnTp>>,
-                                  std::negation<std::is_empty<std::remove_reference_t<FnTp>>>>
-    [[nodiscard]] decltype( &LambdaWrapper<std::remove_reference_t<FnTp>, ParamList, InstTag>::
-                              invoking )
-      make_fnptr( FnTp&& fn ) noexcept
+    /// @brief A wrapper that helps to convert lambda to a C-style function interface, which means
+    /// function pointer.
+    /// @author The origianl version was written by a bilibili user Ayano_Aishi
+    /// @source https://www.bilibili.com/video/BV1Hm421j7qc
+    template<typename>
+    class FnPtrMaker;
+    template<typename Ret, typename... Params>
+    class FnPtrMaker<Ret( Params... )> {
+      static_assert( std::is_function_v<Ret( Params... )>, "Only available to function type" );
+
+    public:
+      template<std::size_t InstanceTag, typename Functor>
+        requires std::is_class_v<std::decay_t<Functor>>
+      static std::add_pointer_t<
+        Ret( Params... ) noexcept( std::is_nothrow_invocable_v<Functor, Params...> )>
+        from( Functor&& fn ) noexcept
+      {
+        if constexpr ( EmptyLambda<std::decay_t<Functor>> ) {
+          return +fn;
+        } else {
+          static_assert(
+            (std::is_lvalue_reference_v<Functor> && std::is_copy_constructible_v<Functor>)
+              || (!std::is_lvalue_reference_v<Functor> && std::is_move_constructible_v<Functor>),
+            "Functor must be copy or move constructible" );
+
+          static std::decay_t<Functor> fntor = std::forward<Functor>( fn );
+          return +[]( Params... args ) noexcept( std::is_nothrow_invocable_v<Functor, Params...> ) {
+            return fntor( std::forward<Params>( args )... );
+          };
+        }
+      }
+    };
+
+    template<typename FunctionType, std::size_t InstanceTag = 0, typename Functor>
+    constexpr auto make_fnptr( Functor&& fn ) noexcept
     {
-      using LambdaType  = std::remove_reference_t<FnTp>;
-      using WrapperType = LambdaWrapper<LambdaType, ParamList, InstTag>;
-
-      static LambdaType fntor = std::forward<FnTp>( fn );
-      if ( WrapperType::fntor == nullptr )
-        WrapperType::fntor = std::addressof( fntor );
-      return &WrapperType::invoking;
+      return FnPtrMaker<FunctionType>::template from<InstanceTag>( std::forward<Functor>( fn ) );
     }
+
   } // namespace utils
 } // namespace simsh
 
