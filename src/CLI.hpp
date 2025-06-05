@@ -3,7 +3,6 @@
 
 #include <atomic>
 #include <csignal>
-#include <stdexcept>
 
 #include "Config.hpp"
 #include "Interpreter.hpp"

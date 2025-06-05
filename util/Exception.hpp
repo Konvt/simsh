@@ -3,7 +3,6 @@
 
 #include <exception>
 #include <format>
-#include <optional>
 #include <ranges>
 
 #include "Config.hpp"

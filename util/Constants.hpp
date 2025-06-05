@@ -1,7 +1,6 @@
 #ifndef __SIMSH_CONSTANTS__
 #define __SIMSH_CONSTANTS__
 
-#include <cstdint>
 #include <cstdlib>
 #include <limits>
 

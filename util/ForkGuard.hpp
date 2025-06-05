@@ -1,13 +1,11 @@
 #ifndef __SIMSH__FORKGUARD__
 #define __SIMSH__FORKGUARD__
 
-#include <csignal>
 #include <memory>
 #include <optional>
 #include <sys/types.h>
 
 #include "Config.hpp"
-#include "Exception.hpp"
 
 namespace simsh {
   namespace utils {

@@ -48,58 +48,83 @@ namespace simsh {
       }
       return {};
     }
+  } // namespace utils
 
-    /// @brief A wrapper that helps to convert lambda to a C-style function interface, which means
-    /// function pointer.
-    /// @author The origianl version was written by a bilibili user Ayano_Aishi
-    /// @source https://www.bilibili.com/video/BV1Hm421j7qc
-    template<typename>
-    class FnPtrMaker;
-    template<typename Ret, typename... Params>
-    class FnPtrMaker<Ret( Params... )> {
-      static_assert( std::is_function_v<Ret( Params... )>, "Only available to function type" );
+  namespace details {
+    template<typename QualifierInfo, typename Ret, typename... Args>
+    class FnAdapter {
+      template<typename Qualifier, typename T>
+        requires( !std::is_reference_v<Qualifier> )
+      static constexpr std::
+        conditional_t<std::is_const_v<std::remove_reference_t<Qualifier>>, const T&&, T&&>
+        callee_fwd( T&& param ) noexcept
+      {
+        return std::forward<T>( param );
+      }
+      template<typename Qualifier, typename T>
+        requires std::is_lvalue_reference_v<Qualifier>
+      static constexpr std::conditional_t<(std::is_const_v<std::remove_reference_t<Qualifier>>
+                                           || std::is_rvalue_reference_v<T&&>),
+                                          const std::remove_reference_t<T>&,
+                                          std::remove_reference_t<T>&>
+        callee_fwd( T&& param ) noexcept
+      {
+        return param;
+      }
+      template<typename Qualifier, typename T>
+        requires std::is_rvalue_reference_v<Qualifier>
+      static constexpr std::conditional_t<std::is_const_v<std::remove_reference_t<Qualifier>>,
+                                          const std::remove_reference_t<T>&&,
+                                          std::remove_reference_t<T>>&&
+        callee_fwd( T&& param ) noexcept
+      {
+        return std::move( param );
+      }
 
-      template<typename Functor>
-      using FnPtrType = std::add_pointer_t<Ret( Params... ) noexcept(
-        std::is_nothrow_invocable_v<Functor, Params...> )>;
-
-      template<typename Functor, typename = void>
-      constexpr static bool is_empty_lambda_v = false;
-      template<typename Functor>
-      constexpr static bool is_empty_lambda_v<
-        Functor,
-        std::enable_if_t<std::conjunction_v<
-          std::is_class<Functor>,
-          std::is_empty<Functor>,
-          std::is_same<decltype( +std::declval<Functor>() ), FnPtrType<Functor>>>>> = true;
+      template<typename Fn>
+      using Callee_t = decltype( callee_fwd<QualifierInfo>( std::declval<std::decay_t<Fn>>() ) );
 
     public:
-      template<std::size_t InstanceTag, typename Functor>
-        requires std::is_class_v<std::decay_t<Functor>>
-      static FnPtrType<Functor> from( Functor&& fn ) noexcept
+      template<auto = [] {}, typename Fn>
+        requires( std::is_invocable_r_v<Ret, Callee_t<Fn>, Args...>
+                  && std::is_constructible_v<std::decay_t<Fn>, Fn> )
+      [[nodiscard]] static auto from( Fn&& fn )
+        noexcept( std::is_nothrow_constructible_v<std::decay_t<Fn>, Fn> )
       {
-        if constexpr ( is_empty_lambda_v<std::decay_t<Functor>> ) {
-          return +fn;
-        } else {
-          static_assert(
-            (std::is_lvalue_reference_v<Functor> && std::is_copy_constructible_v<Functor>)
-              || (!std::is_lvalue_reference_v<Functor> && std::is_move_constructible_v<Functor>),
-            "Functor must be copy or move constructible" );
-
-          static std::decay_t<Functor> fntor = std::forward<Functor>( fn );
-          return +[]( Params... args ) noexcept( std::is_nothrow_invocable_v<Functor, Params...> ) {
-            return fntor( std::forward<Params>( args )... );
-          };
-        }
+        static std::decay_t<Fn> fntor = std::forward<Fn>( fn );
+        return +[]( Args... args ) noexcept(
+                  std::is_nothrow_invocable_r_v<Ret, Callee_t<Fn>, Args...> ) -> Ret {
+          return std::invoke( callee_fwd<QualifierInfo>( fntor ), std::forward<Args>( args )... );
+        };
       }
     };
+  } // namespace details
 
-    template<typename FunctionType, std::size_t InstanceTag = 0, typename Functor>
-    constexpr auto make_fnptr( Functor&& fn ) noexcept
+  namespace utils {
+    /// @brief A wrapper that helps to convert lambda to a C-style function interface, which means
+    /// function pointer.
+    template<typename... Signature>
+    struct CFnCast;
+    template<typename Ret, typename... Args>
+    struct CFnCast<Ret( Args... )> : public details::FnAdapter<int, Ret, Args...> {};
+    template<typename Ret, typename... Args>
+    struct CFnCast<Ret( Args... )&> : public details::FnAdapter<int&, Ret, Args...> {};
+    template<typename Ret, typename... Args>
+    struct CFnCast<Ret( Args... ) &&> : public details::FnAdapter<int&&, Ret, Args...> {};
+    template<typename Ret, typename... Args>
+    struct CFnCast<Ret( Args... ) const> : public details::FnAdapter<const int, Ret, Args...> {};
+    template<typename Ret, typename... Args>
+    struct CFnCast<Ret( Args... ) const&> : public details::FnAdapter<const int&, Ret, Args...> {};
+    template<typename Ret, typename... Args>
+    struct CFnCast<Ret( Args... ) const&&>
+      : public details::FnAdapter<const int&&, Ret, Args...> {};
+
+    template<typename Signature, typename Fn>
+    [[nodiscard]] auto make_fnptr( Fn&& fn )
+      noexcept( std::is_nothrow_constructible_v<std::decay_t<Fn>, Fn> )
     {
-      return FnPtrMaker<FunctionType>::template from<InstanceTag>( std::forward<Functor>( fn ) );
+      return CFnCast<Signature>::from( std::forward<Fn>( fn ) );
     }
-
   } // namespace utils
 } // namespace simsh
 

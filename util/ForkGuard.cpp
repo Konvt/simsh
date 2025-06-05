@@ -1,8 +1,9 @@
+#include <csignal>
 #include <cstring>
 #include <sys/wait.h>
 
+#include "Exception.hpp"
 #include "ForkGuard.hpp"
-#include "Logger.hpp"
 using namespace std;
 
 namespace simsh {

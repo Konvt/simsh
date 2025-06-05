@@ -2,7 +2,6 @@
 #define __SIMSH_TREENODE__
 
 #include <memory>
-#include <optional>
 #include <variant>
 #include <vector>
 
