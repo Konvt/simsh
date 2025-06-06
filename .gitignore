@@ -7,4 +7,4 @@ release/
 misc/
 
 *.exe
-simsh
+*sh

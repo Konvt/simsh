@@ -1,9 +1,9 @@
-#ifndef __SIMSH_HELP__
-#define __SIMSH_HELP__
+#ifndef TISH_HELP
+#define TISH_HELP
 
 #include <util/Config.hpp>
 
-namespace simsh {
+namespace tish {
   namespace utils {
     inline types::StrView help_doc()
     {
@@ -19,6 +19,6 @@ namespace simsh {
                "command-name\n\texec command-name\n" };
     }
   }
-} // namespace simsh
+} // namespace tish
 
-#endif // __SIMSH_HELP__
+#endif // TISH_HELP

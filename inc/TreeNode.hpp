@@ -1,5 +1,5 @@
-#ifndef __SIMSH_TREENODE__
-#define __SIMSH_TREENODE__
+#ifndef TISH_TREENODE
+#define TISH_TREENODE
 
 #include <memory>
 #include <util/Config.hpp>
@@ -8,7 +8,7 @@
 #include <variant>
 #include <vector>
 
-namespace simsh {
+namespace tish {
   class StmtNode {
   public:
     using ChildNode    = std::unique_ptr<StmtNode>;
@@ -98,6 +98,6 @@ namespace simsh {
 
     [[nodiscard]] types::ExprKind kind() const noexcept { return type_; }
   };
-} // namespace simsh
+} // namespace tish
 
-#endif // __SIMSH_TREENODE__
+#endif // TISH_TREENODE

@@ -1,12 +1,12 @@
-#ifndef __SIMSH_LOGGER__
-#define __SIMSH_LOGGER__
+#ifndef TISH_LOGGER
+#define TISH_LOGGER
 
 #include <iostream>
 
 #include <util/Config.hpp>
 #include <util/Exception.hpp>
 
-namespace simsh {
+namespace tish {
   namespace iout { // IO Utility
     /// @brief Log output used to "consume" all exception types in the program,
     /// output to stderr.
@@ -45,6 +45,6 @@ namespace simsh {
     /// @brief An information output class used to output info to stdout.
     inline auto& prmptr = std::cout;
   } // namespace iout
-} // namespace simsh
+} // namespace tish
 
-#endif // __SIMSH_LOGGER__
+#endif // TISH_LOGGER

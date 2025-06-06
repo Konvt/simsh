@@ -5,10 +5,9 @@
 #include <util/ForkGuard.hpp>
 using namespace std;
 
-namespace simsh {
+namespace tish {
   namespace utils {
-    ForkGuard::ForkGuard( bool block_sig )
-      : process_id_ {}, subp_ret_ {}, old_set_ { nullptr }
+    ForkGuard::ForkGuard( bool block_sig ) : process_id_ {}, subp_ret_ {}, old_set_ { nullptr }
     {
       if ( block_sig ) {
         old_set_ = make_unique<sigset_t>();
@@ -84,4 +83,4 @@ namespace simsh {
       }
     }
   } // namespace utils
-} // namespace simsh
+} // namespace tish

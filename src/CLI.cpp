@@ -10,7 +10,7 @@
 #include <util/Utils.hpp>
 using namespace std;
 
-namespace simsh {
+namespace tish {
   namespace cli {
     std::atomic<bool> BaseCLI::_already_exist = false;
 
@@ -28,7 +28,7 @@ namespace simsh {
           [[maybe_unused]] auto _ = signum;
           iout::prmptr << "\n" << std::flush;
         } );
-      simsh::iout::logger.set_prefix( "simsh: " );
+      tish::iout::logger.set_prefix( "tish: " );
 
       while ( !prsr_.empty() ) {
         try {
@@ -93,8 +93,8 @@ namespace simsh {
       signal( SIGINT, wrapper );
       signal( SIGTSTP, wrapper );
 
-      simsh::iout::logger.set_prefix( "simsh: " );
-      simsh::iout::prmptr << _welcome_mes;
+      tish::iout::logger.set_prefix( "tish: " );
+      tish::iout::prmptr << _welcome_mes;
 
       while ( !prsr_.empty() ) {
         detect_info();
@@ -114,4 +114,4 @@ namespace simsh {
       return EXIT_SUCCESS;
     }
   } // namespace cli
-} // namespace simsh
+} // namespace tish

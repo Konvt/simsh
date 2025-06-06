@@ -1,14 +1,14 @@
-# simsh - The simple implementation of shell
+# tish - A Tiny Shell written by modern C++.
 
 **Contents**
-- [simsh - The simple implementation of shell](#simsh---the-simple-implementation-of-shell)
+- [tish - A Tiny Shell written by modern C++.](#tish---a-tiny-shell-written-by-modern-c)
   - [Features](#features)
   - [How to build](#how-to-build)
     - [Makefile](#makefile)
     - [CMake](#cmake)
     - [Binary](#binary)
   - [How to use](#how-to-use)
-- [simsh - Shell 的简单实现 - zh\_cn](#simsh---shell-的简单实现---zh_cn)
+- [tish - 由 Modern C++ 编写的 Tiny Shell - zh\_cn](#tish---由-modern-c-编写的-tiny-shell---zh_cn)
   - [特点](#特点)
   - [如何构建](#如何构建)
     - [Makefile](#makefile-1)
@@ -16,7 +16,7 @@
     - [Binary](#binary-1)
   - [如何使用](#如何使用)
 
-A simple Linux Shell written in Modern C++.
+A simple Linux shell written in Modern C++.
 
 ## Features
 - Supports nested statements
@@ -32,7 +32,7 @@ The project provides two build methods, **but it is recommended not to use both 
 
 Each method assumes the compilation tool **fully supports** `std::ranges` or `std::format`.
 
-Run the program with `./simsh`.
+Run the program with `./tish`.
 
 ### Makefile
 ```sh
@@ -50,37 +50,37 @@ cmake -S . -B build && cmake --build build
 ```
 
 ### Binary
-Since some functions rely on `glibc`, the [binary files](https://github.com/Konvt/simsh/releases/tag/v0.1.1) are not guaranteed to run correctly.
+Since some functions rely on `glibc`, the [binary files](https://github.com/Konvt/tish/releases/tag/v0.1.1) are not guaranteed to run correctly.
 
-For more details, refer to the build environment declarations in [Releases](https://github.com/Konvt/simsh/releases).
+For more details, refer to the build environment declarations in [Releases](https://github.com/Konvt/tish/releases).
 
 ## How to use
 Just like using bash.
 
 You can pass command line arguments at startup to execute a single statement.
 ```sh
-./simsh -c "whoami && pwd"  # Single statement must include the -c parameter
-./simsh "whoami" "&&" "pwd" # Or split into multiple statements in advance, no -c parameter needed
+./tish -c "whoami && pwd"  # Single statement must include the -c parameter
+./tish "whoami" "&&" "pwd" # Or split into multiple statements in advance, no -c parameter needed
 ```
 
 You can also read commands from a file.
 ```sh
-(echo "whoami && pwd" > ./script.txt) && ./simsh ./script.txt
+(echo "whoami && pwd" > ./script.txt) && ./tish ./script.txt
 # No specific extension required, just needs to be a text format file
 ```
 
-Additionally, `simsh` will expand special symbols (i.e., `$$` and `~`) to the current program's `pid` or the user's home directory path, respectively.
+Additionally, `tish` will expand special symbols (i.e., `$$` and `~`) to the current program's `pid` or the user's home directory path, respectively.
 ```sh
-./simsh -c "echo ~ && echo \$\$"
+./tish -c "echo ~ && echo \$\$"
 ```
 
-If run as the `root` user, the default `simsh::CLI` object will change the command prompt to a colorless format ending with `#`.
+If run as the `root` user, the default `tish::CLI` object will change the command prompt to a colorless format ending with `#`.
 
 - - -
 
-# simsh - Shell 的简单实现 - zh_cn
+# tish - 由 Modern C++ 编写的 Tiny Shell - zh_cn
 
-一个由 Modern C++ 编写的、简单的 Linux Shell。
+一个由 Modern C++ 编写的、简单的 Linux shell。
 
 ## 特点
 - 支持嵌套语句
@@ -96,7 +96,7 @@ If run as the `root` user, the default `simsh::CLI` object will change the comma
 
 每种方式都假定使用的编译工具**已完全支持** `std::ranges` 或 `std::format`。
 
-使用 `./simsh` 运行程序。
+使用 `./tish` 运行程序。
 ### Makefile
 ```sh
 make -j all
@@ -112,28 +112,28 @@ cmake --preset linux && cmake --build build
 cmake -S . -B build && cmake --build build
 ```
 ### Binary
-因为部分函数依赖于 `glibc`，因此不保证[二进制文件](https://github.com/Konvt/simsh/releases/tag/v0.1.1)能够正常运行。
+因为部分函数依赖于 `glibc`，因此不保证[二进制文件](https://github.com/Konvt/tish/releases/tag/v0.1.1)能够正常运行。
 
-详情可以参照 [Releases](https://github.com/Konvt/simsh/releases) 中的构建环境声明。
+详情可以参照 [Releases](https://github.com/Konvt/tish/releases) 中的构建环境声明。
 
 ## 如何使用
 就像使用 bash 一样。
 
 可以在启动时传入命令行参数，以执行单条语句。
 ```sh
-./simsh -c "whoami && pwd"  # 单条语句必须带有 -c 参数
-./simsh "whoami" "&&" "pwd" # 或者提前分割为多条语句传入，此时不需要 -c 参数
+./tish -c "whoami && pwd"  # 单条语句必须带有 -c 参数
+./tish "whoami" "&&" "pwd" # 或者提前分割为多条语句传入，此时不需要 -c 参数
 ```
 
 也可以从文件读取命令。
 ```sh
-(echo "whoami && pwd" > ./script.txt) && ./simsh ./script.txt
+(echo "whoami && pwd" > ./script.txt) && ./tish ./script.txt
 # 没有后缀要求，只要求文件是文本格式
 ```
 
-此外，`simsh` 在遇到特殊标记（即 `$$` 和 `~`）时，会将其展开为当前程序的 `pid` 或用户家目录的绝对路径。
+此外，`tish` 在遇到特殊标记（即 `$$` 和 `~`）时，会将其展开为当前程序的 `pid` 或用户家目录的绝对路径。
 ```sh
-./simsh -c "echo ~ && echo \$\$"
+./tish -c "echo ~ && echo \$\$"
 ```
 
-如果以 `root` 用户身份运行，默认的 `simsh::CLI` 对象会将命令提示符替换为没有颜色、且以 `#` 结尾的格式。
+如果以 `root` 用户身份运行，默认的 `tish::CLI` 对象会将命令提示符替换为没有颜色、且以 `#` 结尾的格式。

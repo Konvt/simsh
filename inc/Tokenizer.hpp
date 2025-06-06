@@ -1,5 +1,5 @@
-#ifndef __SIMSH_SCANNER__
-#define __SIMSH_SCANNER__
+#ifndef TISH_TOKENIZER
+#define TISH_TOKENIZER
 
 #include <istream>
 #include <optional>
@@ -7,7 +7,7 @@
 #include <util/Enums.hpp>
 #include <utility>
 
-namespace simsh {
+namespace tish {
   class LineBuffer {
     std::istream* input_stream_;
 
@@ -118,6 +118,6 @@ namespace simsh {
     /// character.
     [[nodiscard]] Token next();
   };
-} // namespace simsh
+} // namespace tish
 
-#endif // __SIMSH_SCANNER__
+#endif // TISH_TOKENIZER

@@ -1,9 +1,9 @@
-#ifndef __SIMSH_ENUM__
-#define __SIMSH_ENUM__
+#ifndef TISH_ENUM
+#define TISH_ENUM
 
 #include <cstdint>
 
-namespace simsh {
+namespace tish {
   namespace types {
     enum class StmtKind : uint8_t {
       trivial,
@@ -45,4 +45,4 @@ namespace simsh {
   }
 }
 
-#endif // __SIMSH_ENUM__
+#endif // TISH_ENUM

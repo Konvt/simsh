@@ -1,5 +1,5 @@
-#ifndef __SIMSH_PIPES__
-#define __SIMSH_PIPES__
+#ifndef TISH_PIPES
+#define TISH_PIPES
 
 #include <algorithm>
 #include <array>
@@ -11,7 +11,7 @@
 #include <util/Config.hpp>
 #include <vector>
 
-namespace simsh {
+namespace tish {
   namespace details {
     template<typename T>
     concept ContiguousContainer = requires( const T& value ) {
@@ -154,6 +154,6 @@ namespace simsh {
     /// descriptor.
     bool disable_blocking( types::FileDesc fd );
   } // namespace utils
-} // namespace simsh
+} // namespace tish
 
-#endif // __SIMSH_PIPES__
+#endif // TISH_PIPES

@@ -8,7 +8,7 @@
 #include <util/Utils.hpp>
 using namespace std;
 
-namespace simsh {
+namespace tish {
   Parser::Parser() : tknizr_ { cin } {}
 
   Parser::StmtNodePtr Parser::parse()
@@ -483,4 +483,4 @@ namespace simsh {
                                   move( token_str ),
                                   move( arguments ) );
   }
-} // namespace simsh
+} // namespace tish

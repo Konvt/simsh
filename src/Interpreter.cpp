@@ -14,7 +14,7 @@
 #include <util/Utils.hpp>
 using namespace std;
 
-namespace simsh {
+namespace tish {
   const std::unordered_set<types::String> Interpreter::_built_in_cmds = { "cd",
                                                                           "exit",
                                                                           "help",
@@ -276,8 +276,8 @@ namespace simsh {
         return;
       else if ( node->token() == "$$"sv )
         node->replace_with( format( "{}", getpid() ) );
-      else if ( node->token() == "$SIMSH_VERSION"sv )
-        node->replace_with( SIMSH_VERSION );
+      else if ( node->token() == "$TISH_VERSION"sv )
+        node->replace_with( TISH_VERSION );
       else if ( node->kind() == types::ExprKind::command ) {
         if ( auto new_token = utils::tilde_expansion( node->token() ); !new_token.empty() )
           node->replace_with( move( new_token ) );
@@ -479,4 +479,4 @@ namespace simsh {
 
     return !constants::EvalSuccess;
   }
-} // namespace simsh
+} // namespace tish

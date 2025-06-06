@@ -1,11 +1,11 @@
-#ifndef __SIMSH_INTERPRETER__
-#define __SIMSH_INTERPRETER__
+#ifndef TISH_INTERPRETER
+#define TISH_INTERPRETER
 
 #include <TreeNode.hpp>
 #include <unordered_set>
 #include <util/Config.hpp>
 
-namespace simsh {
+namespace tish {
   /// @brief An interpreter for executing syntax tree.
   class Interpreter {
     using StmtNodeT = StmtNode* const;
@@ -45,6 +45,6 @@ namespace simsh {
     types::Eval interpret( StmtNodeT stmt_node ) const;
     types::Eval operator()( StmtNodeT stmt_node ) const { return interpret( stmt_node ); }
   };
-} // namespace simsh
+} // namespace tish
 
-#endif // __SIMSH_INTERPRETER__
+#endif // TISH_INTERPRETER

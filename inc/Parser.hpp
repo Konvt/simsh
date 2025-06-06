@@ -1,12 +1,12 @@
-#ifndef __SIMSH_PARSER__
-#define __SIMSH_PARSER__
+#ifndef TISH_PARSER
+#define TISH_PARSER
 
 #include <Tokenizer.hpp>
 #include <TreeNode.hpp>
 #include <memory>
 #include <util/Config.hpp>
 
-namespace simsh {
+namespace tish {
   /// @brief Recursive descent parser.
   class Parser {
     static constexpr types::StrView _pattern_redirection { R"(^(\d*)>{1,2}$)" };
@@ -56,6 +56,6 @@ namespace simsh {
     [[nodiscard]] StmtNodePtr parse();
     [[nodiscard]] bool empty() const { return tknizr_.empty(); }
   };
-} // namespace simsh
+} // namespace tish
 
-#endif // __SIMSH_PARSER__
+#endif // TISH_PARSER

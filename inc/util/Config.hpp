@@ -1,23 +1,23 @@
-#ifndef __SIMSH_CONFIG__
-#define __SIMSH_CONFIG__
+#ifndef TISH_CONFIG
+#define TISH_CONFIG
 
 #include <cstdint>
 #include <string>
 #include <string_view>
 
 #if defined( _MSC_VER ) && defined( _MSVC_LANG ) // for msvc
-# define __SIMSH_CPP_V__ _MSVC_LANG
+# define TISH_CC_STANDARD _MSVC_LANG
 #else
-# define __SIMSH_CPP_V__ __cplusplus
+# define TISH_CC_STANDARD __cplusplus
 #endif
 
-#if __SIMSH_CPP_V__ < 202002L
+#if TISH_CC_STANDARD < 202002L
 # error "The C++ standard version must be at least C++20."
 #endif
 
-#define SIMSH_VERSION "0.1.1"
+#define TISH_VERSION "0.1.1"
 
-namespace simsh {
+namespace tish {
   namespace types {
     using Char    = int;
     using String  = std::string;
@@ -25,8 +25,8 @@ namespace simsh {
     using Eval    = int64_t;
 
     using FileDesc = int; // file descriptor
-    using Token = String;
+    using Token    = String;
   } // namespace types
-} // namespace simsh
+} // namespace tish
 
-#endif // __SIMSH_CONFIG__
+#endif // TISH_CONFIG

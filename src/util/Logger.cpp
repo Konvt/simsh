@@ -2,7 +2,7 @@
 #include <util/Logger.hpp>
 using namespace std;
 
-namespace simsh {
+namespace tish {
   namespace iout {
     const Logger& Logger::print( const error::TraceBack& e ) const
     {
@@ -32,4 +32,4 @@ namespace simsh {
       return logger_;
     }
   } // namespace iout
-} // namespace simsh
+} // namespace tish

@@ -1,5 +1,5 @@
-#ifndef __SIMSH_EXCEPTION__
-#define __SIMSH_EXCEPTION__
+#ifndef TISH_EXCEPTION
+#define TISH_EXCEPTION
 
 #include <exception>
 #include <format>
@@ -7,7 +7,7 @@
 #include <util/Config.hpp>
 #include <util/Utils.hpp>
 
-namespace simsh {
+namespace tish {
   namespace error {
     class TraceBack : public std::exception {
     protected:
@@ -117,6 +117,6 @@ namespace simsh {
       StreamClosed() : TerminationSignal( "target io stream has been closed", EOF ) {}
     };
   } // namespace error
-} // namespace simsh
+} // namespace tish
 
-#endif // __SIMSH_EXCEPTION__
+#endif // TISH_EXCEPTION

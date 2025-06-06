@@ -1,11 +1,11 @@
-#ifndef __SIMSH__FORKGUARD__
-#define __SIMSH__FORKGUARD__
+#ifndef TISH_FORKGUARD
+#define TISH_FORKGUARD
 
 #include <memory>
 #include <optional>
 #include <sys/types.h>
 
-namespace simsh {
+namespace tish {
   namespace utils {
     class ForkGuard {
     public:
@@ -51,6 +51,6 @@ namespace simsh {
       void reset_signals() noexcept;
     };
   } // namespace utils
-} // namespace simsh
+} // namespace tish
 
-#endif // __SIMSH__FORKGUARD__
+#endif // TISH_FORKGUARD

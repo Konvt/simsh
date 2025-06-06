@@ -1,5 +1,5 @@
-#ifndef __SHIMSH_SHELL__
-#define __SHIMSH_SHELL__
+#ifndef TISH_CLI
+#define TISH_CLI
 
 #include <Interpreter.hpp>
 #include <Parser.hpp>
@@ -8,7 +8,7 @@
 #include <util/Config.hpp>
 #include <util/Exception.hpp>
 
-namespace simsh {
+namespace tish {
   namespace cli {
     /// @brief The simplest implementation of the shell.
     class BaseCLI {
@@ -51,13 +51,12 @@ namespace simsh {
       static constexpr types::StrView _root_fmt = CLEAR_LINE "{}@{}:{}# ";
 #undef CLEAR_LINE
       static constexpr types::StrView _welcome_mes =
-        "\n\x1b[36;1m"
-        "      _               _     \n"
-        "  ___(_)_ __ ___  ___| |__  \n"
-        " / __| | '_ ` _ \\/ __| '_ \\ \n"
-        " \\__ \\ | | | | | \\__ \\ | | |\n"
-        " |___/_|_| |_| |_|___/_| |_|\n"
-        "                            \n"
+        "\x1b[36;1m"
+        "  _   _     _\n"
+        " | |_(_)___| |__\n"
+        " | __| / __| '_ \\\n"
+        " | |_| \\__ \\ | | |\n"
+        "  \\__|_|___/_| |_|\n"
         "\x1b[0m\n"
         "Type \x1b[32mhelp\x1b[0m for more information\n";
 
@@ -84,6 +83,6 @@ namespace simsh {
       virtual int run();
     };
   } // namespace cli
-} // namespace simsh
+} // namespace tish
 
-#endif // __SHIMSH_SHELL__
+#endif // TISH_CLI

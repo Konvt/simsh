@@ -1,5 +1,5 @@
-#ifndef __SIMSH_UTILS__
-#define __SIMSH_UTILS__
+#ifndef TISH_UTILS
+#define TISH_UTILS
 
 #include <functional>
 #include <regex>
@@ -9,7 +9,7 @@
 #include <util/Enums.hpp>
 #include <utility>
 
-namespace simsh {
+namespace tish {
   namespace utils {
     [[nodiscard]] types::String format_char( types::Char character );
 
@@ -132,6 +132,6 @@ namespace simsh {
       return CFnCast<Signature>::from( std::forward<Fn>( fn ) );
     }
   } // namespace utils
-} // namespace simsh
+} // namespace tish
 
-#endif // __SIMSH_UTILS__
+#endif // TISH_UTILS

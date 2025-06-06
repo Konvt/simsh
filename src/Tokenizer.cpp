@@ -3,7 +3,7 @@
 #include <util/Exception.hpp>
 using namespace std;
 
-namespace simsh {
+namespace tish {
   void LineBuffer::swap_members( LineBuffer&& rhs ) noexcept
   {
     using std::swap;
@@ -298,4 +298,4 @@ namespace simsh {
 
     return new_token;
   }
-} // namespace simsh
+} // namespace tish

@@ -13,7 +13,7 @@
 #include <util/Utils.hpp>
 using namespace std;
 
-namespace simsh {
+namespace tish {
   namespace utils {
     types::String format_char( types::Char character )
     {
@@ -92,4 +92,4 @@ namespace simsh {
       return dup2( old_fd, new_fd ) == -1;
     }
   } // namespace utils
-} // namespace simsh
+} // namespace tish

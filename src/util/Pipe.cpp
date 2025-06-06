@@ -5,7 +5,7 @@
 #include <util/Pipe.hpp>
 using namespace std;
 
-namespace simsh {
+namespace tish {
   namespace utils {
     Pipe::Pipe() : pipefd_ {}, reader_closed_ { false }, writer_closed_ { false }
     {
@@ -89,4 +89,4 @@ namespace simsh {
       return fcntl( fd, F_SETFL, fcntl( fd, F_GETFL ) | O_NONBLOCK ) > 0;
     }
   } // namespace utils
-} // namespace simsh
+} // namespace tish
