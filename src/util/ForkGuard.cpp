@@ -1,9 +1,8 @@
 #include <csignal>
 #include <cstring>
 #include <sys/wait.h>
-
-#include "Exception.hpp"
-#include "ForkGuard.hpp"
+#include <util/Exception.hpp>
+#include <util/ForkGuard.hpp>
 using namespace std;
 
 namespace simsh {
@@ -44,7 +43,7 @@ namespace simsh {
       }
     }
 
-    ForkGuard::PidT ForkGuard::pid() const noexcept
+    ForkGuard::Pid ForkGuard::pid() const noexcept
     {
       return process_id_;
     }
@@ -62,17 +61,17 @@ namespace simsh {
     void ForkGuard::wait()
     {
       if ( is_parent() && !subprocess_exit_code_.has_value() ) {
-        ExitCodeT status {};
+        ExitCode status {};
         if ( waitpid( process_id_, &status, 0 ) < 0 )
           throw error::SystemCallError( "waitpid" );
         subprocess_exit_code_ = status;
       }
     }
 
-    optional<ForkGuard::ExitCodeT> ForkGuard::exit_code() const noexcept
+    optional<ForkGuard::ExitCode> ForkGuard::exit_code() const noexcept
     {
       if ( is_parent() && subprocess_exit_code_.has_value() )
-        return { static_cast<ExitCodeT>( WEXITSTATUS( *subprocess_exit_code_ ) ) };
+        return { static_cast<ExitCode>( WEXITSTATUS( *subprocess_exit_code_ ) ) };
       return nullopt;
     }
 

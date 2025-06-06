@@ -1,16 +1,13 @@
+#include <CLI.hpp>
+#include <Parser.hpp>
 #include <array>
 #include <filesystem>
 #include <format>
-
-#include "Exception.hpp"
-#include "Logger.hpp"
-#include "Parser.hpp"
-
 #include <pwd.h>
 #include <unistd.h>
-
-#include "CLI.hpp"
-#include "Utils.hpp"
+#include <util/Exception.hpp>
+#include <util/Logger.hpp>
+#include <util/Utils.hpp>
 using namespace std;
 
 namespace simsh {

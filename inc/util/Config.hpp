@@ -19,13 +19,13 @@
 
 namespace simsh {
   namespace types {
-    using CharT    = int;
-    using StringT  = std::string;
-    using StrViewT = std::string_view;
-    using EvalT    = int64_t;
+    using Char    = int;
+    using String  = std::string;
+    using StrView = std::string_view;
+    using Eval    = int64_t;
 
-    using FDType = int; // file descriptor
-    using TokenT = StringT;
+    using FileDesc = int; // file descriptor
+    using Token = String;
   } // namespace types
 } // namespace simsh
 

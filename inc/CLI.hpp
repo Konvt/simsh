@@ -1,12 +1,12 @@
 #ifndef __SHIMSH_SHELL__
 #define __SHIMSH_SHELL__
 
+#include <Interpreter.hpp>
+#include <Parser.hpp>
 #include <atomic>
 #include <csignal>
-
-#include "Config.hpp"
-#include "Interpreter.hpp"
-#include "Parser.hpp"
+#include <util/Config.hpp>
+#include <util/Exception.hpp>
 
 namespace simsh {
   namespace cli {
@@ -26,7 +26,7 @@ namespace simsh {
       /// created in the same scope.
       BaseCLI( Parser prsr ) : prsr_ { std::move( prsr ) }, interp_ {}
       {
-        [[unlikely]] if ( already_exist_ )
+        if ( already_exist_ ) [[unlikely]]
           throw error::RuntimeError( "BaseCLI: CLI already exists" );
         else
           already_exist_ = true;
@@ -46,11 +46,11 @@ namespace simsh {
     /// @brief A shell with prompt.
     class CLI : public BaseCLI {
 #define CLEAR_LINE "\x1b[1K\r"
-      static constexpr types::StrViewT default_fmt =
+      static constexpr types::StrView default_fmt =
         CLEAR_LINE "\x1b[32;1m{}@{}\x1b[0m:\x1b[34;1m{}\x1b[0m$ ";
-      static constexpr types::StrViewT root_fmt = CLEAR_LINE "{}@{}:{}# ";
+      static constexpr types::StrView root_fmt = CLEAR_LINE "{}@{}:{}# ";
 #undef CLEAR_LINE
-      static constexpr types::StrViewT welcome_mes =
+      static constexpr types::StrView welcome_mes =
         "\n\x1b[36;1m"
         "      _               _     \n"
         "  ___(_)_ __ ___  ___| |__  \n"
@@ -61,13 +61,13 @@ namespace simsh {
         "\x1b[0m\n"
         "Type \x1b[32mhelp\x1b[0m for more information\n";
 
-      types::StringT prompt_;
+      types::String prompt_;
 
-      types::StringT host_name_;
-      types::StringT home_dir_;
-      types::StringT current_dir_;
+      types::String host_name_;
+      types::String home_dir_;
+      types::String current_dir_;
 
-      types::StringT user_name_;
+      types::String user_name_;
 
       void update_prompt();
 
@@ -79,7 +79,7 @@ namespace simsh {
       CLI( Parser prsr ) : BaseCLI( std::move( prsr ) ) { detect_info(); }
       CLI() : CLI( Parser() ) {}
       virtual ~CLI() = default;
-      [[nodiscard]] types::StrViewT prompt() const noexcept { return prompt_; }
+      [[nodiscard]] types::StrView prompt() const noexcept { return prompt_; }
 
       virtual int run();
     };

@@ -1,7 +1,6 @@
+#include <Tokenizer.hpp>
 #include <cassert>
-
-#include "Exception.hpp"
-#include "Tokenizer.hpp"
+#include <util/Exception.hpp>
 using namespace std;
 
 namespace simsh {
@@ -27,7 +26,7 @@ namespace simsh {
     line_pos_ = 0;
   }
 
-  types::CharT LineBuffer::peek()
+  types::Char LineBuffer::peek()
   {
     assert( input_stream_ != nullptr );
     if ( line_pos_ >= line_input_.size() ) {
@@ -86,11 +85,11 @@ namespace simsh {
     return *current_token_;
   }
 
-  types::TokenT Tokenizer::consume( types::TokenType expect )
+  types::Token Tokenizer::consume( types::TokenType expect )
   {
     assert( current_token_.has_value() );
     if ( current_token_->is( expect ) ) {
-      types::TokenT discard_tokens = move( current_token_->value_ );
+      types::Token discard_tokens = move( current_token_->value_ );
       current_token_.reset();
       return discard_tokens;
     }
@@ -173,7 +172,7 @@ namespace simsh {
             token_type = types::TokenType::RPAREN;
           } break;
           default: {
-            if ( ( "':^%"sv ).find( character ) != types::StrViewT::npos )
+            if ( ( "':^%"sv ).find( character ) != types::StrView::npos )
               throw error::TokenError( line_buf_.line_pos(),
                                        line_buf_.context(),
                                        "any valid command character"sv,
@@ -198,7 +197,7 @@ namespace simsh {
 
       case StateType::INCMD: {
         if ( isspace( character )
-             || ( "&|!<>\"';:()^%#"sv ).find( character ) != types::StrViewT::npos ) {
+             || ( "&|!<>\"';:()^%#"sv ).find( character ) != types::StrView::npos ) {
           if ( token_str.empty() ) {
             throw error::TokenError( line_buf_.line_pos(),
                                      line_buf_.context(),
@@ -226,7 +225,7 @@ namespace simsh {
           save_char  = false;
           token_type = types::TokenType::STR;
           state      = StateType::DONE;
-        } else if ( ( "\n"sv ).find( character ) != types::StrViewT::npos || character == EOF )
+        } else if ( ( "\n"sv ).find( character ) != types::StrView::npos || character == EOF )
           throw error::TokenError( line_buf_.line_pos(), line_buf_.context(), '"', character );
       } break;
 

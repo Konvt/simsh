@@ -1,9 +1,8 @@
 #include <cassert>
 #include <fcntl.h>
 #include <unistd.h>
-
-#include "Exception.hpp"
-#include "Pipe.hpp"
+#include <util/Exception.hpp>
+#include <util/Pipe.hpp>
 using namespace std;
 
 namespace simsh {
@@ -60,7 +59,7 @@ namespace simsh {
       }
     }
 
-    types::FDType PipeReader::get() const
+    types::FileDesc PipeReader::get() const
     {
       return pipefd_[reader_fd];
     }
@@ -73,12 +72,12 @@ namespace simsh {
       }
     }
 
-    types::FDType PipeWriter::get() const
+    types::FileDesc PipeWriter::get() const
     {
       return pipefd_[writer_fd];
     }
 
-    bool close_blocking( types::FDType fd )
+    bool close_blocking( types::FileDesc fd )
     {
       return fcntl( fd, F_SETFL, fcntl( fd, F_GETFL ) | O_NONBLOCK ) > 0;
     }

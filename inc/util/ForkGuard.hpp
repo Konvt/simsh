@@ -5,18 +5,16 @@
 #include <optional>
 #include <sys/types.h>
 
-#include "Config.hpp"
-
 namespace simsh {
   namespace utils {
     class ForkGuard {
     public:
-      using ExitCodeT = int;
-      using PidT      = pid_t;
+      using ExitCode = int;
+      using Pid      = pid_t;
 
     private:
-      PidT process_id_;
-      std::optional<ExitCodeT> subprocess_exit_code_;
+      Pid process_id_;
+      std::optional<ExitCode> subprocess_exit_code_;
 
       std::unique_ptr<sigset_t> old_set_;
       sigset_t new_set_;
@@ -36,13 +34,13 @@ namespace simsh {
       /// @brief Abandon the management child process, and deconstruct this
       /// object.
       ~ForkGuard() noexcept;
-      [[nodiscard]] PidT pid() const noexcept;
+      [[nodiscard]] Pid pid() const noexcept;
       [[nodiscard]] bool is_parent() const noexcept;
       [[nodiscard]] bool is_child() const noexcept;
 
       /// @brief Check the exit code of subprocess.
       /// @return Return exit code.
-      [[nodiscard]] std::optional<ExitCodeT> exit_code() const noexcept;
+      [[nodiscard]] std::optional<ExitCode> exit_code() const noexcept;
 
       /// @brief Wait for the subprocess to exit.
       /// @throw error::SystemCallError If `waitpid` fails.

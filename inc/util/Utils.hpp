@@ -1,53 +1,59 @@
 #ifndef __SIMSH_UTILS__
 #define __SIMSH_UTILS__
 
-#include <concepts>
-#include <filesystem>
 #include <functional>
 #include <regex>
 #include <span>
 #include <type_traits>
+#include <util/Config.hpp>
+#include <util/Enums.hpp>
 #include <utility>
-
-#include "Config.hpp"
-#include "EnumLabel.hpp"
 
 namespace simsh {
   namespace utils {
-    [[nodiscard]] types::StringT format_char( types::CharT character );
+    [[nodiscard]] types::String format_char( types::Char character );
 
-    [[nodiscard]] types::StrViewT token_kind_map( types::TokenType tkn );
+    [[nodiscard]] constexpr types::StrView token_kind_map( types::TokenType tkn ) noexcept
+    {
+      switch ( tkn ) {
+      case types::TokenType::STR:         return "string";
+      case types::TokenType::CMD:         return "command";
+      case types::TokenType::AND:         return "logical AND";
+      case types::TokenType::OR:          return "logical OR";
+      case types::TokenType::NOT:         return "logical NOT";
+      case types::TokenType::PIPE:        return "pipeline";
+      case types::TokenType::OVR_REDIR:   [[fallthrough]];
+      case types::TokenType::APND_REDIR:  return "output redirection";
+      case types::TokenType::MERG_OUTPUT: [[fallthrough]];
+      case types::TokenType::MERG_APPND:  [[fallthrough]];
+      case types::TokenType::MERG_STREAM: return "combined redirection";
+      case types::TokenType::STDIN_REDIR: return "input redirection";
+      case types::TokenType::LPAREN:      return "left paren";
+      case types::TokenType::RPAREN:      return "right paren";
+      case types::TokenType::NEWLINE:     return "newline";
+      case types::TokenType::SEMI:        return "semicolon";
+      case types::TokenType::ENDFILE:     return "end of file";
+      case types::TokenType::ERROR:       [[fallthrough]];
+      default:                            return "error";
+      }
+    }
 
-    [[nodiscard]] bool create_file( types::StrViewT filename );
+    [[nodiscard]] bool create_file( types::StrView filename );
 
-    [[nodiscard]] types::StrViewT get_homedir();
+    [[nodiscard]] types::StrView get_homedir();
 
-    [[nodiscard]] std::vector<types::StringT> get_envpath();
+    [[nodiscard]] std::vector<types::String> get_envpath();
 
-    [[nodiscard]] types::StringT tilde_expansion( const types::StringT& token );
+    [[nodiscard]] types::String tilde_expansion( const types::String& token );
 
-    [[nodiscard]] std::pair<bool, std::smatch> match_string( const types::StringT& str,
-                                                             types::StrViewT reg_str );
+    [[nodiscard]] std::pair<bool, std::smatch> match_string( const types::String& str,
+                                                             types::StrView reg_str );
 
     /// @brief Finds the path to the given file in the path set.
-    template<typename T>
-      requires requires( std::decay_t<T> t ) {
-        { std::filesystem::path( t ) } -> std::same_as<std::filesystem::path>;
-      }
-    [[nodiscard]] types::StringT search_filepath( std::span<const T> path_set,
-                                                  types::StrViewT filename )
-    {
-      for ( const auto& env_path : path_set ) {
-        try {
-          if ( const auto filepath = std::filesystem::path( env_path ) / filename;
-               std::filesystem::exists( filepath ) && std::filesystem::is_regular_file( filepath ) )
-            return filepath.string();
-        } catch ( const std::filesystem::filesystem_error& e ) {
-          // just ignore it
-        }
-      }
-      return {};
-    }
+    [[nodiscard]] types::String search_filepath( std::span<const types::StrView> path_set,
+                                                 types::StrView filename );
+    [[nodiscard]] types::String search_filepath( std::span<const types::String> path_set,
+                                                 types::StrView filename );
   } // namespace utils
 
   namespace details {

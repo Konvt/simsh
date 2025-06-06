@@ -2,12 +2,11 @@
 #define __SIMSH_TREENODE__
 
 #include <memory>
+#include <util/Config.hpp>
+#include <util/Enums.hpp>
+#include <util/Exception.hpp>
 #include <variant>
 #include <vector>
-
-#include "Config.hpp"
-#include "EnumLabel.hpp"
-#include "Exception.hpp"
 
 namespace simsh {
   class StmtNode {
@@ -57,14 +56,14 @@ namespace simsh {
 
   class ExprNode : public StmtNode {
     types::ExprKind type_;
-    std::variant<types::EvalT, types::TokenT> expr_;
+    std::variant<types::Eval, types::Token> expr_;
 
   public:
     /// @throw error::RuntimeError If the type of `data` does not match the
     /// value of `expr_type`.
     template<typename T>
       requires std::disjunction_v<std::is_arithmetic<std::decay_t<T>>,
-                                  std::is_same<std::decay_t<T>, types::TokenT>>
+                                  std::is_same<std::decay_t<T>, types::Token>>
     ExprNode( types::ExprKind expr_type, T&& data, SiblingNodes siblings = {} )
       : StmtNode( types::StmtKind::trivial, std::move( siblings ) )
       , type_ { expr_type }
@@ -86,16 +85,16 @@ namespace simsh {
     {}
     virtual ~ExprNode() = default;
 
-    [[nodiscard]] types::TokenT token() && { return std::move( std::get<types::TokenT>( expr_ ) ); }
-    const types::TokenT& token() const& { return std::get<types::TokenT>( expr_ ); }
+    [[nodiscard]] types::Token token() && { return std::move( std::get<types::Token>( expr_ ) ); }
+    const types::Token& token() const& { return std::get<types::Token>( expr_ ); }
 
     /// @brief Replace the current token with the new token.
-    void replace_with( types::TokenT token )
+    void replace_with( types::Token token )
     {
-      std::get<types::TokenT>( expr_ ) = std::move( token );
+      std::get<types::Token>( expr_ ) = std::move( token );
     }
 
-    [[nodiscard]] types::EvalT value() const { return std::get<types::EvalT>( expr_ ); }
+    [[nodiscard]] types::Eval value() const { return std::get<types::Eval>( expr_ ); }
 
     [[nodiscard]] types::ExprKind kind() const noexcept { return type_; }
   };

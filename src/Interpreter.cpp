@@ -1,33 +1,27 @@
-#include <algorithm>
+#include <HelpDocument.hpp>
+#include <Interpreter.hpp>
 #include <cassert>
-#include <cerrno>
 #include <cstdlib>
-#include <filesystem>
-#include <format>
-#include <ranges>
-
 #include <fcntl.h>
+#include <filesystem>
 #include <unistd.h>
-
-#include "Constants.hpp"
-#include "EnumLabel.hpp"
-#include "Exception.hpp"
-#include "ForkGuard.hpp"
-#include "HelpDocument.hpp"
-#include "Interpreter.hpp"
-#include "Logger.hpp"
-#include "Pipe.hpp"
-#include "Utils.hpp"
+#include <util/Constants.hpp>
+#include <util/Enums.hpp>
+#include <util/Exception.hpp>
+#include <util/ForkGuard.hpp>
+#include <util/Logger.hpp>
+#include <util/Pipe.hpp>
+#include <util/Utils.hpp>
 using namespace std;
 
 namespace simsh {
-  const std::unordered_set<types::StringT> Interpreter::built_in_cmds = { "cd",
+  const std::unordered_set<types::String> Interpreter::built_in_cmds = { "cd",
                                                                           "exit",
                                                                           "help",
                                                                           "type",
                                                                           "exec" };
 
-  types::EvalT Interpreter::sequential_stmt( StmtNodeT seq_stmt ) const
+  types::Eval Interpreter::sequential_stmt( StmtNodeT seq_stmt ) const
   {
     assert( seq_stmt != nullptr );
     assert( seq_stmt->left() != nullptr );
@@ -41,7 +35,7 @@ namespace simsh {
     }
   }
 
-  types::EvalT Interpreter::logical_and( StmtNodeT and_stmt ) const
+  types::Eval Interpreter::logical_and( StmtNodeT and_stmt ) const
   {
     assert( and_stmt != nullptr );
     assert( and_stmt->left() != nullptr && and_stmt->right() != nullptr );
@@ -50,7 +44,7 @@ namespace simsh {
     return interpret( and_stmt->left() ) && interpret( and_stmt->right() );
   }
 
-  types::EvalT Interpreter::logical_or( StmtNodeT or_stmt ) const
+  types::Eval Interpreter::logical_or( StmtNodeT or_stmt ) const
   {
     assert( or_stmt != nullptr );
     assert( or_stmt->left() != nullptr && or_stmt->right() != nullptr );
@@ -59,7 +53,7 @@ namespace simsh {
     return interpret( or_stmt->left() ) || interpret( or_stmt->right() );
   }
 
-  types::EvalT Interpreter::logical_not( StmtNodeT not_stmt ) const
+  types::Eval Interpreter::logical_not( StmtNodeT not_stmt ) const
   {
     assert( not_stmt != nullptr );
 
@@ -69,7 +63,7 @@ namespace simsh {
     return !interpret( not_stmt->left() );
   }
 
-  types::EvalT Interpreter::pipeline_stmt( StmtNodeT pipeline_stmt ) const
+  types::Eval Interpreter::pipeline_stmt( StmtNodeT pipeline_stmt ) const
   {
     assert( pipeline_stmt != nullptr );
     assert( pipeline_stmt->left() != nullptr && pipeline_stmt->right() != nullptr );
@@ -100,7 +94,7 @@ namespace simsh {
     return constants::EvalSuccess;
   }
 
-  types::EvalT Interpreter::output_redirection( StmtNodeT oup_redr ) const
+  types::Eval Interpreter::output_redirection( StmtNodeT oup_redr ) const
   {
     assert( oup_redr != nullptr );
 
@@ -144,7 +138,7 @@ namespace simsh {
      * `types::ExprKind::value`, which specifies the destination file
      * descriptor.
      */
-    types::FDType file_d = STDOUT_FILENO;
+    types::FileDesc file_d = STDOUT_FILENO;
     if ( oup_redr->type() == types::StmtKind::appnd_redrct
          || oup_redr->type() == types::StmtKind::ovrwrit_redrct ) {
       ExprNodeT arg_node = static_cast<ExprNode*>( oup_redr->siblings().front().get() );
@@ -191,7 +185,7 @@ namespace simsh {
       return pguard.exit_code().value();
   }
 
-  types::EvalT Interpreter::merge_stream( StmtNodeT merg_redr ) const
+  types::Eval Interpreter::merge_stream( StmtNodeT merg_redr ) const
   {
     assert( merg_redr != nullptr );
 
@@ -231,7 +225,7 @@ namespace simsh {
       return pguard.exit_code().value();
   }
 
-  types::EvalT Interpreter::input_redirection( StmtNodeT inp_redr ) const
+  types::Eval Interpreter::input_redirection( StmtNodeT inp_redr ) const
   {
     assert( inp_redr != nullptr );
     assert( inp_redr->left() != nullptr && inp_redr->right() == nullptr );
@@ -270,7 +264,7 @@ namespace simsh {
     return pguard.exit_code() == constants::ExecSuccess;
   }
 
-  types::EvalT Interpreter::trivial( ExprNodeT expr ) const
+  types::Eval Interpreter::trivial( ExprNodeT expr ) const
   {
     assert( expr != nullptr );
 
@@ -307,7 +301,7 @@ namespace simsh {
       return external_exec( expr );
   }
 
-  types::EvalT Interpreter::builtin_exec( ExprNodeT expr ) const
+  types::Eval Interpreter::builtin_exec( ExprNodeT expr ) const
   {
     assert( expr != nullptr );
     assert( expr->kind() != types::ExprKind::value );
@@ -322,7 +316,7 @@ namespace simsh {
       assert( static_cast<const ExprNode*>( expr->siblings().front().get() )->kind()
               != types::ExprKind::value );
 
-      types::StrViewT target_dir =
+      types::StrView target_dir =
         expr->siblings().size() == 0
           ? utils::get_homedir()
           : static_cast<const ExprNode*>( expr->siblings().front().get() )->token();
@@ -390,8 +384,7 @@ namespace simsh {
         if ( built_in_cmds.contains( arg_node->token() ) )
           iout::prmptr << format( "{} is a builtin\n", arg_node->token() );
         else if ( const auto filepath =
-                    utils::search_filepath<types::StringT>( utils::get_envpath(),
-                                                            arg_node->token() );
+                    utils::search_filepath( utils::get_envpath(), arg_node->token() );
                   filepath.empty() )
           iout::logger << error::ArgumentError(
             "type"sv,
@@ -406,7 +399,7 @@ namespace simsh {
     return constants::EvalSuccess;
   }
 
-  types::EvalT Interpreter::external_exec( ExprNodeT expr ) const
+  types::Eval Interpreter::external_exec( ExprNodeT expr ) const
   {
     assert( expr != nullptr );
 
@@ -445,7 +438,7 @@ namespace simsh {
     }
   }
 
-  types::EvalT Interpreter::interpret( StmtNodeT stmt_node ) const
+  types::Eval Interpreter::interpret( StmtNodeT stmt_node ) const
   {
     if ( stmt_node == nullptr )
       throw error::ArgumentError( "interpreter", "syntax tree node is null" );

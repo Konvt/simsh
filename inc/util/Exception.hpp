@@ -4,29 +4,28 @@
 #include <exception>
 #include <format>
 #include <ranges>
-
-#include "Config.hpp"
-#include "Utils.hpp"
+#include <util/Config.hpp>
+#include <util/Utils.hpp>
 
 namespace simsh {
   namespace error {
     class TraceBack : public std::exception {
     protected:
-      types::StringT message_;
+      types::String message_;
 
     public:
-      TraceBack( types::StringT message ) : message_ { std::move( message ) } {}
+      TraceBack( types::String message ) : message_ { std::move( message ) } {}
       virtual const char* what() const noexcept { return message_.c_str(); }
     };
 
     /// @brief This exception indicates errors in some cpp code.
     class RuntimeError : public TraceBack {
     public:
-      RuntimeError( types::StringT message ) : TraceBack( std::move( message ) ) {}
+      RuntimeError( types::String message ) : TraceBack( std::move( message ) ) {}
     };
 
     class TokenError : public TraceBack {
-      TokenError( size_t line_pos, types::StrViewT context, types::StrViewT message )
+      TokenError( size_t line_pos, types::StrView context, types::StrView message )
         : TraceBack( "\n    " )
       {
         // Trim trailing whitespace from the string_view
@@ -43,9 +42,9 @@ namespace simsh {
 
     public:
       TokenError( size_t line_pos,
-                  types::StrViewT context,
-                  types::CharT expect,
-                  types::CharT received )
+                  types::StrView context,
+                  types::Char expect,
+                  types::Char received )
         : TokenError( line_pos,
                       std::move( context ),
                       std::format( "expect {}, but received {}",
@@ -53,9 +52,9 @@ namespace simsh {
                                    utils::format_char( received ) ) )
       {}
       TokenError( size_t line_pos,
-                  types::StrViewT context,
-                  types::StrViewT expecting,
-                  types::CharT received )
+                  types::StrView context,
+                  types::StrView expecting,
+                  types::Char received )
         : TokenError(
             line_pos,
             std::move( context ),
@@ -66,7 +65,7 @@ namespace simsh {
     class SyntaxError : public TraceBack {
     public:
       SyntaxError( size_t line_pos,
-                   types::StrViewT context,
+                   types::StrView context,
                    types::TokenType expect,
                    types::TokenType found )
         : TraceBack( "\n    " )
@@ -88,29 +87,29 @@ namespace simsh {
 
     class ArgumentError : public TraceBack {
     public:
-      ArgumentError( types::StrViewT where, types::StrViewT why )
+      ArgumentError( types::StrView where, types::StrView why )
         : TraceBack( std::format( "{}: {}", where, why ) )
       {}
     };
 
     class SystemCallError : public TraceBack {
     public:
-      SystemCallError( types::StringT where ) : TraceBack( std::move( where ) ) {}
+      SystemCallError( types::String where ) : TraceBack( std::move( where ) ) {}
     };
 
     class TerminationSignal : public TraceBack {
-      types::EvalT exit_val_;
+      types::Eval exit_val_;
 
     protected:
-      TerminationSignal( types::StringT message, types::EvalT exit_val )
+      TerminationSignal( types::String message, types::Eval exit_val )
         : TraceBack( std::move( message ) ), exit_val_ { exit_val }
       {}
 
     public:
-      TerminationSignal( types::EvalT exit_val )
+      TerminationSignal( types::Eval exit_val )
         : TerminationSignal( "current process must be killed", exit_val )
       {}
-      types::EvalT value() const noexcept { return exit_val_; }
+      types::Eval value() const noexcept { return exit_val_; }
     };
 
     class StreamClosed : public TerminationSignal {

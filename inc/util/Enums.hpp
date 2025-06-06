@@ -1,7 +1,7 @@
 #ifndef __SIMSH_ENUM__
 #define __SIMSH_ENUM__
 
-#include "Config.hpp"
+#include <cstdint>
 
 namespace simsh {
   namespace types {

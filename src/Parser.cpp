@@ -1,13 +1,16 @@
+#include <Parser.hpp>
+#include <Tokenizer.hpp>
+#include <TreeNode.hpp>
 #include <cassert>
-
-#include "Constants.hpp"
-#include "Exception.hpp"
-#include "Parser.hpp"
-#include "TreeNode.hpp"
-#include "Utils.hpp"
+#include <iostream>
+#include <util/Constants.hpp>
+#include <util/Exception.hpp>
+#include <util/Utils.hpp>
 using namespace std;
 
 namespace simsh {
+  Parser::Parser() : tknizr_ { cin } {}
+
   Parser::StmtNodePtr Parser::parse()
   {
     tknizr_.clear();
@@ -263,7 +266,7 @@ namespace simsh {
     StmtNode::SiblingNodes arguments;
 
     auto extract_params = [this]( StmtNode::SiblingNodes& args,
-                                  types::StrViewT re_str,
+                                  types::StrView re_str,
                                   types::TokenType expecting ) {
       auto [match_result, matches] = utils::match_string( tknizr_.consume( expecting ), re_str );
 
@@ -288,12 +291,12 @@ namespace simsh {
     switch ( tknizr_.peek().type_ ) {
     case types::TokenType::OVR_REDIR: { // >
       stmt_kind = types::StmtKind::ovrwrit_redrct;
-      extract_params( arguments, redirection_regex, types::TokenType::OVR_REDIR );
+      extract_params( arguments, _pattern_redirection, types::TokenType::OVR_REDIR );
       assert( arguments.size() == 1 );
     } break;
     case types::TokenType::APND_REDIR: { // >>
       stmt_kind = types::StmtKind::appnd_redrct;
-      extract_params( arguments, redirection_regex, types::TokenType::APND_REDIR );
+      extract_params( arguments, _pattern_redirection, types::TokenType::APND_REDIR );
       assert( arguments.size() == 1 );
     } break;
     case types::TokenType::MERG_OUTPUT: { // &>
@@ -320,7 +323,7 @@ namespace simsh {
     // child node.
     if ( tknizr_.peek().is( types::TokenType::MERG_STREAM ) ) { // output_redirecti
       StmtNode::SiblingNodes subargs;
-      extract_params( subargs, combined_redir_regex, types::TokenType::MERG_STREAM );
+      extract_params( subargs, _pattern_combined_redir, types::TokenType::MERG_STREAM );
       assert( subargs.size() == 2 );
 
       return make_unique<StmtNode>( stmt_kind,
@@ -340,7 +343,7 @@ namespace simsh {
 
     StmtNode::SiblingNodes arguments;
     auto extract_params = [this]( StmtNode::SiblingNodes& args,
-                                  types::StrViewT re_str,
+                                  types::StrView re_str,
                                   types::TokenType expecting ) {
       auto [match_result, matches] = utils::match_string( tknizr_.consume( expecting ), re_str );
 
@@ -362,14 +365,14 @@ namespace simsh {
       }
     };
 
-    extract_params( arguments, combined_redir_regex, types::TokenType::MERG_STREAM );
+    extract_params( arguments, _pattern_combined_redir, types::TokenType::MERG_STREAM );
     assert( arguments.size() == 2 );
 
     StmtNodePtr node = nullptr;
     switch ( tknizr_.peek().type_ ) {
     case types::TokenType::OVR_REDIR: { // >
       StmtNode::SiblingNodes subargs;
-      extract_params( subargs, redirection_regex, types::TokenType::OVR_REDIR );
+      extract_params( subargs, _pattern_redirection, types::TokenType::OVR_REDIR );
       assert( subargs.size() == 1 );
       subargs.emplace_back( expression() );
 
@@ -383,7 +386,7 @@ namespace simsh {
 
     case types::TokenType::APND_REDIR: { // >>
       StmtNode::SiblingNodes subargs;
-      extract_params( subargs, redirection_regex, types::TokenType::APND_REDIR );
+      extract_params( subargs, _pattern_redirection, types::TokenType::APND_REDIR );
       assert( subargs.size() == 1 );
       subargs.emplace_back( expression() );
 

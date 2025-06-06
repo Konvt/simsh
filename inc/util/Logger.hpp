@@ -3,15 +3,15 @@
 
 #include <iostream>
 
-#include "Config.hpp"
-#include "Exception.hpp"
+#include <util/Config.hpp>
+#include <util/Exception.hpp>
 
 namespace simsh {
   namespace iout { // IO Utility
     /// @brief Log output used to "consume" all exception types in the program,
     /// output to stderr.
     class Logger {
-      types::StringT prefix_;
+      types::String prefix_;
 
       Logger() noexcept = default;
 
@@ -22,12 +22,12 @@ namespace simsh {
 
       static Logger& inst() noexcept;
 
-      [[nodiscard]] types::StrViewT prefix() const& noexcept { return prefix_; }
-      [[nodiscard]] types::StringT prefix() && noexcept { return std::move( prefix_ ); }
+      [[nodiscard]] types::StrView prefix() const& noexcept { return prefix_; }
+      [[nodiscard]] types::String prefix() && noexcept { return std::move( prefix_ ); }
 
       /// @brief Set a string prefix that comes with each output, which defaults
       /// to empty.
-      void set_prefix( types::StringT prefix );
+      void set_prefix( types::String prefix );
 
       /// @brief Print the exception information via `std::cerr`.
       Logger& operator<<( const error::TraceBack& e );

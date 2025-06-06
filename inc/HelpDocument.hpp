@@ -1,11 +1,11 @@
 #ifndef __SIMSH_HELP__
 #define __SIMSH_HELP__
 
-#include "Config.hpp"
+#include <util/Config.hpp>
 
 namespace simsh {
   namespace utils {
-    inline types::StrViewT help_doc()
+    inline types::StrView help_doc()
     {
       return { "Single statement:\n\tcommand\n\tcommand;\n"
                "Connect statement:\n\tcommand1 [&& | || | ;] command2\n"

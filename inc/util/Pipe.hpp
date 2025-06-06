@@ -7,9 +7,8 @@
 #include <cstring>
 #include <type_traits>
 #include <unistd.h>
+#include <util/Config.hpp>
 #include <vector>
-
-#include "Config.hpp"
 
 namespace simsh {
   namespace details {
@@ -27,10 +26,10 @@ namespace simsh {
     /// @brief Anonymous pipes.
     class Pipe {
     protected:
-      static constexpr types::FDType reader_fd = 0;
-      static constexpr types::FDType writer_fd = 1;
+      static constexpr types::FileDesc reader_fd = 0;
+      static constexpr types::FileDesc writer_fd = 1;
 
-      std::array<types::FDType, 2> pipefd_;
+      std::array<types::FileDesc, 2> pipefd_;
       bool reader_closed_, writer_closed_;
 
     public:
@@ -59,7 +58,7 @@ namespace simsh {
       PipeReader& operator=( const PipeReader& ) = delete;
 
       void close();
-      [[nodiscard]] types::FDType get() const;
+      [[nodiscard]] types::FileDesc get() const;
 
       template<typename T>
         requires is_valid_type_v<T>
@@ -88,7 +87,7 @@ namespace simsh {
       PipeWriter& operator=( const PipeReader& ) = delete;
 
       void close();
-      [[nodiscard]] types::FDType get() const;
+      [[nodiscard]] types::FileDesc get() const;
 
       /// @brief for any type that isn't a pointer
       template<typename T>
@@ -154,7 +153,7 @@ namespace simsh {
 
     /// @brief Disable blocking behavior when reading from the specified file
     /// descriptor.
-    bool close_blocking( types::FDType fd );
+    bool close_blocking( types::FileDesc fd );
   } // namespace utils
 } // namespace simsh
 

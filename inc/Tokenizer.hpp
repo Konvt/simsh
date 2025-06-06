@@ -3,10 +3,9 @@
 
 #include <istream>
 #include <optional>
+#include <util/Config.hpp>
+#include <util/Enums.hpp>
 #include <utility>
-
-#include "Config.hpp"
-#include "EnumLabel.hpp"
 
 namespace simsh {
   class LineBuffer {
@@ -14,7 +13,7 @@ namespace simsh {
 
     bool received_eof_;
     size_t line_pos_;
-    types::StringT line_input_;
+    types::String line_input_;
 
     void swap_members( LineBuffer&& rhs ) noexcept;
 
@@ -38,7 +37,7 @@ namespace simsh {
     [[nodiscard]] size_t line_pos() const noexcept { return line_pos_; }
 
     /// @brief Returns the current scanned string.
-    [[nodiscard]] types::StringT context() const noexcept { return line_input_; }
+    [[nodiscard]] types::String context() const noexcept { return line_input_; }
 
     /// @brief Clear the line buffer.
     void clear() noexcept;
@@ -46,7 +45,7 @@ namespace simsh {
     /// @brief Peek the current character.
     /// @throw error::StreamClosed If `peek` is called again when EOF has been
     /// returned.
-    [[nodiscard]] types::CharT peek();
+    [[nodiscard]] types::Char peek();
 
     /// @brief Discard the current character from the buffer.
     void consume() noexcept;
@@ -60,9 +59,9 @@ namespace simsh {
   public:
     struct Token {
       types::TokenType type_;
-      types::TokenT value_;
+      types::Token value_;
 
-      Token( types::TokenType tp, types::TokenT val )
+      Token( types::TokenType tp, types::Token val )
         : type_ { std::move( tp ) }, value_ { std::move( val ) }
       {}
       Token() : Token( types::TokenType::ERROR, {} ) {}
@@ -84,7 +83,7 @@ namespace simsh {
     [[nodiscard]] size_t line_pos() const noexcept { return line_buf_.line_pos(); }
 
     /// @brief Returns the current scanned string.
-    [[nodiscard]] types::StringT context() const noexcept { return line_buf_.context(); }
+    [[nodiscard]] types::String context() const noexcept { return line_buf_.context(); }
 
     /// @brief Clear all unprocessed characters.
     void clear()
@@ -97,7 +96,7 @@ namespace simsh {
 
     /// @brief Discard the current token and return it.
     /// @throw error::SyntaxError If `expect` isn't matched with current token.
-    types::TokenT consume( types::TokenType expect );
+    types::Token consume( types::TokenType expect );
 
     /// @brief Reset the current line buffer with the new one.
     void reset( LineBuffer line_buf );

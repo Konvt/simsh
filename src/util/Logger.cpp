@@ -1,5 +1,5 @@
-#include "Logger.hpp"
 #include <format>
+#include <util/Logger.hpp>
 using namespace std;
 
 namespace simsh {
@@ -21,7 +21,7 @@ namespace simsh {
       return *this;
     }
 
-    void Logger::set_prefix( types::StringT prefix )
+    void Logger::set_prefix( types::String prefix )
     {
       prefix_ = move( prefix );
     }

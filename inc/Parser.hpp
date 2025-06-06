@@ -1,18 +1,16 @@
 #ifndef __SIMSH_PARSER__
 #define __SIMSH_PARSER__
 
-#include <iostream>
+#include <Tokenizer.hpp>
+#include <TreeNode.hpp>
 #include <memory>
-
-#include "Config.hpp"
-#include "Tokenizer.hpp"
-#include "TreeNode.hpp"
+#include <util/Config.hpp>
 
 namespace simsh {
   /// @brief Recursive descent parser.
   class Parser {
-    static constexpr types::StrViewT redirection_regex { R"(^(\d*)>{1,2}$)" };
-    static constexpr types::StrViewT combined_redir_regex { R"(^(\d*)>&(\d*)$)" };
+    static constexpr types::StrView _pattern_redirection { R"(^(\d*)>{1,2}$)" };
+    static constexpr types::StrView _pattern_combined_redir { R"(^(\d*)>&(\d*)$)" };
 
     using StmtNodePtr = std::unique_ptr<StmtNode>;
     using ExprNodePtr = std::unique_ptr<ExprNode>;
@@ -33,7 +31,7 @@ namespace simsh {
     [[nodiscard]] ExprNodePtr expression();
 
   public:
-    Parser() : tknizr_ { std::cin } {}
+    Parser();
     Parser( LineBuffer line_buf ) : tknizr_ { std::move( line_buf ) } {}
     Parser( Tokenizer tknizr ) : tknizr_ { std::move( tknizr ) } {}
     Parser( Parser&& rhs ) : tknizr_ { std::move( rhs.tknizr_ ) } {}

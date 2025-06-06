@@ -1,14 +1,11 @@
+#include <CLI.hpp>
+#include <Parser.hpp>
 #include <fstream>
 #include <span>
-
 #include <unistd.h>
-
-#include "Exception.hpp"
-#include "Logger.hpp"
-#include "Parser.hpp"
-#include "Pipe.hpp"
-
-#include "CLI.hpp"
+#include <util/Exception.hpp>
+#include <util/Logger.hpp>
+#include <util/Pipe.hpp>
 using namespace std;
 
 int main( int argc, char** argv )
