@@ -15,7 +15,7 @@
 using namespace std;
 
 namespace simsh {
-  const std::unordered_set<types::String> Interpreter::built_in_cmds = { "cd",
+  const std::unordered_set<types::String> Interpreter::_built_in_cmds = { "cd",
                                                                           "exit",
                                                                           "help",
                                                                           "type",
@@ -70,7 +70,7 @@ namespace simsh {
     assert( pipeline_stmt->siblings().empty() == true );
 
     utils::Pipe pipe;
-    utils::close_blocking( pipe.reader().get() );
+    utils::disable_blocking( pipe.reader().get() );
 
     for ( size_t i = 0; i < 2; ++i ) {
       utils::ForkGuard pguard;
@@ -78,11 +78,11 @@ namespace simsh {
         // child process
         if ( i == 0 ) {
           pipe.reader().close();
-          dup2( pipe.writer().get(), STDOUT_FILENO );
+          utils::rebind_fd( pipe.writer().get(), STDOUT_FILENO );
           interpret( pipeline_stmt->left() );
         } else {
           pipe.writer().close();
-          dup2( pipe.reader().get(), STDIN_FILENO );
+          utils::rebind_fd( pipe.reader().get(), STDIN_FILENO );
           interpret( pipeline_stmt->right() );
         }
         throw error::TerminationSignal( EXIT_FAILURE );
@@ -157,13 +157,13 @@ namespace simsh {
                                      ? O_APPEND
                                      : O_TRUNC ) );
 
-      dup2( target_fd, file_d );
+      utils::rebind_fd( target_fd, file_d );
       if ( oup_redr->type() == types::StmtKind::merge_output
            || oup_redr->type() == types::StmtKind::merge_appnd ) {
         if ( file_d != STDOUT_FILENO )
-          dup2( target_fd, STDOUT_FILENO );
+          utils::rebind_fd( target_fd, STDOUT_FILENO );
         if ( file_d != STDERR_FILENO )
-          dup2( target_fd, STDERR_FILENO );
+          utils::rebind_fd( target_fd, STDERR_FILENO );
       }
 
       if ( oup_redr->left() != nullptr ) {
@@ -210,7 +210,7 @@ namespace simsh {
 
     utils::ForkGuard pguard;
     if ( pguard.is_child() ) {
-      dup2( r_fd, l_fd );
+      utils::rebind_fd( r_fd, l_fd );
 
       interpret( merg_redr->left() );
       throw error::TerminationSignal( EXIT_FAILURE );
@@ -252,7 +252,7 @@ namespace simsh {
     utils::ForkGuard pguard;
     if ( pguard.is_child() ) {
       auto target_fd = open( filename.c_str(), O_RDONLY );
-      dup2( target_fd, STDIN_FILENO );
+      utils::rebind_fd( target_fd, STDIN_FILENO );
 
       interpret( inp_redr->left() );
 
@@ -295,7 +295,7 @@ namespace simsh {
 
     if ( expr->kind() == types::ExprKind::value )
       return expr->value();
-    else if ( built_in_cmds.contains( expr->token() ) )
+    else if ( _built_in_cmds.contains( expr->token() ) )
       return builtin_exec( expr );
     else
       return external_exec( expr );
@@ -381,7 +381,7 @@ namespace simsh {
         ExprNodeT arg_node = static_cast<ExprNode*>( sblng.get() );
         assert( arg_node->kind() != types::ExprKind::value );
 
-        if ( built_in_cmds.contains( arg_node->token() ) )
+        if ( _built_in_cmds.contains( arg_node->token() ) )
           iout::prmptr << format( "{} is a builtin\n", arg_node->token() );
         else if ( const auto filepath =
                     utils::search_filepath( utils::get_envpath(), arg_node->token() );
@@ -404,7 +404,7 @@ namespace simsh {
     assert( expr != nullptr );
 
     utils::Pipe pipe;
-    utils::close_blocking( pipe.reader().get() );
+    utils::disable_blocking( pipe.reader().get() );
 
     utils::ForkGuard pguard;
     if ( pguard.is_child() ) {

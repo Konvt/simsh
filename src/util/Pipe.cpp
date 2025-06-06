@@ -34,9 +34,9 @@ namespace simsh {
     Pipe::~Pipe() noexcept
     {
       if ( !reader_closed_ )
-        ::close( pipefd_[reader_fd] );
+        ::close( pipefd_[_reader_fd] );
       if ( !writer_closed_ )
-        ::close( pipefd_[writer_fd] );
+        ::close( pipefd_[_writer_fd] );
     }
 
     PipeReader& Pipe::reader()
@@ -55,13 +55,13 @@ namespace simsh {
     {
       if ( !reader_closed_ ) {
         reader_closed_ = true;
-        ::close( pipefd_[reader_fd] );
+        ::close( pipefd_[_reader_fd] );
       }
     }
 
     types::FileDesc PipeReader::get() const
     {
-      return pipefd_[reader_fd];
+      return pipefd_[_reader_fd];
     }
 
     void PipeWriter::close()
@@ -74,10 +74,17 @@ namespace simsh {
 
     types::FileDesc PipeWriter::get() const
     {
-      return pipefd_[writer_fd];
+      return pipefd_[_writer_fd];
     }
 
-    bool close_blocking( types::FileDesc fd )
+    const PipeWriter& PipeWriter::push( const char* const value ) const
+    {
+      if ( !writer_closed_ )
+        write( pipefd_[_writer_fd], value, sizeof( char ) * strlen( value ) );
+      return *this;
+    }
+
+    bool disable_blocking( types::FileDesc fd )
     {
       return fcntl( fd, F_SETFL, fcntl( fd, F_GETFL ) | O_NONBLOCK ) > 0;
     }

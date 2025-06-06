@@ -14,7 +14,7 @@ namespace simsh {
 
     private:
       Pid process_id_;
-      std::optional<ExitCode> subprocess_exit_code_;
+      std::optional<ExitCode> subp_ret_;
 
       std::unique_ptr<sigset_t> old_set_;
       sigset_t new_set_;

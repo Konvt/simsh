@@ -5,6 +5,7 @@
 #include <array>
 #include <concepts>
 #include <cstring>
+#include <ranges>
 #include <type_traits>
 #include <unistd.h>
 #include <util/Config.hpp>
@@ -12,10 +13,10 @@
 
 namespace simsh {
   namespace details {
-    template<template<typename, typename...> typename T, typename U, typename... Args>
-    concept RandomAccess = requires( const T<U, Args...>& value ) {
-      { value.data() } -> std::same_as<const U*>;
-      { value.size() } -> std::same_as<size_t>;
+    template<typename T>
+    concept ContiguousContainer = requires( const T& value ) {
+      requires std::ranges::contiguous_range<T>;
+      { value.size() } -> std::convertible_to<std::size_t>;
     };
   } // namespace details
 
@@ -26,8 +27,8 @@ namespace simsh {
     /// @brief Anonymous pipes.
     class Pipe {
     protected:
-      static constexpr types::FileDesc reader_fd = 0;
-      static constexpr types::FileDesc writer_fd = 1;
+      static constexpr types::FileDesc _reader_fd = 0;
+      static constexpr types::FileDesc _writer_fd = 1;
 
       std::array<types::FileDesc, 2> pipefd_;
       bool reader_closed_, writer_closed_;
@@ -36,7 +37,7 @@ namespace simsh {
       Pipe( const Pipe& )            = delete;
       Pipe& operator=( const Pipe& ) = delete;
 
-      /// @throw error::ArgumentError If an attempt to create a pipe fails.
+      /// @throw error::SystemCallError If an attempt to create a pipe fails.
       Pipe();
       Pipe( Pipe&& rhs ) noexcept;
       Pipe& operator=( Pipe&& rhs ) noexcept;
@@ -47,11 +48,10 @@ namespace simsh {
 
     class PipeReader : public Pipe {
       template<typename T>
-      static constexpr bool is_valid_type_v = std::conjunction_v<
-        std::negation<std::is_void<std::remove_pointer_t<std::decay_t<T>>>>, // forbidden any void
-                                                                             // pointers
-        std::is_trivially_copyable<T>,
-        std::is_default_constructible<std::decay_t<T>>>;
+      static constexpr bool is_valid_type_v = requires {
+        !std::is_void_v<std::remove_pointer_t<std::decay_t<T>>>&& std::is_trivially_copyable_v<T>&&
+          std::is_default_constructible_v<std::decay_t<T>>;
+      };
 
     public:
       PipeReader( const PipeReader& )            = delete;
@@ -66,17 +66,17 @@ namespace simsh {
       {
         T value {};
         if ( !reader_closed_ )
-          read( pipefd_[reader_fd], &value, sizeof( value ) );
+          read( pipefd_[_reader_fd], &value, sizeof( value ) );
         return value;
       }
 
       template<typename T>
         requires is_valid_type_v<T>
-      [[nodiscard]] std::vector<T> pop( size_t num ) const
+      [[nodiscard]] std::vector<T> pop( std::size_t num ) const
       {
         std::vector<T> values( num );
         if ( !reader_closed_ )
-          read( pipefd_[reader_fd], values.data(), num * sizeof( T ) );
+          read( pipefd_[_reader_fd], values.data(), num * sizeof( T ) );
         return values;
       }
     };
@@ -93,67 +93,66 @@ namespace simsh {
       template<typename T>
         requires std::conjunction_v<std::negation<std::is_pointer<std::decay_t<T>>>,
                                     std::is_trivially_copyable<std::decay_t<T>>>
-      void push( const T& value ) const
+      const PipeWriter& push( const T& value ) const
       {
         if ( !writer_closed_ )
-          write( pipefd_[writer_fd], std::addressof( value ), sizeof( value ) );
+          write( pipefd_[_writer_fd], std::addressof( value ), sizeof( value ) );
+        return *this;
       }
 
       /// @brief for raw array
-      template<typename ArrT, size_t N>
+      template<typename ArrT, std::size_t N>
         requires std::is_trivially_copyable_v<ArrT>
-      void push( const ArrT ( &value )[N] ) const
+      const PipeWriter& push( const ArrT ( &value )[N] ) const
       {
         if ( !writer_closed_ )
-          write( pipefd_[writer_fd], &value, sizeof( value ) );
+          write( pipefd_[_writer_fd], &value, sizeof( value ) );
+        return *this;
       }
 
-      /// @brief only for pointer types and dynamic arrays
+      /// @brief only for pointer types or dynamic arrays
       template<typename T>
-        requires std::conjunction_v<
-          std::is_trivially_copyable<std::remove_cvref_t<T>>,
-          std::negation<std::is_same<std::decay_t<T>, char*>>,
-          std::negation<std::is_void<std::remove_pointer_t<std::decay_t<T>>>> // forbidden any void
-                                                                              // pointers
-          >
-      void push( const T* const value, size_t length = 1 ) const
+        requires( std::is_trivially_copyable_v<std::remove_cvref_t<T>>
+                  && !std::is_same_v<std::decay_t<T>, char*>
+                  && !std::is_void_v<std::remove_pointer_t<std::decay_t<T>>> )
+      const PipeWriter& push( const T* const value, std::size_t length = 1 ) const
       {
         if ( !writer_closed_ )
-          write( pipefd_[writer_fd], value, length * sizeof( T ) );
+          write( pipefd_[_writer_fd], value, length * sizeof( T ) );
+        return *this;
       }
 
       /// @brief for the randomly accessible container type
-      template<template<typename, typename...> class T, typename U, typename... Args>
-        requires std::conjunction_v<std::bool_constant<details::RandomAccess<T, U, Args...>>,
-                                    std::is_trivially_copyable<U>>
-      void push( const T<U, Args...>& value ) const
+      template<typename R>
+        requires( details::ContiguousContainer<R>
+                  && std::is_trivially_copyable_v<std::ranges::range_value_t<R>> )
+      const PipeWriter& push( const R& value ) const
       {
         if ( !writer_closed_ )
-          write( pipefd_[writer_fd], value.data(), sizeof( U ) * value.size() );
+          write( pipefd_[_writer_fd],
+                 value.data(),
+                 sizeof( std::ranges::range_value_t<R> ) * value.size() );
+        return *this;
       }
 
       /// @brief for the container type that is not randomly accessible
-      template<template<typename, typename...> class T, typename U, typename... Args>
-        requires std::conjunction_v<
-          std::negation<std::bool_constant<details::RandomAccess<T, U, Args...>>>,
-          std::is_trivially_copyable<U>>
-      void push( const T<U, Args...>& value ) const
+      template<typename R>
+        requires( !details::ContiguousContainer<R>
+                  && std::is_trivially_copyable_v<std::ranges::range_value_t<R>> )
+      const PipeWriter& push( const R& value ) const
       {
         if ( !writer_closed_ )
           std::ranges::for_each( value, [this]( const auto& ele ) -> void { this->push( ele ); } );
+        return *this;
       }
 
       /// @brief for dynamic `c-style` string
-      void push( const char* const value ) const
-      {
-        if ( !writer_closed_ )
-          write( pipefd_[writer_fd], value, sizeof( char ) * strlen( value ) );
-      }
+      const PipeWriter& push( const char* const value ) const;
     };
 
     /// @brief Disable blocking behavior when reading from the specified file
     /// descriptor.
-    bool close_blocking( types::FileDesc fd );
+    bool disable_blocking( types::FileDesc fd );
   } // namespace utils
 } // namespace simsh
 

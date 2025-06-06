@@ -10,7 +10,7 @@ namespace simsh {
   class Interpreter {
     using StmtNodeT = StmtNode* const;
     using ExprNodeT = ExprNode* const;
-    static const std::unordered_set<types::String> built_in_cmds;
+    static const std::unordered_set<types::String> _built_in_cmds;
 
     [[nodiscard]] types::Eval sequential_stmt( StmtNodeT seq_stmt ) const;
     [[nodiscard]] types::Eval logical_and( StmtNodeT and_stmt ) const;

@@ -12,7 +12,7 @@ using namespace std;
 
 namespace simsh {
   namespace cli {
-    std::atomic<bool> BaseCLI::already_exist_ = false;
+    std::atomic<bool> BaseCLI::_already_exist = false;
 
     int BaseCLI::run()
     {
@@ -50,9 +50,9 @@ namespace simsh {
            && current_dir_.compare( 0, home_dir_.size(), home_dir_ ) == 0 )
         current_dir_.replace( 0, home_dir_.size(), "~" );
       if ( user_name_ == "root" )
-        prompt_ = format( root_fmt, user_name_, host_name_, current_dir_ );
+        prompt_ = format( _root_fmt, user_name_, host_name_, current_dir_ );
       else
-        prompt_ = format( default_fmt, user_name_, host_name_, current_dir_ );
+        prompt_ = format( _default_fmt, user_name_, host_name_, current_dir_ );
     }
 
     void CLI::detect_info()
@@ -94,7 +94,7 @@ namespace simsh {
       signal( SIGTSTP, wrapper );
 
       simsh::iout::logger.set_prefix( "simsh: " );
-      simsh::iout::prmptr << welcome_mes;
+      simsh::iout::prmptr << _welcome_mes;
 
       while ( !prsr_.empty() ) {
         detect_info();

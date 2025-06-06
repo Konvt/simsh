@@ -38,7 +38,7 @@ namespace simsh {
       }
     }
 
-    [[nodiscard]] bool create_file( types::StrView filename );
+    bool create_file( types::StrView filename );
 
     [[nodiscard]] types::StrView get_homedir();
 
@@ -50,10 +50,10 @@ namespace simsh {
                                                              types::StrView reg_str );
 
     /// @brief Finds the path to the given file in the path set.
-    [[nodiscard]] types::String search_filepath( std::span<const types::StrView> path_set,
-                                                 types::StrView filename );
     [[nodiscard]] types::String search_filepath( std::span<const types::String> path_set,
                                                  types::StrView filename );
+
+    bool rebind_fd( types::FileDesc old_fd, types::FileDesc new_fd ) noexcept;
   } // namespace utils
 
   namespace details {

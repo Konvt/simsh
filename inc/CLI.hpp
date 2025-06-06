@@ -12,10 +12,10 @@ namespace simsh {
   namespace cli {
     /// @brief The simplest implementation of the shell.
     class BaseCLI {
-      static std::atomic<bool> already_exist_; // A process can have only one shell
+      static std::atomic<bool> _already_exist; // A process can have only one shell
                                                // instance in a same scope.
 
-      struct sigaction old_action_;
+      struct sigaction _old_action;
 
     protected:
       Parser prsr_;
@@ -26,18 +26,18 @@ namespace simsh {
       /// created in the same scope.
       BaseCLI( Parser prsr ) : prsr_ { std::move( prsr ) }, interp_ {}
       {
-        if ( already_exist_ ) [[unlikely]]
+        if ( _already_exist ) [[unlikely]]
           throw error::RuntimeError( "BaseCLI: CLI already exists" );
         else
-          already_exist_ = true;
+          _already_exist = true;
 
-        sigaction( SIGINT, nullptr, &old_action_ ); // save the old signal action
+        sigaction( SIGINT, nullptr, &_old_action ); // save the old signal action
       }
       BaseCLI() : BaseCLI( Parser() ) {}
       virtual ~BaseCLI()
       {
-        sigaction( SIGINT, &old_action_, nullptr );
-        already_exist_ = false;
+        sigaction( SIGINT, &_old_action, nullptr );
+        _already_exist = false;
       };
 
       virtual int run();
@@ -46,11 +46,11 @@ namespace simsh {
     /// @brief A shell with prompt.
     class CLI : public BaseCLI {
 #define CLEAR_LINE "\x1b[1K\r"
-      static constexpr types::StrView default_fmt =
+      static constexpr types::StrView _default_fmt =
         CLEAR_LINE "\x1b[32;1m{}@{}\x1b[0m:\x1b[34;1m{}\x1b[0m$ ";
-      static constexpr types::StrView root_fmt = CLEAR_LINE "{}@{}:{}# ";
+      static constexpr types::StrView _root_fmt = CLEAR_LINE "{}@{}:{}# ";
 #undef CLEAR_LINE
-      static constexpr types::StrView welcome_mes =
+      static constexpr types::StrView _welcome_mes =
         "\n\x1b[36;1m"
         "      _               _     \n"
         "  ___(_)_ __ ___  ___| |__  \n"

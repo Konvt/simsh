@@ -48,10 +48,10 @@ namespace simsh {
 
     StmtNode* left() const& noexcept { return l_child_.get(); }
     StmtNode* right() const& noexcept { return r_child_.get(); }
-    [[nodiscard]] ChildNode left() && noexcept { return std::move( l_child_ ); }
-    [[nodiscard]] ChildNode right() && noexcept { return std::move( r_child_ ); }
+    [[nodiscard]] ChildNode&& left() && noexcept { return std::move( l_child_ ); }
+    [[nodiscard]] ChildNode&& right() && noexcept { return std::move( r_child_ ); }
     const SiblingNodes& siblings() const& noexcept { return siblings_; }
-    [[nodiscard]] SiblingNodes siblings() && noexcept { return std::move( siblings_ ); }
+    [[nodiscard]] SiblingNodes&& siblings() && noexcept { return std::move( siblings_ ); }
   };
 
   class ExprNode : public StmtNode {
@@ -73,10 +73,10 @@ namespace simsh {
                        "ExprNode: The parameter `data` does not match the type "
                        "annotation `expr_type`";
                      std::is_arithmetic_v<std::decay_t<T>> ) {
-        [[unlikely]] if ( expr_type != types::ExprKind::value )
+        if ( expr_type != types::ExprKind::value ) [[unlikely]]
           throw error::RuntimeError( error_mes );
       } else {
-        [[unlikely]] if ( expr_type == types::ExprKind::value )
+        if ( expr_type == types::ExprKind::value ) [[unlikely]]
           throw error::RuntimeError( error_mes );
       }
     }
@@ -85,7 +85,7 @@ namespace simsh {
     {}
     virtual ~ExprNode() = default;
 
-    [[nodiscard]] types::Token token() && { return std::move( std::get<types::Token>( expr_ ) ); }
+    [[nodiscard]] types::Token&& token() && { return std::move( std::get<types::Token>( expr_ ) ); }
     const types::Token& token() const& { return std::get<types::Token>( expr_ ); }
 
     /// @brief Replace the current token with the new token.

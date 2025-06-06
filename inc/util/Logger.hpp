@@ -23,18 +23,20 @@ namespace simsh {
       static Logger& inst() noexcept;
 
       [[nodiscard]] types::StrView prefix() const& noexcept { return prefix_; }
-      [[nodiscard]] types::String prefix() && noexcept { return std::move( prefix_ ); }
+      [[nodiscard]] types::String&& prefix() && noexcept { return std::move( prefix_ ); }
 
       /// @brief Set a string prefix that comes with each output, which defaults
       /// to empty.
       void set_prefix( types::String prefix );
 
-      /// @brief Print the exception information via `std::cerr`.
-      Logger& operator<<( const error::TraceBack& e );
-
       /// @brief Print the exception via `perror`.
-      Logger& print( const error::TraceBack& e );
+      const Logger& print( const error::TraceBack& e ) const;
+
+      friend const Logger& operator<<( const Logger& logr, const error::TraceBack& e );
     };
+
+    /// @brief Print the exception information via `std::cerr`.
+    const Logger& operator<<( const Logger& logr, const error::TraceBack& e );
 
     /// @brief Log output used to "consume" all exception types in the program,
     /// output to stderr.

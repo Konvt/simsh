@@ -8,7 +8,7 @@ using namespace std;
 namespace simsh {
   namespace utils {
     ForkGuard::ForkGuard( bool block_sig )
-      : process_id_ {}, subprocess_exit_code_ {}, old_set_ { nullptr }
+      : process_id_ {}, subp_ret_ {}, old_set_ { nullptr }
     {
       if ( block_sig ) {
         old_set_ = make_unique<sigset_t>();
@@ -26,7 +26,7 @@ namespace simsh {
 
     ForkGuard::ForkGuard( ForkGuard&& rhs )
       : process_id_ { rhs.process_id_ }
-      , subprocess_exit_code_ { move( rhs.subprocess_exit_code_ ) }
+      , subp_ret_ { move( rhs.subp_ret_ ) }
       , old_set_ { move( rhs.old_set_ ) }
     {
       sigemptyset( &new_set_ );
@@ -60,18 +60,18 @@ namespace simsh {
 
     void ForkGuard::wait()
     {
-      if ( is_parent() && !subprocess_exit_code_.has_value() ) {
+      if ( is_parent() && !subp_ret_.has_value() ) {
         ExitCode status {};
         if ( waitpid( process_id_, &status, 0 ) < 0 )
           throw error::SystemCallError( "waitpid" );
-        subprocess_exit_code_ = status;
+        subp_ret_ = status;
       }
     }
 
     optional<ForkGuard::ExitCode> ForkGuard::exit_code() const noexcept
     {
-      if ( is_parent() && subprocess_exit_code_.has_value() )
-        return { static_cast<ExitCode>( WEXITSTATUS( *subprocess_exit_code_ ) ) };
+      if ( is_parent() && subp_ret_.has_value() )
+        return { static_cast<ExitCode>( WEXITSTATUS( *subp_ret_ ) ) };
       return nullopt;
     }
 

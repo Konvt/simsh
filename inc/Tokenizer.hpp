@@ -12,7 +12,7 @@ namespace simsh {
     std::istream* input_stream_;
 
     bool received_eof_;
-    size_t line_pos_;
+    std::size_t line_pos_;
     types::String line_input_;
 
     void swap_members( LineBuffer&& rhs ) noexcept;
@@ -34,7 +34,7 @@ namespace simsh {
     LineBuffer& operator=( LineBuffer&& rhs ) noexcept;
 
     [[nodiscard]] bool eof() const { return received_eof_; }
-    [[nodiscard]] size_t line_pos() const noexcept { return line_pos_; }
+    [[nodiscard]] std::size_t line_pos() const noexcept { return line_pos_; }
 
     /// @brief Returns the current scanned string.
     [[nodiscard]] types::String context() const noexcept { return line_input_; }
@@ -52,7 +52,7 @@ namespace simsh {
 
     /// @brief Back `num_chars` characters, set to 0 if the line position is
     /// less than `num_chars`.
-    void backtrack( size_t num_chars ) noexcept;
+    void backtrack( std::size_t num_chars ) noexcept;
   };
 
   class Tokenizer {
@@ -80,7 +80,7 @@ namespace simsh {
     Tokenizer& operator=( Tokenizer&& rhs );
 
     [[nodiscard]] bool empty() const noexcept { return line_buf_.eof(); }
-    [[nodiscard]] size_t line_pos() const noexcept { return line_buf_.line_pos(); }
+    [[nodiscard]] std::size_t line_pos() const noexcept { return line_buf_.line_pos(); }
 
     /// @brief Returns the current scanned string.
     [[nodiscard]] types::String context() const noexcept { return line_buf_.context(); }
@@ -101,10 +101,10 @@ namespace simsh {
     /// @brief Reset the current line buffer with the new one.
     void reset( LineBuffer line_buf );
 
-    [[nodiscard]] LineBuffer line_buf() && noexcept { return std::move( line_buf_ ); }
+    [[nodiscard]] LineBuffer&& line_buf() && noexcept { return std::move( line_buf_ ); }
     const LineBuffer& line_buf() const& noexcept { return line_buf_; }
 
-    [[nodiscard]] std::optional<Token> token() && noexcept { return std::move( current_token_ ); }
+    [[nodiscard]] std::optional<Token>&& token() && noexcept { return std::move( current_token_ ); }
     const std::optional<Token>& token() const& noexcept { return current_token_; }
 
   private:

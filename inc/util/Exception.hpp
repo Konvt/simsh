@@ -25,7 +25,7 @@ namespace simsh {
     };
 
     class TokenError : public TraceBack {
-      TokenError( size_t line_pos, types::StrView context, types::StrView message )
+      TokenError( std::size_t line_pos, types::StrView context, types::StrView message )
         : TraceBack( "\n    " )
       {
         // Trim trailing whitespace from the string_view
@@ -41,7 +41,7 @@ namespace simsh {
       }
 
     public:
-      TokenError( size_t line_pos,
+      TokenError( std::size_t line_pos,
                   types::StrView context,
                   types::Char expect,
                   types::Char received )
@@ -51,7 +51,7 @@ namespace simsh {
                                    utils::format_char( expect ),
                                    utils::format_char( received ) ) )
       {}
-      TokenError( size_t line_pos,
+      TokenError( std::size_t line_pos,
                   types::StrView context,
                   types::StrView expecting,
                   types::Char received )
@@ -64,7 +64,7 @@ namespace simsh {
 
     class SyntaxError : public TraceBack {
     public:
-      SyntaxError( size_t line_pos,
+      SyntaxError( std::size_t line_pos,
                    types::StrView context,
                    types::TokenType expect,
                    types::TokenType found )

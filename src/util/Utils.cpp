@@ -1,4 +1,3 @@
-#include <util/Config.hpp>
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
@@ -10,6 +9,7 @@
 #include <pwd.h>
 #include <ranges>
 #include <unistd.h>
+#include <util/Config.hpp>
 #include <util/Utils.hpp>
 using namespace std;
 
@@ -73,7 +73,7 @@ namespace simsh {
     }
 
     types::String search_filepath( std::span<const types::String> path_set,
-                                    types::StrView filename )
+                                   types::StrView filename )
     {
       for ( const auto& env_path : path_set ) {
         try {
@@ -85,6 +85,11 @@ namespace simsh {
         }
       }
       return {};
+    }
+
+    bool rebind_fd( types::FileDesc old_fd, types::FileDesc new_fd ) noexcept
+    {
+      return dup2( old_fd, new_fd ) == -1;
     }
   } // namespace utils
 } // namespace simsh

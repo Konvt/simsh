@@ -6,6 +6,7 @@
 #include <util/Exception.hpp>
 #include <util/Logger.hpp>
 #include <util/Pipe.hpp>
+#include <util/Utils.hpp>
 using namespace std;
 
 int main( int argc, char** argv )
@@ -23,12 +24,10 @@ int main( int argc, char** argv )
     }
 
     simsh::utils::Pipe pipe;
-    dup2( pipe.reader().get(), STDIN_FILENO );
-    const auto args = "-c"sv == argv[1] ? span( argv + 2, argc - 2 ) : span( argv + 1, argc - 1 );
-    for ( const auto e : args ) {
-      pipe.writer().push( e );
-      pipe.writer().push( ' ' );
-    }
+    simsh::utils::rebind_fd( pipe.reader().get(), STDIN_FILENO );
+    ranges::for_each(
+      "-c"sv == argv[1] ? span( argv + 2, argc - 2 ) : span( argv + 1, argc - 1 ),
+      [&writer = pipe.writer()]( const auto e ) noexcept { writer.push( e ).push( ' ' ); } );
     pipe.writer().push( '\n' );
     pipe.writer().close();
     return simsh::cli::BaseCLI().run();
