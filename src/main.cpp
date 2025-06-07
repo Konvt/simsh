@@ -6,7 +6,7 @@
 #include <util/Exception.hpp>
 #include <util/Logger.hpp>
 #include <util/Pipe.hpp>
-#include <util/Utils.hpp>
+#include <util/Util.hpp>
 using namespace std;
 
 int main( int argc, char** argv )
@@ -23,8 +23,8 @@ int main( int argc, char** argv )
       return EXIT_FAILURE;
     }
 
-    tish::utils::Pipe pipe;
-    tish::utils::rebind_fd( pipe.reader().get(), STDIN_FILENO );
+    tish::util::Pipe pipe;
+    tish::util::rebind_fd( pipe.reader().get(), STDIN_FILENO );
     ranges::for_each(
       "-c"sv == argv[1] ? span( argv + 2, argc - 2 ) : span( argv + 1, argc - 1 ),
       [&writer = pipe.writer()]( const auto e ) noexcept { writer.push( e ).push( ' ' ); } );

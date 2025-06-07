@@ -9,8 +9,8 @@
 namespace tish {
   /// @brief Recursive descent parser.
   class Parser {
-    static constexpr types::StrView _pattern_redirection { R"(^(\d*)>{1,2}$)" };
-    static constexpr types::StrView _pattern_combined_redir { R"(^(\d*)>&(\d*)$)" };
+    static constexpr type::StrView _pattern_redirection { R"(^(\d*)>{1,2}$)" };
+    static constexpr type::StrView _pattern_combined_redir { R"(^(\d*)>&(\d*)$)" };
 
     using StmtNodePtr = std::unique_ptr<StmtNode>;
     using ExprNodePtr = std::unique_ptr<ExprNode>;
@@ -32,8 +32,8 @@ namespace tish {
 
   public:
     Parser();
-    Parser( LineBuffer line_buf ) : tknizr_ { std::move( line_buf ) } {}
-    Parser( Tokenizer tknizr ) : tknizr_ { std::move( tknizr ) } {}
+    Parser( LineBuffer&& line_buf ) : tknizr_ { std::move( line_buf ) } {}
+    Parser( Tokenizer&& tknizr ) : tknizr_ { std::move( tknizr ) } {}
     Parser( Parser&& rhs ) : tknizr_ { std::move( rhs.tknizr_ ) } {}
     ~Parser() = default;
     Parser& operator=( Parser&& rhs )
@@ -44,10 +44,10 @@ namespace tish {
     }
 
     /// @brief Reset the current line buffer with a new one.
-    void reset( LineBuffer line_buf ) { tknizr_.reset( std::move( line_buf ) ); }
+    void reset( LineBuffer&& line_buf ) { tknizr_.reset( std::move( line_buf ) ); }
 
     /// @brief Reset the current tokenizer with a new one.
-    void reset( Tokenizer tknizr ) { tknizr_ = std::move( tknizr ); }
+    void reset( Tokenizer&& tknizr ) { tknizr_ = std::move( tknizr ); }
 
     Tokenizer& tokenizer() noexcept { return tknizr_; }
     const Tokenizer& tokenizer() const noexcept { return tknizr_; }

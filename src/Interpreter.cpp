@@ -1,3 +1,4 @@
+#include <util/Config.hpp>
 #include <HelpDocument.hpp>
 #include <Interpreter.hpp>
 #include <cassert>
@@ -5,169 +6,185 @@
 #include <fcntl.h>
 #include <filesystem>
 #include <unistd.h>
-#include <util/Constants.hpp>
-#include <util/Enums.hpp>
+#include <util/Constant.hpp>
 #include <util/Exception.hpp>
 #include <util/ForkGuard.hpp>
 #include <util/Logger.hpp>
 #include <util/Pipe.hpp>
-#include <util/Utils.hpp>
+#include <util/Util.hpp>
 using namespace std;
 
 namespace tish {
-  const std::unordered_set<types::String> Interpreter::_built_in_cmds = { "cd",
-                                                                          "exit",
-                                                                          "help",
-                                                                          "type",
-                                                                          "exec" };
+  const std::unordered_set<type::String> Interpreter::_built_in_cmds = { "cd",
+                                                                         "exit",
+                                                                         "help",
+                                                                         "type",
+                                                                         "exec" };
 
-  types::Eval Interpreter::sequential_stmt( StmtNodeT seq_stmt ) const
+  Interpreter::EvalResult Interpreter::sequential_stmt( StmtNodeT seq_stmt ) const
   {
     assert( seq_stmt != nullptr );
     assert( seq_stmt->left() != nullptr );
     assert( seq_stmt->siblings().empty() == true );
 
-    if ( seq_stmt->right() == nullptr )
-      return interpret( seq_stmt->left() );
-    else {
-      interpret( seq_stmt->left() );
-      return interpret( seq_stmt->right() );
-    }
+    EvalResult ret;
+    ret.side_val_.push_back( evaluate( seq_stmt->left() ).value_ );
+    if ( seq_stmt->right() != nullptr )
+      ret.side_val_.push_back( evaluate( seq_stmt->right() ).value_ );
+    ret.value_ = ret.side_val_.back();
+    return ret;
   }
 
-  types::Eval Interpreter::logical_and( StmtNodeT and_stmt ) const
+  Interpreter::EvalResult Interpreter::logical_and( StmtNodeT and_stmt ) const
   {
     assert( and_stmt != nullptr );
     assert( and_stmt->left() != nullptr && and_stmt->right() != nullptr );
     assert( and_stmt->siblings().empty() == true );
 
-    return interpret( and_stmt->left() ) && interpret( and_stmt->right() );
+    auto ret = EvalResult( evaluate( and_stmt->left() ).value_ );
+    ret.side_val_.push_back( ret.value_ );
+    if ( ret ) {
+      ret.side_val_.push_back( evaluate( and_stmt->right() ).value_ );
+      ret.value_ = ret.value_ && ret.side_val_.back();
+    }
+    return ret;
   }
 
-  types::Eval Interpreter::logical_or( StmtNodeT or_stmt ) const
+  Interpreter::EvalResult Interpreter::logical_or( StmtNodeT or_stmt ) const
   {
     assert( or_stmt != nullptr );
     assert( or_stmt->left() != nullptr && or_stmt->right() != nullptr );
     assert( or_stmt->siblings().empty() == true );
 
-    return interpret( or_stmt->left() ) || interpret( or_stmt->right() );
+    auto ret = EvalResult( evaluate( or_stmt->left() ).value_ );
+    ret.side_val_.push_back( ret.value_ );
+    if ( !ret ) {
+      ret.side_val_.push_back( evaluate( or_stmt->right() ).value_ );
+      ret.value_ = ret.value_ || ret.side_val_.back();
+    }
+    return ret;
   }
 
-  types::Eval Interpreter::logical_not( StmtNodeT not_stmt ) const
+  Interpreter::EvalResult Interpreter::logical_not( StmtNodeT not_stmt ) const
   {
     assert( not_stmt != nullptr );
 
     assert( not_stmt->left() != nullptr && not_stmt->right() == nullptr );
     assert( not_stmt->siblings().empty() == true );
 
-    return !interpret( not_stmt->left() );
+    EvalResult ret;
+    ret.side_val_.push_back( evaluate( not_stmt->left() ).value_ );
+    ret.value_ = !ret.side_val_.back();
+    return ret;
   }
 
-  types::Eval Interpreter::pipeline_stmt( StmtNodeT pipeline_stmt ) const
+  Interpreter::EvalResult Interpreter::pipeline_stmt( StmtNodeT pipeline_stmt ) const
   {
     assert( pipeline_stmt != nullptr );
     assert( pipeline_stmt->left() != nullptr && pipeline_stmt->right() != nullptr );
     assert( pipeline_stmt->siblings().empty() == true );
 
-    utils::Pipe pipe;
-    utils::disable_blocking( pipe.reader().get() );
+    util::Pipe pipe;
+    util::disable_blocking( pipe.reader().get() );
 
+    EvalResult ret;
     for ( size_t i = 0; i < 2; ++i ) {
-      utils::ForkGuard pguard;
+      util::ForkGuard pguard;
       if ( pguard.is_child() ) {
         // child process
         if ( i == 0 ) {
           pipe.reader().close();
-          utils::rebind_fd( pipe.writer().get(), STDOUT_FILENO );
-          interpret( pipeline_stmt->left() );
+          util::rebind_fd( pipe.writer().get(), STDOUT_FILENO );
+          evaluate( pipeline_stmt->left() );
         } else {
           pipe.writer().close();
-          utils::rebind_fd( pipe.reader().get(), STDIN_FILENO );
-          interpret( pipeline_stmt->right() );
+          util::rebind_fd( pipe.reader().get(), STDIN_FILENO );
+          evaluate( pipeline_stmt->right() );
         }
         throw error::TerminationSignal( EXIT_FAILURE );
       }
       pguard.wait();
-      pipe.writer().close();
+      ret.side_val_.push_back( pguard.exit_code().value() );
     }
 
-    return constants::EvalSuccess;
+    ret.value_ =
+      ret.side_val_.front() == EvalResult::success ? ret.side_val_.back() : ret.side_val_.front();
+    return ret;
   }
 
-  types::Eval Interpreter::output_redirection( StmtNodeT oup_redr ) const
+  Interpreter::EvalResult Interpreter::output_redirection( StmtNodeT oup_redr ) const
   {
     assert( oup_redr != nullptr );
 
     assert( oup_redr->right() == nullptr );
     assert( oup_redr->siblings().empty() == false );
-    assert( oup_redr->siblings().front()->type() == types::StmtKind::trivial );
+    assert( oup_redr->siblings().front()->type() == StmtNode::StmtKind::atom );
 
     assert( static_cast<const ExprNode*>(
               oup_redr
-                ->siblings()[oup_redr->type() == types::StmtKind::appnd_redrct
-                                 || oup_redr->type() == types::StmtKind::ovrwrit_redrct
+                ->siblings()[oup_redr->type() == StmtNode::StmtKind::appnd_redrct
+                                 || oup_redr->type() == StmtNode::StmtKind::ovrwrit_redrct
                                ? 1
                                : 0]
                 .get() )
               ->kind()
-            != types::ExprKind::value );
+            != ExprNode::ExprKind::value );
 
     const auto& filename =
       static_cast<const ExprNode*>(
         oup_redr
-          ->siblings()[oup_redr->type() == types::StmtKind::appnd_redrct
-                           || oup_redr->type() == types::StmtKind::ovrwrit_redrct
+          ->siblings()[oup_redr->type() == StmtNode::StmtKind::appnd_redrct
+                           || oup_redr->type() == StmtNode::StmtKind::ovrwrit_redrct
                          ? 1
                          : 0]
           .get() )
         ->token();
 
     // Check whether the file descriptor can be obtained.
-    if ( !filesystem::exists( filename ) && !utils::create_file( filename ) ) {
-      iout::logger.print( error::SystemCallError( filename ) );
-      return !constants::EvalSuccess;
+    if ( !filesystem::exists( filename ) && !util::create_file( filename ) ) {
+      iout::logger.print( error::SystemCallError( type::String( filename ) ) );
+      return { EvalResult::abort };
     } else if ( const auto perms = filesystem::status( filename ).permissions();
                 ( perms & filesystem::perms::owner_write )
                 == filesystem::perms::none ) { // not writable
-      iout::logger.print( error::SystemCallError( filename ) );
-      return !constants::EvalSuccess;
+      iout::logger.print( error::SystemCallError( type::String( filename ) ) );
+      return { EvalResult::abort };
     }
 
-    /* For `types::StmtKind::appnd_redrct` and `types::StmtKind::ovrwrit_redrct`
+    /* For `StmtNode::StmtKind::appnd_redrct` and `StmtNode::StmtKind::ovrwrit_redrct`
      * node, the first element of `merg_redr->siblings()` is `ExprNode` of type
-     * `types::ExprKind::value`, which specifies the destination file
-     * descriptor.
-     */
-    types::FileDesc file_d = STDOUT_FILENO;
-    if ( oup_redr->type() == types::StmtKind::appnd_redrct
-         || oup_redr->type() == types::StmtKind::ovrwrit_redrct ) {
+     * `ExprNode::ExprKind::value`, which specifies the destination file
+     * descriptor. */
+    type::FileDesc file_d = STDOUT_FILENO;
+    if ( oup_redr->type() == StmtNode::StmtKind::appnd_redrct
+         || oup_redr->type() == StmtNode::StmtKind::ovrwrit_redrct ) {
       ExprNodeT arg_node = static_cast<ExprNode*>( oup_redr->siblings().front().get() );
 
-      assert( arg_node->kind() == types::ExprKind::value );
+      assert( arg_node->kind() == ExprNode::ExprKind::value );
 
-      file_d = arg_node->value() == constants::InvalidValue ? STDOUT_FILENO : arg_node->value();
+      file_d = arg_node->value() == constant::invalid_value ? STDOUT_FILENO : arg_node->value();
     }
 
-    utils::ForkGuard pguard;
+    util::ForkGuard pguard;
     if ( pguard.is_child() ) {
       auto target_fd = open( filename.c_str(),
                              O_WRONLY
-                               | ( oup_redr->type() == types::StmtKind::appnd_redrct
-                                       || oup_redr->type() == types::StmtKind::merge_appnd
+                               | ( oup_redr->type() == StmtNode::StmtKind::appnd_redrct
+                                       || oup_redr->type() == StmtNode::StmtKind::merge_appnd
                                      ? O_APPEND
                                      : O_TRUNC ) );
 
-      utils::rebind_fd( target_fd, file_d );
-      if ( oup_redr->type() == types::StmtKind::merge_output
-           || oup_redr->type() == types::StmtKind::merge_appnd ) {
+      util::rebind_fd( target_fd, file_d );
+      if ( oup_redr->type() == StmtNode::StmtKind::merge_output
+           || oup_redr->type() == StmtNode::StmtKind::merge_appnd ) {
         if ( file_d != STDOUT_FILENO )
-          utils::rebind_fd( target_fd, STDOUT_FILENO );
+          util::rebind_fd( target_fd, STDOUT_FILENO );
         if ( file_d != STDERR_FILENO )
-          utils::rebind_fd( target_fd, STDERR_FILENO );
+          util::rebind_fd( target_fd, STDERR_FILENO );
       }
 
       if ( oup_redr->left() != nullptr ) {
-        interpret( oup_redr->left() );
+        evaluate( oup_redr->left() );
         close( target_fd );
         throw error::TerminationSignal( EXIT_FAILURE );
       } else {
@@ -179,162 +196,162 @@ namespace tish {
 
     assert( pguard.exit_code().has_value() );
 
-    if ( oup_redr->left() != nullptr && oup_redr->left()->type() == types::StmtKind::trivial )
-      return pguard.exit_code() == constants::ExecSuccess;
-    else
-      return pguard.exit_code().value();
+    auto ret = EvalResult( pguard.exit_code().value() );
+    if ( oup_redr->left() == nullptr || oup_redr->left()->type() != StmtNode::StmtKind::atom )
+      ret.side_val_.push_back( ret.value_ ); // Exists a subexpression
+    return ret;
   }
 
-  types::Eval Interpreter::merge_stream( StmtNodeT merg_redr ) const
+  Interpreter::EvalResult Interpreter::merge_stream( StmtNodeT merg_redr ) const
   {
     assert( merg_redr != nullptr );
 
     assert( merg_redr->left() != nullptr && merg_redr->right() == nullptr );
     assert( merg_redr->siblings().size() == 2 );
-    assert( merg_redr->siblings()[0]->type() == types::StmtKind::trivial
-            && merg_redr->siblings()[1]->type() == types::StmtKind::trivial );
+    assert( merg_redr->siblings()[0]->type() == StmtNode::StmtKind::atom
+            && merg_redr->siblings()[1]->type() == StmtNode::StmtKind::atom );
 
-    /* For `types::StmtKind::merge_stream` node,
+    /* For `StmtNode::StmtKind::merge_stream` node,
      * the first and second elements of `merg_redr->siblings()` is `ExprNode` of
-     * type `types::ExprKind::value`, which specifies the destination file descriptor. */
+     * type `ExprNode::ExprKind::value`, which specifies the destination file descriptor. */
     ExprNodeT arg_node1 = static_cast<ExprNode*>( merg_redr->siblings()[0].get() );
     ExprNodeT arg_node2 = static_cast<ExprNode*>( merg_redr->siblings()[1].get() );
 
-    assert( arg_node1->kind() == types::ExprKind::value );
-    assert( arg_node2->kind() == types::ExprKind::value );
+    assert( arg_node1->kind() == ExprNode::ExprKind::value );
+    assert( arg_node2->kind() == ExprNode::ExprKind::value );
 
     const auto l_fd =
-      arg_node1->value() == constants::InvalidValue ? STDERR_FILENO : arg_node1->value();
+      arg_node1->value() == constant::invalid_value ? STDERR_FILENO : arg_node1->value();
     const auto r_fd =
-      arg_node2->value() == constants::InvalidValue ? STDOUT_FILENO : arg_node2->value();
+      arg_node2->value() == constant::invalid_value ? STDOUT_FILENO : arg_node2->value();
 
-    utils::ForkGuard pguard;
+    util::ForkGuard pguard;
     if ( pguard.is_child() ) {
-      utils::rebind_fd( r_fd, l_fd );
+      util::rebind_fd( r_fd, l_fd );
 
-      interpret( merg_redr->left() );
+      evaluate( merg_redr->left() );
       throw error::TerminationSignal( EXIT_FAILURE );
     }
     pguard.wait();
 
     assert( pguard.exit_code().has_value() );
 
-    if ( merg_redr->left()->type() == types::StmtKind::trivial )
-      return pguard.exit_code() == constants::ExecSuccess;
-    else
-      return pguard.exit_code().value();
+    auto ret = EvalResult( pguard.exit_code().value() );
+    if ( merg_redr->left()->type() != StmtNode::StmtKind::atom )
+      ret.side_val_.push_back( ret.value_ );
+    return ret;
   }
 
-  types::Eval Interpreter::input_redirection( StmtNodeT inp_redr ) const
+  Interpreter::EvalResult Interpreter::input_redirection( StmtNodeT inp_redr ) const
   {
     assert( inp_redr != nullptr );
     assert( inp_redr->left() != nullptr && inp_redr->right() == nullptr );
     assert( inp_redr->siblings().empty() == false );
-    assert( inp_redr->siblings().front()->type() == types::StmtKind::trivial );
+    assert( inp_redr->siblings().front()->type() == StmtNode::StmtKind::atom );
 
     if ( inp_redr->siblings().size() != 1 ) {
       iout::logger << error::ArgumentError( "input redirection"sv, "argument number error"sv );
-      return !constants::EvalSuccess;
+      return { EvalResult::abort };
     }
 
     const auto& filename =
       static_cast<const ExprNode*>( inp_redr->siblings().front().get() )->token();
     if ( !filesystem::exists( filename ) ) {
-      iout::logger.print( error::SystemCallError( filename ) );
-      return !constants::EvalSuccess;
+      iout::logger.print( error::SystemCallError( type::String( filename ) ) );
+      return { EvalResult::abort };
     } else if ( const auto perms = filesystem::status( filename ).permissions();
                 ( perms & filesystem::perms::owner_read )
                 == filesystem::perms::none ) { // not readable
-      iout::logger.print( error::SystemCallError( filename ) );
-      return !constants::EvalSuccess;
+      iout::logger.print( error::SystemCallError( type::String( filename ) ) );
+      return { EvalResult::abort };
     }
 
-    utils::ForkGuard pguard;
+    util::ForkGuard pguard;
     if ( pguard.is_child() ) {
       auto target_fd = open( filename.c_str(), O_RDONLY );
-      utils::rebind_fd( target_fd, STDIN_FILENO );
+      util::rebind_fd( target_fd, STDIN_FILENO );
 
-      interpret( inp_redr->left() );
+      evaluate( inp_redr->left() );
 
       close( target_fd );
       throw error::TerminationSignal( EXIT_FAILURE );
     }
     pguard.wait();
-
-    return pguard.exit_code() == constants::ExecSuccess;
+    return { pguard.exit_code().value() };
   }
 
-  types::Eval Interpreter::trivial( ExprNodeT expr ) const
+  Interpreter::EvalResult Interpreter::atom( ExprNodeT expr ) const
   {
     assert( expr != nullptr );
 
     assert( expr->left() == nullptr && expr->right() == nullptr );
-    assert( expr->type() == types::StmtKind::trivial );
+    assert( expr->type() == StmtNode::StmtKind::atom );
 
     const auto cmd_expand = []( ExprNodeT node ) -> void {
-      if ( node->kind() == types::ExprKind::value )
+      if ( node->kind() == ExprNode::ExprKind::value )
         return;
       else if ( node->token() == "$$"sv )
         node->replace_with( format( "{}", getpid() ) );
       else if ( node->token() == "$TISH_VERSION"sv )
         node->replace_with( TISH_VERSION );
-      else if ( node->kind() == types::ExprKind::command ) {
-        if ( auto new_token = utils::tilde_expansion( node->token() ); !new_token.empty() )
+      else if ( node->kind() == ExprNode::ExprKind::command ) {
+        if ( auto new_token = util::tilde_expansion( node->token() ); !new_token.empty() )
           node->replace_with( move( new_token ) );
       }
     };
 
     cmd_expand( expr );
     for ( auto& sblng : expr->siblings() ) {
-      assert( sblng->type() == types::StmtKind::trivial );
+      assert( sblng->type() == StmtNode::StmtKind::atom );
 
       const auto node = static_cast<ExprNode*>( sblng.get() );
-      assert( node->kind() != types::ExprKind::value );
+      assert( node->kind() != ExprNode::ExprKind::value );
       cmd_expand( node );
     }
 
-    if ( expr->kind() == types::ExprKind::value )
-      return expr->value();
+    if ( expr->kind() == ExprNode::ExprKind::value )
+      return { expr->value() };
     else if ( _built_in_cmds.contains( expr->token() ) )
       return builtin_exec( expr );
     else
       return external_exec( expr );
   }
 
-  types::Eval Interpreter::builtin_exec( ExprNodeT expr ) const
+  Interpreter::EvalResult Interpreter::builtin_exec( ExprNodeT expr ) const
   {
     assert( expr != nullptr );
-    assert( expr->kind() != types::ExprKind::value );
+    assert( expr->kind() != ExprNode::ExprKind::value );
 
+    EvalResult ret;
     switch ( expr->token().front() ) {
     case 'c': { // cd
       if ( expr->siblings().size() > 1 ) {
         iout::logger << error::ArgumentError( "cd"sv, "the number of arguments error"sv );
-        return !constants::EvalSuccess;
+        return { EvalResult::abort };
       }
 
       assert( static_cast<const ExprNode*>( expr->siblings().front().get() )->kind()
-              != types::ExprKind::value );
+              != ExprNode::ExprKind::value );
 
-      types::StrView target_dir =
+      type::StrView target_dir =
         expr->siblings().size() == 0
-          ? utils::get_homedir()
+          ? util::get_homedir()
           : static_cast<const ExprNode*>( expr->siblings().front().get() )->token();
 
       try {
         filesystem::current_path( target_dir );
       } catch ( const filesystem::filesystem_error& e ) {
         iout::logger.print( error::SystemCallError( format( "cd: {}", target_dir.data() ) ) );
-        return !constants::EvalSuccess;
+        return { EvalResult::abort };
       }
-      return constants::EvalSuccess;
+      return { EvalResult::success };
     } break;
 
     case 'e': { // exit or exec
       if ( expr->token() == "exit" ) {
         if ( !expr->siblings().empty() ) {
           iout::logger << error::ArgumentError( "exit"sv, "the number of arguments error"sv );
-          return !constants::EvalSuccess;
+          return { EvalResult::abort };
         }
         throw error::TerminationSignal( EXIT_SUCCESS );
       } else if ( !expr->siblings().empty() ) {
@@ -345,9 +362,9 @@ namespace tish {
         ranges::transform( expr->siblings(),
                            back_inserter( exec_argv ),
                            []( const auto& sblng ) -> char* {
-                             assert( sblng->type() == types::StmtKind::trivial );
+                             assert( sblng->type() == StmtNode::StmtKind::atom );
                              ExprNodeT arg_node = static_cast<ExprNode*>( sblng.get() );
-                             assert( arg_node->kind() != types::ExprKind::value );
+                             assert( arg_node->kind() != ExprNode::ExprKind::value );
 
                              return const_cast<char*>( arg_node->token().data() );
                            } );
@@ -359,32 +376,32 @@ namespace tish {
         iout::logger << error::ArgumentError(
           "exec",
           format( "{}: command not found", error_info->token() ) );
-        return !constants::ExecSuccess;
+        return { EvalResult::abort };
       }
     } break;
 
     case 'h': { // help
       if ( !expr->siblings().empty() ) {
         iout::logger << error::ArgumentError( "help"sv, "the number of arguments error"sv );
-        return !constants::EvalSuccess;
+        return { EvalResult::abort };
       }
-      iout::prmptr << utils::help_doc();
+      iout::prmptr << util::help_doc();
     } break;
 
     case 't': { // type
       if ( expr->siblings().empty() )
-        return !constants::EvalSuccess;
+        return { EvalResult::abort };
 
       for ( const auto& sblng : expr->siblings() ) {
-        assert( sblng->type() == types::StmtKind::trivial );
+        assert( sblng->type() == StmtNode::StmtKind::atom );
 
         ExprNodeT arg_node = static_cast<ExprNode*>( sblng.get() );
-        assert( arg_node->kind() != types::ExprKind::value );
+        assert( arg_node->kind() != ExprNode::ExprKind::value );
 
         if ( _built_in_cmds.contains( arg_node->token() ) )
           iout::prmptr << format( "{} is a builtin\n", arg_node->token() );
         else if ( const auto filepath =
-                    utils::search_filepath( utils::get_envpath(), arg_node->token() );
+                    util::search_filepath( util::get_envpath(), arg_node->token() );
                   filepath.empty() )
           iout::logger << error::ArgumentError(
             "type"sv,
@@ -396,17 +413,17 @@ namespace tish {
     default: assert( false ); break;
     }
 
-    return constants::EvalSuccess;
+    return { EvalResult::success };
   }
 
-  types::Eval Interpreter::external_exec( ExprNodeT expr ) const
+  Interpreter::EvalResult Interpreter::external_exec( ExprNodeT expr ) const
   {
     assert( expr != nullptr );
 
-    utils::Pipe pipe;
-    utils::disable_blocking( pipe.reader().get() );
+    util::Pipe pipe;
+    util::disable_blocking( pipe.reader().get() );
 
-    utils::ForkGuard pguard;
+    util::ForkGuard pguard;
     if ( pguard.is_child() ) {
       // child process
       vector<char*> exec_argv { const_cast<char*>( expr->token().data() ) };
@@ -414,9 +431,9 @@ namespace tish {
       ranges::transform( expr->siblings(),
                          back_inserter( exec_argv ),
                          []( const auto& sblng ) -> char* {
-                           assert( sblng->type() == types::StmtKind::trivial );
+                           assert( sblng->type() == StmtNode::StmtKind::atom );
                            ExprNodeT arg_node = static_cast<ExprNode*>( sblng.get() );
-                           assert( arg_node->kind() != types::ExprKind::value );
+                           assert( arg_node->kind() != ExprNode::ExprKind::value );
 
                            return const_cast<char*>( arg_node->token().data() );
                          } );
@@ -427,56 +444,56 @@ namespace tish {
 
       pipe.writer().push( true );
       // Ensure that all scoped objects are destructed normally.
-      // In particular the object `utils::Pipe` above.
-      throw error::TerminationSignal( constants::ExecFailureExit );
+      // In particular the object `util::Pipe` above.
+      throw error::TerminationSignal( EvalResult::abort );
     } else {
       pguard.wait();
       if ( pipe.reader().pop<bool>() )
         iout::logger << error::ArgumentError( expr->token(), "command not found" );
 
-      return pguard.exit_code() == constants::ExecSuccess;
+      return { pguard.exit_code().value() };
     }
   }
 
-  types::Eval Interpreter::interpret( StmtNodeT stmt_node ) const
+  Interpreter::EvalResult Interpreter::evaluate( StmtNodeT stmt_node ) const
   {
     if ( stmt_node == nullptr )
       throw error::ArgumentError( "interpreter", "syntax tree node is null" );
 
     switch ( stmt_node->type() ) {
-    case types::StmtKind::sequential: {
+    case StmtNode::StmtKind::sequential: {
       return sequential_stmt( stmt_node );
     }
-    case types::StmtKind::logical_and: {
+    case StmtNode::StmtKind::logical_and: {
       return logical_and( stmt_node );
     }
-    case types::StmtKind::logical_or: {
+    case StmtNode::StmtKind::logical_or: {
       return logical_or( stmt_node );
     }
-    case types::StmtKind::logical_not: {
+    case StmtNode::StmtKind::logical_not: {
       return logical_not( stmt_node );
     }
-    case types::StmtKind::pipeline: {
+    case StmtNode::StmtKind::pipeline: {
       return pipeline_stmt( stmt_node );
     }
-    case types::StmtKind::appnd_redrct:   [[fallthrough]];
-    case types::StmtKind::ovrwrit_redrct: [[fallthrough]];
-    case types::StmtKind::merge_output:   [[fallthrough]];
-    case types::StmtKind::merge_appnd:    {
+    case StmtNode::StmtKind::appnd_redrct:   [[fallthrough]];
+    case StmtNode::StmtKind::ovrwrit_redrct: [[fallthrough]];
+    case StmtNode::StmtKind::merge_output:   [[fallthrough]];
+    case StmtNode::StmtKind::merge_appnd:    {
       return output_redirection( stmt_node );
     }
-    case types::StmtKind::merge_stream: {
+    case StmtNode::StmtKind::merge_stream: {
       return merge_stream( stmt_node );
     }
-    case types::StmtKind::stdin_redrct: {
+    case StmtNode::StmtKind::stdin_redrct: {
       return input_redirection( stmt_node );
     }
-    case types::StmtKind::trivial: {
-      return trivial( static_cast<ExprNode*>( stmt_node ) );
+    case StmtNode::StmtKind::atom: {
+      return atom( static_cast<ExprNode*>( stmt_node ) );
     }
     default: assert( false ); break;
     }
 
-    return !constants::EvalSuccess;
+    return {};
   }
 } // namespace tish

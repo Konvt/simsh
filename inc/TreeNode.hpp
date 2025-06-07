@@ -3,7 +3,6 @@
 
 #include <memory>
 #include <util/Config.hpp>
-#include <util/Enums.hpp>
 #include <util/Exception.hpp>
 #include <variant>
 #include <vector>
@@ -11,11 +10,25 @@
 namespace tish {
   class StmtNode {
   public:
+    enum class StmtKind : uint8_t {
+      atom,
+      sequential,
+      logical_and,
+      logical_or,
+      logical_not,
+      pipeline,
+      ovrwrit_redrct,
+      appnd_redrct, // >, >>
+      merge_output,
+      merge_appnd,
+      merge_stream, // &>, &>>, >&
+      stdin_redrct
+    };
     using ChildNode    = std::unique_ptr<StmtNode>;
     using SiblingNodes = std::vector<ChildNode>;
 
   protected:
-    types::StmtKind category_;
+    StmtKind category_;
     ChildNode l_child_, r_child_;
     /* Any additional arguments are stored in siblings node.
      * Currently the arguments can only be saved as an unique_ptr pointing to
@@ -23,7 +36,7 @@ namespace tish {
     SiblingNodes siblings_;
 
   public:
-    StmtNode( types::StmtKind stmt_type,
+    StmtNode( StmtKind stmt_type,
               ChildNode left_stmt   = nullptr,
               ChildNode right_stmt  = nullptr,
               SiblingNodes siblings = {} )
@@ -32,7 +45,7 @@ namespace tish {
       , r_child_ { std::move( right_stmt ) }
       , siblings_ { std::move( siblings ) }
     {}
-    StmtNode( types::StmtKind stmt_type, SiblingNodes siblings ) : StmtNode( stmt_type )
+    StmtNode( StmtKind stmt_type, SiblingNodes siblings ) : StmtNode( stmt_type )
     {
       siblings_ = std::move( siblings );
     }
@@ -44,7 +57,7 @@ namespace tish {
     {}
     virtual ~StmtNode() = default;
 
-    [[nodiscard]] types::StmtKind type() const noexcept { return category_; }
+    [[nodiscard]] StmtKind type() const noexcept { return category_; }
 
     StmtNode* left() const& noexcept { return l_child_.get(); }
     StmtNode* right() const& noexcept { return r_child_.get(); }
@@ -55,17 +68,21 @@ namespace tish {
   };
 
   class ExprNode : public StmtNode {
-    types::ExprKind type_;
-    std::variant<types::Eval, types::Token> expr_;
+  public:
+    enum class ExprKind : uint8_t { command, string, value };
+
+  private:
+    ExprKind type_;
+    std::variant<type::Eval, type::String> expr_;
 
   public:
     /// @throw error::RuntimeError If the type of `data` does not match the
     /// value of `expr_type`.
     template<typename T>
       requires std::disjunction_v<std::is_arithmetic<std::decay_t<T>>,
-                                  std::is_same<std::decay_t<T>, types::Token>>
-    ExprNode( types::ExprKind expr_type, T&& data, SiblingNodes siblings = {} )
-      : StmtNode( types::StmtKind::trivial, std::move( siblings ) )
+                                  std::is_same<std::decay_t<T>, type::String>>
+    ExprNode( ExprKind expr_type, T&& data, SiblingNodes siblings = {} )
+      : StmtNode( StmtKind::atom, std::move( siblings ) )
       , type_ { expr_type }
       , expr_ { std::forward<T>( data ) }
     {
@@ -73,10 +90,10 @@ namespace tish {
                        "ExprNode: The parameter `data` does not match the type "
                        "annotation `expr_type`";
                      std::is_arithmetic_v<std::decay_t<T>> ) {
-        if ( expr_type != types::ExprKind::value ) [[unlikely]]
+        if ( expr_type != ExprKind::value ) [[unlikely]]
           throw error::RuntimeError( error_mes );
       } else {
-        if ( expr_type == types::ExprKind::value ) [[unlikely]]
+        if ( expr_type == ExprKind::value ) [[unlikely]]
           throw error::RuntimeError( error_mes );
       }
     }
@@ -85,18 +102,18 @@ namespace tish {
     {}
     virtual ~ExprNode() = default;
 
-    [[nodiscard]] types::Token&& token() && { return std::move( std::get<types::Token>( expr_ ) ); }
-    const types::Token& token() const& { return std::get<types::Token>( expr_ ); }
+    [[nodiscard]] type::String&& token() && { return std::move( std::get<type::String>( expr_ ) ); }
+    const type::String& token() const& { return std::get<type::String>( expr_ ); }
 
     /// @brief Replace the current token with the new token.
-    void replace_with( types::Token token )
+    void replace_with( type::String token )
     {
-      std::get<types::Token>( expr_ ) = std::move( token );
+      std::get<type::String>( expr_ ) = std::move( token );
     }
 
-    [[nodiscard]] types::Eval value() const { return std::get<types::Eval>( expr_ ); }
+    [[nodiscard]] type::Eval value() const { return std::get<type::Eval>( expr_ ); }
 
-    [[nodiscard]] types::ExprKind kind() const noexcept { return type_; }
+    [[nodiscard]] ExprKind kind() const noexcept { return type_; }
   };
 } // namespace tish
 

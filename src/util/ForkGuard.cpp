@@ -6,7 +6,7 @@
 using namespace std;
 
 namespace tish {
-  namespace utils {
+  namespace util {
     ForkGuard::ForkGuard( bool block_sig ) : process_id_ {}, subp_ret_ {}, old_set_ { nullptr }
     {
       if ( block_sig ) {
@@ -82,5 +82,5 @@ namespace tish {
         signal( SIGINT, SIG_DFL );
       }
     }
-  } // namespace utils
+  } // namespace util
 } // namespace tish

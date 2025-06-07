@@ -21,7 +21,7 @@ namespace tish {
       return logr;
     }
 
-    void Logger::set_prefix( types::String prefix )
+    void Logger::set_prefix( type::String prefix )
     {
       prefix_ = move( prefix );
     }

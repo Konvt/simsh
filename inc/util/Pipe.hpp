@@ -20,17 +20,17 @@ namespace tish {
     };
   } // namespace details
 
-  namespace utils {
+  namespace util {
     class PipeReader;
     class PipeWriter;
 
     /// @brief Anonymous pipes.
     class Pipe {
     protected:
-      static constexpr types::FileDesc _reader_fd = 0;
-      static constexpr types::FileDesc _writer_fd = 1;
+      static constexpr type::FileDesc _reader_fd = 0;
+      static constexpr type::FileDesc _writer_fd = 1;
 
-      std::array<types::FileDesc, 2> pipefd_;
+      std::array<type::FileDesc, 2> pipefd_;
       bool reader_closed_, writer_closed_;
 
     public:
@@ -58,7 +58,7 @@ namespace tish {
       PipeReader& operator=( const PipeReader& ) = delete;
 
       void close();
-      [[nodiscard]] types::FileDesc get() const;
+      [[nodiscard]] type::FileDesc get() const;
 
       template<typename T>
         requires is_valid_type_v<T>
@@ -87,7 +87,7 @@ namespace tish {
       PipeWriter& operator=( const PipeReader& ) = delete;
 
       void close();
-      [[nodiscard]] types::FileDesc get() const;
+      [[nodiscard]] type::FileDesc get() const;
 
       /// @brief for any type that isn't a pointer
       template<typename T>
@@ -110,7 +110,7 @@ namespace tish {
         return *this;
       }
 
-      /// @brief only for pointer types or dynamic arrays
+      /// @brief only for pointer type or dynamic arrays
       template<typename T>
         requires( std::is_trivially_copyable_v<std::remove_cvref_t<T>>
                   && !std::is_same_v<std::decay_t<T>, char*>
@@ -152,8 +152,8 @@ namespace tish {
 
     /// @brief Disable blocking behavior when reading from the specified file
     /// descriptor.
-    bool disable_blocking( types::FileDesc fd );
-  } // namespace utils
+    bool disable_blocking( type::FileDesc fd );
+  } // namespace util
 } // namespace tish
 
 #endif // TISH_PIPES

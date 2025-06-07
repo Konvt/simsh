@@ -4,8 +4,8 @@
 #include <util/Config.hpp>
 
 namespace tish {
-  namespace utils {
-    inline types::StrView help_doc()
+  namespace util {
+    inline type::StrView help_doc()
     {
       return { "Single statement:\n\tcommand\n\tcommand;\n"
                "Connect statement:\n\tcommand1 [&& | || | ;] command2\n"

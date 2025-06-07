@@ -5,9 +5,10 @@
 #include <format>
 #include <pwd.h>
 #include <unistd.h>
+#include <util/Config.hpp>
 #include <util/Exception.hpp>
 #include <util/Logger.hpp>
-#include <util/Utils.hpp>
+#include <util/Util.hpp>
 using namespace std;
 
 namespace tish {
@@ -32,7 +33,7 @@ namespace tish {
 
       while ( !prsr_.empty() ) {
         try {
-          interp_( prsr_.parse().get() );
+          interp_.evaluate( prsr_.parse().get() );
         } catch ( const error::SystemCallError& e ) {
           iout::logger.print( e );
         } catch ( const error::TerminationSignal& e ) {
@@ -49,15 +50,25 @@ namespace tish {
       if ( current_dir_.size() >= home_dir_.size()
            && current_dir_.compare( 0, home_dir_.size(), home_dir_ ) == 0 )
         current_dir_.replace( 0, home_dir_.size(), "~" );
+      type::String error_info;
+      if ( last_result_.has_value() && !last_result_.value() ) {
+        error_info = last_result_->side_val_.size() < 2
+                     ? format( FG_RED "[" BOLD_TXT "{}" RESETSTYLE FG_RED "]" RESETSTYLE,
+                               last_result_->value_ )
+                     : format( FG_RED "[" BOLD_TXT "{}|{}" RESETSTYLE FG_RED "]" RESETSTYLE,
+                               last_result_->side_val_.front(),
+                               last_result_->side_val_.back() );
+        last_result_.reset();
+      }
       if ( user_name_ == "root" )
-        prompt_ = format( _root_fmt, user_name_, host_name_, current_dir_ );
+        prompt_ = format( _root_fmt, user_name_, host_name_, current_dir_, error_info );
       else
-        prompt_ = format( _default_fmt, user_name_, host_name_, current_dir_ );
+        prompt_ = format( _default_fmt, user_name_, host_name_, current_dir_, error_info );
     }
 
     void CLI::detect_info()
     {
-      bool info_updated = false;
+      bool info_updated = last_result_.has_value() && !last_result_.value();
 
       const passwd* const pw = getpwuid( getuid() );
       if ( user_name_ != pw->pw_name ) {
@@ -86,7 +97,7 @@ namespace tish {
     int CLI::run()
     {
       auto wrapper =
-        utils::make_fnptr<std::remove_pointer_t<sighandler_t>>( [this]( int signum ) noexcept {
+        util::make_fnptr<std::remove_pointer_t<sighandler_t>>( [this]( int signum ) noexcept {
           [[maybe_unused]] auto _ = signum;
           iout::prmptr << prompt() << std::flush;
         } );
@@ -98,10 +109,10 @@ namespace tish {
 
       while ( !prsr_.empty() ) {
         detect_info();
-        iout::prmptr << prompt_ << std::flush;
+        iout::prmptr << prompt() << std::flush;
 
         try {
-          interp_( prsr_.parse().get() );
+          last_result_ = interp_.evaluate( prsr_.parse().get() );
         } catch ( const error::SystemCallError& e ) {
           iout::logger.print( e );
         } catch ( const error::TerminationSignal& e ) {

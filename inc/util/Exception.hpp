@@ -1,31 +1,32 @@
 #ifndef TISH_EXCEPTION
 #define TISH_EXCEPTION
 
+#include <Tokenizer.hpp>
 #include <exception>
 #include <format>
 #include <ranges>
 #include <util/Config.hpp>
-#include <util/Utils.hpp>
+#include <util/Util.hpp>
 
 namespace tish {
   namespace error {
     class TraceBack : public std::exception {
     protected:
-      types::String message_;
+      type::String message_;
 
     public:
-      TraceBack( types::String message ) : message_ { std::move( message ) } {}
+      TraceBack( type::String&& message ) : message_ { std::move( message ) } {}
       virtual const char* what() const noexcept { return message_.c_str(); }
     };
 
     /// @brief This exception indicates errors in some cpp code.
     class RuntimeError : public TraceBack {
     public:
-      RuntimeError( types::String message ) : TraceBack( std::move( message ) ) {}
+      RuntimeError( type::String&& message ) : TraceBack( std::move( message ) ) {}
     };
 
     class TokenError : public TraceBack {
-      TokenError( std::size_t line_pos, types::StrView context, types::StrView message )
+      TokenError( std::size_t line_pos, type::StrView context, type::StrView message )
         : TraceBack( "\n    " )
       {
         // Trim trailing whitespace from the string_view
@@ -42,32 +43,32 @@ namespace tish {
 
     public:
       TokenError( std::size_t line_pos,
-                  types::StrView context,
-                  types::Char expect,
-                  types::Char received )
+                  type::StrView context,
+                  type::Char expect,
+                  type::Char received )
         : TokenError( line_pos,
                       std::move( context ),
                       std::format( "expect {}, but received {}",
-                                   utils::format_char( expect ),
-                                   utils::format_char( received ) ) )
+                                   util::format_char( expect ),
+                                   util::format_char( received ) ) )
       {}
       TokenError( std::size_t line_pos,
-                  types::StrView context,
-                  types::StrView expecting,
-                  types::Char received )
+                  type::StrView context,
+                  type::StrView expecting,
+                  type::Char received )
         : TokenError(
             line_pos,
             std::move( context ),
-            std::format( "expect {}, but received {}", expecting, utils::format_char( received ) ) )
+            std::format( "expect {}, but received {}", expecting, util::format_char( received ) ) )
       {}
     };
 
     class SyntaxError : public TraceBack {
     public:
       SyntaxError( std::size_t line_pos,
-                   types::StrView context,
-                   types::TokenType expect,
-                   types::TokenType found )
+                   type::StrView context,
+                   Tokenizer::TokenKind expect,
+                   Tokenizer::TokenKind found )
         : TraceBack( "\n    " )
       {
         // Trim trailing whitespace from the string_view
@@ -80,36 +81,36 @@ namespace tish {
         message_.append( format( "{}\n    ", context ) )
           .append( line_pos, '~' )
           .append( format( "^\n  except {}, but found {}",
-                           utils::token_kind_map( expect ),
-                           utils::token_kind_map( found ) ) );
+                           Tokenizer::as_string( expect ),
+                           Tokenizer::as_string( found ) ) );
       }
     };
 
     class ArgumentError : public TraceBack {
     public:
-      ArgumentError( types::StrView where, types::StrView why )
+      ArgumentError( type::StrView where, type::StrView why )
         : TraceBack( std::format( "{}: {}", where, why ) )
       {}
     };
 
     class SystemCallError : public TraceBack {
     public:
-      SystemCallError( types::String where ) : TraceBack( std::move( where ) ) {}
+      SystemCallError( type::String&& where ) : TraceBack( std::move( where ) ) {}
     };
 
     class TerminationSignal : public TraceBack {
-      types::Eval exit_val_;
+      type::Eval exit_val_;
 
     protected:
-      TerminationSignal( types::String message, types::Eval exit_val )
+      TerminationSignal( type::String&& message, type::Eval exit_val )
         : TraceBack( std::move( message ) ), exit_val_ { exit_val }
       {}
 
     public:
-      TerminationSignal( types::Eval exit_val )
+      TerminationSignal( type::Eval exit_val )
         : TerminationSignal( "current process must be killed", exit_val )
       {}
-      types::Eval value() const noexcept { return exit_val_; }
+      type::Eval value() const noexcept { return exit_val_; }
     };
 
     class StreamClosed : public TerminationSignal {

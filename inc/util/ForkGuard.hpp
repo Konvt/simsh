@@ -6,7 +6,7 @@
 #include <sys/types.h>
 
 namespace tish {
-  namespace utils {
+  namespace util {
     class ForkGuard {
     public:
       using ExitCode = int;
@@ -50,7 +50,7 @@ namespace tish {
       /// process.
       void reset_signals() noexcept;
     };
-  } // namespace utils
+  } // namespace util
 } // namespace tish
 
 #endif // TISH_FORKGUARD

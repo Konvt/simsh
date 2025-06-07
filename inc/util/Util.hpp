@@ -6,55 +6,29 @@
 #include <span>
 #include <type_traits>
 #include <util/Config.hpp>
-#include <util/Enums.hpp>
 #include <utility>
 
 namespace tish {
-  namespace utils {
-    [[nodiscard]] types::String format_char( types::Char character );
+  namespace util {
+    [[nodiscard]] type::String format_char( type::Char character );
 
-    [[nodiscard]] constexpr types::StrView token_kind_map( types::TokenType tkn ) noexcept
-    {
-      switch ( tkn ) {
-      case types::TokenType::STR:         return "string";
-      case types::TokenType::CMD:         return "command";
-      case types::TokenType::AND:         return "logical AND";
-      case types::TokenType::OR:          return "logical OR";
-      case types::TokenType::NOT:         return "logical NOT";
-      case types::TokenType::PIPE:        return "pipeline";
-      case types::TokenType::OVR_REDIR:   [[fallthrough]];
-      case types::TokenType::APND_REDIR:  return "output redirection";
-      case types::TokenType::MERG_OUTPUT: [[fallthrough]];
-      case types::TokenType::MERG_APPND:  [[fallthrough]];
-      case types::TokenType::MERG_STREAM: return "combined redirection";
-      case types::TokenType::STDIN_REDIR: return "input redirection";
-      case types::TokenType::LPAREN:      return "left paren";
-      case types::TokenType::RPAREN:      return "right paren";
-      case types::TokenType::NEWLINE:     return "newline";
-      case types::TokenType::SEMI:        return "semicolon";
-      case types::TokenType::ENDFILE:     return "end of file";
-      case types::TokenType::ERROR:       [[fallthrough]];
-      default:                            return "error";
-      }
-    }
+    bool create_file( type::StrView filename );
 
-    bool create_file( types::StrView filename );
+    [[nodiscard]] type::StrView get_homedir();
 
-    [[nodiscard]] types::StrView get_homedir();
+    [[nodiscard]] std::vector<type::String> get_envpath();
 
-    [[nodiscard]] std::vector<types::String> get_envpath();
+    [[nodiscard]] type::String tilde_expansion( const type::String& token );
 
-    [[nodiscard]] types::String tilde_expansion( const types::String& token );
-
-    [[nodiscard]] std::pair<bool, std::smatch> match_string( const types::String& str,
-                                                             types::StrView reg_str );
+    [[nodiscard]] std::pair<bool, std::smatch> match_string( const type::String& str,
+                                                             type::StrView reg_str );
 
     /// @brief Finds the path to the given file in the path set.
-    [[nodiscard]] types::String search_filepath( std::span<const types::String> path_set,
-                                                 types::StrView filename );
+    [[nodiscard]] type::String search_filepath( std::span<const type::String> path_set,
+                                                type::StrView filename );
 
-    bool rebind_fd( types::FileDesc old_fd, types::FileDesc new_fd ) noexcept;
-  } // namespace utils
+    bool rebind_fd( type::FileDesc old_fd, type::FileDesc new_fd ) noexcept;
+  } // namespace util
 
   namespace details {
     template<typename QualifierInfo, typename Ret, typename... Args>
@@ -106,7 +80,7 @@ namespace tish {
     };
   } // namespace details
 
-  namespace utils {
+  namespace util {
     /// @brief A wrapper that helps to convert lambda to a C-style function interface, which means
     /// function pointer.
     template<typename... Signature>
@@ -131,7 +105,7 @@ namespace tish {
     {
       return CFnCast<Signature>::from( std::forward<Fn>( fn ) );
     }
-  } // namespace utils
+  } // namespace util
 } // namespace tish
 
 #endif // TISH_UTILS

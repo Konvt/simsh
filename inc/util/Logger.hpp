@@ -11,7 +11,7 @@ namespace tish {
     /// @brief Log output used to "consume" all exception types in the program,
     /// output to stderr.
     class Logger {
-      types::String prefix_;
+      type::String prefix_;
 
       Logger() noexcept = default;
 
@@ -22,12 +22,12 @@ namespace tish {
 
       static Logger& inst() noexcept;
 
-      [[nodiscard]] types::StrView prefix() const& noexcept { return prefix_; }
-      [[nodiscard]] types::String&& prefix() && noexcept { return std::move( prefix_ ); }
+      [[nodiscard]] type::StrView prefix() const& noexcept { return prefix_; }
+      [[nodiscard]] type::String&& prefix() && noexcept { return std::move( prefix_ ); }
 
       /// @brief Set a string prefix that comes with each output, which defaults
       /// to empty.
-      void set_prefix( types::String prefix );
+      void set_prefix( type::String prefix );
 
       /// @brief Print the exception via `perror`.
       const Logger& print( const error::TraceBack& e ) const;
@@ -38,7 +38,7 @@ namespace tish {
     /// @brief Print the exception information via `std::cerr`.
     const Logger& operator<<( const Logger& logr, const error::TraceBack& e );
 
-    /// @brief Log output used to "consume" all exception types in the program,
+    /// @brief Log output used to "consume" all exception type in the program,
     /// output to stderr.
     inline Logger& logger = Logger::inst();
 
