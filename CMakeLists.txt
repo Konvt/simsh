@@ -9,13 +9,20 @@ add_executable(tish "")
 set_target_properties(tish PROPERTIES OUTPUT_NAME "tish")
 set_target_properties(tish PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/.")
 
-target_compile_options(tish PRIVATE
-  $<$<COMPILE_LANGUAGE:C>:-DNDEBUG>
-  $<$<COMPILE_LANGUAGE:CXX>:-DNDEBUG>
-  $<$<COMPILE_LANGUAGE:CXX>:-Wall>
-  $<$<COMPILE_LANGUAGE:CXX>:-Wpedantic>
-  $<$<COMPILE_LANGUAGE:CXX>:-Wextra>
-  $<$<COMPILE_LANGUAGE:CXX>:-Wshadow>)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  target_compile_options(tish PRIVATE
+    $<$<COMPILE_LANGUAGE:CXX>:-Wall>
+    $<$<COMPILE_LANGUAGE:CXX>:-Wpedantic>
+    $<$<COMPILE_LANGUAGE:CXX>:-Wextra>
+    $<$<COMPILE_LANGUAGE:CXX>:-Wshadow>)
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+  target_compile_options(tish PRIVATE
+    $<$<COMPILE_LANGUAGE:CXX>:/W4>
+    $<$<COMPILE_LANGUAGE:CXX>:/permissive->)
+else()
+  message(WARNING "Unknown compiler: ${CMAKE_CXX_COMPILER_ID}. No warning flags set.")
+endif()
+
 set_target_properties(tish PROPERTIES CXX_EXTENSIONS OFF)
 target_compile_features(tish PRIVATE cxx_std_20)
 

@@ -1,6 +1,8 @@
 #include <algorithm>
 #include <cassert>
+#include <cerrno>
 #include <cstdlib>
+#include <cstring>
 #include <filesystem>
 #include <format>
 #include <fstream>
@@ -10,12 +12,17 @@
 #include <ranges>
 #include <unistd.h>
 #include <util/Config.hpp>
-#include <util/Utils.hpp>
+#include <util/Util.hpp>
 using namespace std;
 
 namespace tish {
-  namespace utils {
-    types::String format_char( types::Char character )
+  namespace util {
+    type::String format_version()
+    {
+      return format( "{}.{}.{}-{}", TISH_MAJOR_V, TISH_MINOR_V, TISH_PATCH_V, TISH_BUILD_MODE );
+    }
+
+    type::String format_char( type::Char character )
     {
       switch ( character ) {
       case '\0': return "'\\0'";
@@ -36,35 +43,33 @@ namespace tish {
       }
     }
 
-    bool create_file( types::StrView filename )
+    bool create_file( type::StrView filename )
     {
       return ofstream( filename.data() ).is_open();
     }
 
-    types::StrView get_homedir()
+    type::StrView get_homedir() noexcept
     {
       return getpwuid( getuid() )->pw_dir;
     }
 
-    vector<types::String> get_envpath()
+    vector<type::String> get_envpath()
     {
-      types::StrView envpath = getenv( "PATH" );
+      type::StrView envpath = getenv( "PATH" );
 
-      vector<types::String> ret;
+      vector<type::String> ret;
       ranges::transform( envpath | views::split( ':' ), back_inserter( ret ), []( auto&& path ) {
-        return types::String( ranges::begin( path ), ranges::end( path ) );
+        return type::String( ranges::begin( path ), ranges::end( path ) );
       } );
       return ret;
     }
 
-    types::String tilde_expansion( const types::String& token )
+    type::String format_error( type::StrView __s )
     {
-      if ( regex_search( token, regex( "^~(/.*)?$" ) ) )
-        return format( "{}{}", get_homedir(), types::StrView( token.begin() + 1, token.end() ) );
-      return {};
+      return format( "{}: {}", __s, strerror( errno ) );
     }
 
-    pair<bool, smatch> match_string( const types::String& str, types::StrView reg_str )
+    pair<bool, smatch> match_string( const type::String& str, type::StrView reg_str )
     {
       regex pattern { reg_str.data() };
       smatch matches;
@@ -72,8 +77,7 @@ namespace tish {
       return { result, move( matches ) };
     }
 
-    types::String search_filepath( std::span<const types::String> path_set,
-                                   types::StrView filename )
+    type::String search_filepath( std::span<const type::String> path_set, type::StrView filename )
     {
       for ( const auto& env_path : path_set ) {
         try {
@@ -87,9 +91,9 @@ namespace tish {
       return {};
     }
 
-    bool rebind_fd( types::FileDesc old_fd, types::FileDesc new_fd ) noexcept
+    bool rebind_fd( type::FileDesc old_fd, type::FileDesc new_fd ) noexcept
     {
       return dup2( old_fd, new_fd ) == -1;
     }
-  } // namespace utils
+  } // namespace util
 } // namespace tish

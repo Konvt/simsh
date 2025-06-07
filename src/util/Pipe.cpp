@@ -6,7 +6,7 @@
 using namespace std;
 
 namespace tish {
-  namespace utils {
+  namespace util {
     Pipe::Pipe() : pipefd_ {}, reader_closed_ { false }, writer_closed_ { false }
     {
       if ( pipe( pipefd_.data() ) < 0 )
@@ -59,7 +59,7 @@ namespace tish {
       }
     }
 
-    types::FileDesc PipeReader::get() const
+    type::FileDesc PipeReader::get() const
     {
       return pipefd_[_reader_fd];
     }
@@ -72,7 +72,7 @@ namespace tish {
       }
     }
 
-    types::FileDesc PipeWriter::get() const
+    type::FileDesc PipeWriter::get() const
     {
       return pipefd_[_writer_fd];
     }
@@ -84,9 +84,9 @@ namespace tish {
       return *this;
     }
 
-    bool disable_blocking( types::FileDesc fd )
+    bool disable_blocking( type::FileDesc fd )
     {
       return fcntl( fd, F_SETFL, fcntl( fd, F_GETFL ) | O_NONBLOCK ) > 0;
     }
-  } // namespace utils
+  } // namespace util
 } // namespace tish

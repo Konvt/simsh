@@ -5,15 +5,17 @@
 #include <Parser.hpp>
 #include <atomic>
 #include <csignal>
+#include <optional>
 #include <util/Config.hpp>
 #include <util/Exception.hpp>
+#include <util/Term.hpp>
 
 namespace tish {
   namespace cli {
     /// @brief The simplest implementation of the shell.
     class BaseCLI {
-      static std::atomic<bool> _already_exist; // A process can have only one shell
-                                               // instance in a same scope.
+      // A process can have only one shell instance in a same scope.
+      static std::atomic<bool> _existed;
 
       struct sigaction _old_action;
 
@@ -22,22 +24,20 @@ namespace tish {
       Interpreter interp_;
 
     public:
-      /// @throw error::RuntimeError If more than one object instances are
-      /// created in the same scope.
-      BaseCLI( Parser prsr ) : prsr_ { std::move( prsr ) }, interp_ {}
+      BaseCLI( Parser&& prsr ) : prsr_ { std::move( prsr ) }, interp_ {}
       {
-        if ( _already_exist ) [[unlikely]]
+        if ( _existed ) [[unlikely]]
           throw error::RuntimeError( "BaseCLI: CLI already exists" );
         else
-          _already_exist = true;
+          _existed = true;
 
         sigaction( SIGINT, nullptr, &_old_action ); // save the old signal action
       }
       BaseCLI() : BaseCLI( Parser() ) {}
-      virtual ~BaseCLI()
+      virtual ~BaseCLI() noexcept
       {
         sigaction( SIGINT, &_old_action, nullptr );
-        _already_exist = false;
+        _existed = false;
       };
 
       virtual int run();
@@ -45,28 +45,29 @@ namespace tish {
 
     /// @brief A shell with prompt.
     class CLI : public BaseCLI {
-#define CLEAR_LINE "\x1b[1K\r"
-      static constexpr types::StrView _default_fmt =
-        CLEAR_LINE "\x1b[32;1m{}@{}\x1b[0m:\x1b[34;1m{}\x1b[0m$ ";
-      static constexpr types::StrView _root_fmt = CLEAR_LINE "{}@{}:{}# ";
-#undef CLEAR_LINE
-      static constexpr types::StrView _welcome_mes =
-        "\x1b[36;1m"
-        "  _   _     _\n"
-        " | |_(_)___| |__\n"
-        " | __| / __| '_ \\\n"
-        " | |_| \\__ \\ | | |\n"
-        "  \\__|_|___/_| |_|\n"
-        "\x1b[0m\n"
-        "Type \x1b[32mhelp\x1b[0m for more information\n";
+      static constexpr type::StrView _default_fmt = LINEWIPE LINESTART FG_GREEN BOLD_TXT
+        "{}@{}" RESETSTYLE ":" FG_BLUE BOLD_TXT "{}" RESETSTYLE " {}$ ";
+      static constexpr type::StrView _root_fmt = LINEWIPE LINEWIPE "{}@{}:{} {}# ";
+      static constexpr type::StrView _binary_err_fmt =
+        FG_RED "[" BOLD_TXT "{}|{}" RESETSTYLE FG_RED "]" RESETSTYLE;
+      static constexpr type::StrView _unary_err_fmt =
+        FG_RED "[" BOLD_TXT "{}" RESETSTYLE FG_RED "]" RESETSTYLE;
+      static constexpr type::StrView _welcome_mes =
+        FG_CYAN BOLD_TXT "  _   _     _\n"
+                         " | |_(_)___| |__\n"
+                         " | __| / __| '_ \\\n"
+                         " | |_| \\__ \\ | | |\n"
+                         "  \\__|_|___/_| |_|\n" RESETSTYLE "\n"
+                         "Type " FG_GREEN "help" RESETSTYLE " for more information\n";
 
-      types::String prompt_;
+      type::String prompt_;
 
-      types::String host_name_;
-      types::String home_dir_;
-      types::String current_dir_;
+      type::String host_name_;
+      type::String home_dir_;
+      type::String current_dir_;
 
-      types::String user_name_;
+      type::String user_name_;
+      std::optional<Interpreter::EvalResult> last_result_;
 
       void update_prompt();
 
@@ -75,10 +76,10 @@ namespace tish {
       void detect_info();
 
     public:
-      CLI( Parser prsr ) : BaseCLI( std::move( prsr ) ) { detect_info(); }
+      CLI( Parser&& prsr ) : BaseCLI( std::move( prsr ) ) { detect_info(); }
       CLI() : CLI( Parser() ) {}
       virtual ~CLI() = default;
-      [[nodiscard]] types::StrView prompt() const noexcept { return prompt_; }
+      [[nodiscard]] type::StrView prompt() const noexcept { return prompt_; }
 
       virtual int run();
     };

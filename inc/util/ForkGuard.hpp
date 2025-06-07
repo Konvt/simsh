@@ -6,7 +6,7 @@
 #include <sys/types.h>
 
 namespace tish {
-  namespace utils {
+  namespace util {
     class ForkGuard {
     public:
       using ExitCode = int;
@@ -27,9 +27,8 @@ namespace tish {
       ForkGuard& operator=( ForkGuard&& )      = delete;
 
       /// @brief Fork and check for success.
-      /// @throw error::SystemCallError When fork failed.
-      explicit ForkGuard( bool block_sig = true );
-      ForkGuard( ForkGuard&& rhs );
+      explicit ForkGuard( bool block_sig = true ) noexcept( false );
+      ForkGuard( ForkGuard&& rhs ) noexcept;
 
       /// @brief Abandon the management child process, and deconstruct this
       /// object.
@@ -43,14 +42,13 @@ namespace tish {
       [[nodiscard]] std::optional<ExitCode> exit_code() const noexcept;
 
       /// @brief Wait for the subprocess to exit.
-      /// @throw error::SystemCallError If `waitpid` fails.
-      void wait();
+      void wait() noexcept( false );
 
       /// @brief Only reset the signals in subprocess, it's invalid for parent
       /// process.
       void reset_signals() noexcept;
     };
-  } // namespace utils
+  } // namespace util
 } // namespace tish
 
 #endif // TISH_FORKGUARD

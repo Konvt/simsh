@@ -26,7 +26,7 @@ namespace tish {
     line_pos_ = 0;
   }
 
-  types::Char LineBuffer::peek()
+  type::Char LineBuffer::peek()
   {
     assert( input_stream_ != nullptr );
     if ( line_pos_ >= line_input_.size() ) {
@@ -61,7 +61,7 @@ namespace tish {
     line_pos_ = line_pos_ <= num_chars ? 0 : line_pos_ - num_chars;
   }
 
-  void Tokenizer::reset( LineBuffer line_buf )
+  void Tokenizer::reset( LineBuffer&& line_buf ) noexcept
   {
     if ( !line_buf.eof() ) {
       line_buf_ = std::move( line_buf );
@@ -69,7 +69,7 @@ namespace tish {
     }
   }
 
-  Tokenizer& Tokenizer::operator=( Tokenizer&& rhs )
+  Tokenizer& Tokenizer::operator=( Tokenizer&& rhs ) noexcept
   {
     using std::swap;
     swap( line_buf_, rhs.line_buf_ );
@@ -85,11 +85,11 @@ namespace tish {
     return *current_token_;
   }
 
-  types::Token Tokenizer::consume( types::TokenType expect )
+  type::String Tokenizer::consume( TokenKind expect )
   {
     assert( current_token_.has_value() );
     if ( current_token_->is( expect ) ) {
-      types::Token discard_tokens = move( current_token_->value_ );
+      type::String discard_tokens = move( current_token_->value_ );
       current_token_.reset();
       return discard_tokens;
     }
@@ -102,7 +102,7 @@ namespace tish {
   Tokenizer::Token Tokenizer::next()
   {
     Token new_token;
-    auto& [token_type, token_str] = new_token;
+    auto& [token_str, token_type] = new_token;
 
     enum class StateType : uint8_t {
       START,
@@ -133,14 +133,14 @@ namespace tish {
           switch ( character ) {
           case EOF: {
             save_char  = false;
-            token_type = types::TokenType::ENDFILE;
+            token_type = TokenKind::ENDFILE;
           } break;
           case '\0': [[fallthrough]];
           case '\n': {
-            token_type = types::TokenType::NEWLINE;
+            token_type = TokenKind::NEWLINE;
           } break;
           case ';': {
-            token_type = types::TokenType::SEMI;
+            token_type = TokenKind::SEMI;
           } break;
           case '"': {
             save_char = false;
@@ -157,22 +157,22 @@ namespace tish {
             state = StateType::INPIPE_LIKE;
           } break;
           case '<': {
-            token_type = types::TokenType::STDIN_REDIR;
+            token_type = TokenKind::STDIN_REDIR;
           } break;
           case '!': {
-            token_type = types::TokenType::NOT;
+            token_type = TokenKind::NOT;
           } break;
           case '>': {
             state = StateType::INRARR;
           } break;
           case '(': {
-            token_type = types::TokenType::LPAREN;
+            token_type = TokenKind::LPAREN;
           } break;
           case ')': {
-            token_type = types::TokenType::RPAREN;
+            token_type = TokenKind::RPAREN;
           } break;
           default: {
-            if ( ( "':^%"sv ).find( character ) != types::StrView::npos )
+            if ( ( "':^%"sv ).find( character ) != type::StrView::npos )
               throw error::TokenError( line_buf_.line_pos(),
                                        line_buf_.context(),
                                        "any valid command character"sv,
@@ -187,24 +187,24 @@ namespace tish {
       case StateType::INCOMMENT: {
         save_char = false;
         if ( character == '\n' ) {
-          token_type = types::TokenType::NEWLINE;
+          token_type = TokenKind::NEWLINE;
           state      = StateType::DONE;
         } else if ( character == EOF ) {
-          token_type = types::TokenType::ENDFILE;
+          token_type = TokenKind::ENDFILE;
           state      = StateType::DONE;
         }
       } break;
 
       case StateType::INCMD: {
         if ( isspace( character )
-             || ( "&|!<>\"';:()^%#"sv ).find( character ) != types::StrView::npos ) {
+             || ( "&|!<>\"';:()^%#"sv ).find( character ) != type::StrView::npos ) {
           if ( token_str.empty() ) {
             throw error::TokenError( line_buf_.line_pos(),
                                      line_buf_.context(),
                                      "any valid command character"sv,
                                      character );
           }
-          token_type = types::TokenType::CMD;
+          token_type = TokenKind::CMD;
           save_char  = ( discard_char = false );
           state      = StateType::DONE;
         }
@@ -223,31 +223,31 @@ namespace tish {
       case StateType::INSTR: {
         if ( character == '"' ) {
           save_char  = false;
-          token_type = types::TokenType::STR;
+          token_type = TokenKind::STR;
           state      = StateType::DONE;
-        } else if ( ( "\n"sv ).find( character ) != types::StrView::npos || character == EOF )
+        } else if ( ( "\n"sv ).find( character ) != type::StrView::npos || character == EOF )
           throw error::TokenError( line_buf_.line_pos(), line_buf_.context(), '"', character );
       } break;
 
       case StateType::INAND: {
         if ( character == '&' ) { // get &&, done
           state      = StateType::DONE;
-          token_type = types::TokenType::AND;
+          token_type = TokenKind::AND;
         } else if ( character == '>' )
           state = StateType::INMEG_OUTPUT; // get &>, still expecting '>' or
                                            // nothing
         else {
-          token_type = types::TokenType::ERROR;
+          token_type = TokenKind::ERROR;
           throw error::TokenError( line_buf_.line_pos(), line_buf_.context(), '&', character );
         }
       } break;
 
       case StateType::INMEG_OUTPUT: {
         if ( character == '>' )
-          token_type = types::TokenType::MERG_APPND; // get &>>
+          token_type = TokenKind::MERG_APPND; // get &>>
         else {
           save_char  = ( discard_char = false );
-          token_type = types::TokenType::MERG_OUTPUT; // get &>
+          token_type = TokenKind::MERG_OUTPUT; // get &>
         }
         state = StateType::DONE;
       } break;
@@ -256,7 +256,7 @@ namespace tish {
                                       // nothing
         if ( !isdigit( character ) ) {
           save_char  = ( discard_char = false );
-          token_type = types::TokenType::MERG_STREAM;
+          token_type = TokenKind::MERG_STREAM;
           state      = StateType::DONE;
         }
       } break;
@@ -264,9 +264,9 @@ namespace tish {
       case StateType::INPIPE_LIKE: {
         if ( character != '|' ) {
           save_char  = ( discard_char = false );
-          token_type = types::TokenType::PIPE;
+          token_type = TokenKind::PIPE;
         } else
-          token_type = types::TokenType::OR;
+          token_type = TokenKind::OR;
         state = StateType::DONE;
       } break;
 
@@ -275,17 +275,17 @@ namespace tish {
         if ( character == '&' ) // get (\d*)>&, expecting (\d*) or nothing
           state = StateType::INMEG_STREAM;
         else if ( character == '>' ) // get >>, done
-          token_type = types::TokenType::APND_REDIR;
+          token_type = TokenKind::APND_REDIR;
         else { // get >, done
           save_char  = ( discard_char = false );
-          token_type = types::TokenType::OVR_REDIR;
+          token_type = TokenKind::OVR_REDIR;
         }
       } break;
 
       case StateType::DONE: [[fallthrough]];
       default:              {
         state      = StateType::DONE;
-        token_type = types::TokenType::ERROR;
+        token_type = TokenKind::ERROR;
         throw error::ArgumentError( "tokenizer"sv, "the state machine status is incorrect"sv );
       } break;
       }

@@ -6,7 +6,7 @@
 using namespace std;
 
 namespace tish {
-  namespace utils {
+  namespace util {
     ForkGuard::ForkGuard( bool block_sig ) : process_id_ {}, subp_ret_ {}, old_set_ { nullptr }
     {
       if ( block_sig ) {
@@ -23,13 +23,13 @@ namespace tish {
         throw error::SystemCallError( "fork" );
     }
 
-    ForkGuard::ForkGuard( ForkGuard&& rhs )
+    ForkGuard::ForkGuard( ForkGuard&& rhs ) noexcept
       : process_id_ { rhs.process_id_ }
       , subp_ret_ { move( rhs.subp_ret_ ) }
       , old_set_ { move( rhs.old_set_ ) }
     {
       sigemptyset( &new_set_ );
-      memcpy( new_set_.__val, rhs.new_set_.__val, sizeof( sigset_t::__val ) );
+      memcpy( &new_set_, &rhs.new_set_, sizeof( sigset_t ) );
       sigemptyset( &rhs.new_set_ );
     }
 
@@ -82,5 +82,5 @@ namespace tish {
         signal( SIGINT, SIG_DFL );
       }
     }
-  } // namespace utils
+  } // namespace util
 } // namespace tish
