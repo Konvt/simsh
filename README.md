@@ -1,7 +1,7 @@
-# tish - A Tiny Shell written by modern C++.
+# tish - A Tiny Shell written in modern C++.
 
 **Contents**
-- [tish - A Tiny Shell written by modern C++.](#tish---a-tiny-shell-written-by-modern-c)
+- [tish - A Tiny Shell written in modern C++.](#tish---a-tiny-shell-written-in-modern-c)
   - [Features](#features)
   - [How to build](#how-to-build)
     - [Makefile](#makefile)
@@ -16,7 +16,7 @@
     - [Binary](#binary-1)
   - [如何使用](#如何使用)
 
-A simple Linux shell written in Modern C++.
+A Tiny Shell written in modern C++.
 
 ## Features
 - Supports nested statements
@@ -24,6 +24,10 @@ A simple Linux shell written in Modern C++.
 - Syntax parsing based on recursive descent method
 - Modular design
 - Adheres to Modern C++ standards
+
+> This is just a *toy project* for personal practice.
+> \
+> If you are looking for a mature and reliable shell program, this project may not meet your expectations.
 
 ## How to build
 The syntax standard used is C++20 (with `ranges` and `format`), so the compiler required for building needs to be at least g++13 or clang14.
@@ -36,11 +40,12 @@ Run the program with `./tish`.
 
 ### Makefile
 ```sh
-make -j all
+make -j release
 ```
 ### CMake
 ```sh
-cmake --preset linux && cmake --build build
+# requires CMake 3.21
+cmake --preset release && cmake --build --preset release
 ```
 
 or
@@ -99,11 +104,12 @@ If run as the `root` user, the default `tish::CLI` object will change the comman
 使用 `./tish` 运行程序。
 ### Makefile
 ```sh
-make -j all
+make -j release
 ```
 ### CMake
 ```sh
-cmake --preset linux && cmake --build build
+# 需要 CMake 3.21
+cmake --preset release && cmake --build --preset release
 ```
 
 或者是

@@ -2,7 +2,7 @@
 # Please see the LICENSE file in the root of the repository for the full license text.
 # Copyright (c) 2024-2025 Konvt
 
-cmake_minimum_required(VERSION 3.15.0)
+cmake_minimum_required(VERSION 3.8.0)
 project(tish LANGUAGES CXX)
 
 add_executable(tish "")
@@ -40,9 +40,7 @@ foreach(dir IN LISTS FORMAT_DIRS)
     "${dir}/*.cpp"
     "${dir}/*.hpp"
     "${dir}/*.cxx"
-    "${dir}/*.hxx"
-    "${dir}/*.c"
-    "${dir}/*.h")
+    "${dir}/*.hxx")
   list(APPEND FORMAT_FILES ${TMP_FILES})
 endforeach()
 
