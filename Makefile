@@ -17,7 +17,7 @@ ifeq ($(BUILD_TYPE_LOWER),release)
   CFLAGS := -std=$(CC_STANDARD) -Wall -Wpedantic -Wextra -Wshadow -DNDEBUG -$(OPT_LEVEL) -I$(INC_DIR)
 else ifeq ($(BUILD_TYPE_LOWER),debug)
   OPT_LEVEL := g
-  CFLAGS := -std=$(CC_STANDARD) -Wall -Wpedantic -Wextra -Wshadow -$(OPT_LEVEL) -I$(INC_DIR)
+  CFLAGS := -std=$(CC_STANDARD) -Wall -Wpedantic -Wextra -Wshadow -fsanitize=address -$(OPT_LEVEL) -I$(INC_DIR)
 else
   $(error Unsupported BUILD_TYPE '$(BUILD_TYPE)', please use 'debug' or 'release' (case insensitive))
 endif

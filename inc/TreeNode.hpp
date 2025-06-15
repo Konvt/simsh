@@ -35,6 +35,30 @@ namespace tish {
      * `ExprNode`. */
     SiblingNodes siblings_;
 
+    static void deconstruct( ChildNode& root ) noexcept
+    { // Traverse the binary tree with linear space complexity.
+      for ( auto cur = root.release(); cur != nullptr; ) {
+        if ( cur->l_child_ != nullptr ) {
+          auto pred = cur->l_child_.get();
+          while ( pred->r_child_ != nullptr && pred->r_child_.get() != cur )
+            pred = pred->r_child_.get();
+
+          if ( pred->r_child_ == nullptr ) {
+            pred->r_child_.reset( cur );
+            cur = cur->l_child_.release();
+          } else {
+            ChildNode tmp { pred->r_child_.release() };
+            cur = tmp->r_child_.release();
+            tmp.reset();
+          }
+        } else {
+          ChildNode tmp { cur };
+          cur = cur->r_child_.release();
+          tmp.reset();
+        }
+      }
+    }
+
   public:
     StmtNode( StmtKind stmt_type,
               ChildNode left_stmt   = nullptr,
@@ -58,6 +82,13 @@ namespace tish {
     virtual ~StmtNode() = default;
 
     [[nodiscard]] StmtKind type() const noexcept { return category_; }
+
+    void clear() noexcept
+    {
+      deconstruct( l_child_ );
+      deconstruct( r_child_ );
+      SiblingNodes().swap( siblings_ );
+    }
 
     StmtNode* left() const& noexcept { return l_child_.get(); }
     StmtNode* right() const& noexcept { return r_child_.get(); }

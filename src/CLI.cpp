@@ -35,7 +35,9 @@ namespace tish {
 
       while ( !prsr_.empty() ) {
         try {
-          interp_.evaluate( prsr_.parse().get() );
+          auto parsed = prsr_.parse();
+          interp_.evaluate( parsed.get() );
+          parsed->clear();
         } catch ( const error::SystemCallError& e ) {
           iout::logger.print( e );
         } catch ( const error::TerminationSignal& e ) {
@@ -119,7 +121,9 @@ namespace tish {
         iout::prmptr << prompt() << std::flush;
 
         try {
-          last_result_ = interp_.evaluate( prsr_.parse().get() );
+          auto parsed  = prsr_.parse();
+          last_result_ = interp_.evaluate( parsed.get() );
+          parsed->clear();
           ranges::for_each( last_result_->message,
                             []( type::StrView info ) { iout::logger << info; } );
         } catch ( const error::SystemCallError& e ) {
