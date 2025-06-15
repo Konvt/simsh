@@ -35,6 +35,21 @@ namespace tish {
      * `ExprNode`. */
     SiblingNodes siblings_;
 
+    static void destruct( ChildNode& root ) noexcept
+    { // Destruct the binary tree with constant space complexity.
+      for ( auto cur = root.get(); cur != nullptr; cur = cur->right() ) {
+        if ( cur->left() != nullptr ) {
+          auto rightmost = cur->left();
+          while ( rightmost->right() != nullptr )
+            rightmost = rightmost->right();
+          rightmost->r_child_.reset( cur->r_child_.release() );
+          cur->r_child_.reset( cur->l_child_.release() );
+        }
+      }
+      while ( root != nullptr )
+        root = std::move( *root ).right();
+    }
+
   public:
     StmtNode( StmtKind stmt_type,
               ChildNode left_stmt   = nullptr,
@@ -58,6 +73,13 @@ namespace tish {
     virtual ~StmtNode() = default;
 
     [[nodiscard]] StmtKind type() const noexcept { return category_; }
+
+    void clear() noexcept
+    {
+      destruct( l_child_ );
+      destruct( r_child_ );
+      SiblingNodes().swap( siblings_ );
+    }
 
     StmtNode* left() const& noexcept { return l_child_.get(); }
     StmtNode* right() const& noexcept { return r_child_.get(); }

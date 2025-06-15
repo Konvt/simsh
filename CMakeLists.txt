@@ -15,6 +15,11 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang
     $<$<COMPILE_LANGUAGE:CXX>:-Wpedantic>
     $<$<COMPILE_LANGUAGE:CXX>:-Wextra>
     $<$<COMPILE_LANGUAGE:CXX>:-Wshadow>)
+
+  if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_compile_options(tish PRIVATE -fsanitize=address)
+    target_link_options(tish PRIVATE -fsanitize=address)
+  endif()
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   target_compile_options(tish PRIVATE
     $<$<COMPILE_LANGUAGE:CXX>:/W4>

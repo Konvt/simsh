@@ -424,7 +424,7 @@ namespace tish {
         assert( arg_node->kind() != ExprNode::ExprKind::value );
 
         if ( _built_in_cmds.contains( arg_node->token() ) )
-          return { .message = { format( "{} is a builtin\n", arg_node->token() ) },
+          return { .message = { format( "{} is a builtin", arg_node->token() ) },
                    .value   = EvalResult::success };
         else if ( const auto filepath =
                     util::search_filepath( util::get_envpath(), arg_node->token() );
@@ -435,7 +435,7 @@ namespace tish {
                                   .message() },
                    .value   = !EvalResult::success };
         else
-          return { .message = { format( "{} is {}\n", arg_node->token(), filepath ) },
+          return { .message = { format( "{} is {}", arg_node->token(), filepath ) },
                    .value   = EvalResult::success };
       }
     } break;
